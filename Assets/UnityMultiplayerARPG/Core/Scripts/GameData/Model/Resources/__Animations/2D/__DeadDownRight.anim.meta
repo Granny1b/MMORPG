@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e31aa3024159615499522e4438b33ae3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: animation
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/GameData/Model/Resources/__Animations/2D/__DeadDownRight.anim
+  uploadId: 857340

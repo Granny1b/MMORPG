@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: a0b357ec1b2de2549a0b8a04c74acc70
+timeCreated: 1522543430
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Models/ItemDrops/DropArmor002.prefab
+  uploadId: 857340

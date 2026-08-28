@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 2cd3c10765f993a4194a4f7b50c502d5
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Item/UIItemCraft.cs
+  uploadId: 857340

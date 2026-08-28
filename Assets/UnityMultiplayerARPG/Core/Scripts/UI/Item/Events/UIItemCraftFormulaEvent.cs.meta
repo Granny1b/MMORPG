@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 18e457c6a4e34764c8e3db4e3cdb7e9d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Item/Events/UIItemCraftFormulaEvent.cs
+  uploadId: 857340

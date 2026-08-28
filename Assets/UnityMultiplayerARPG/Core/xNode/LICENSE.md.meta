@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 77523c356ccf04f56b53e6527c6b12fd
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/xNode/LICENSE.md
+  uploadId: 857340

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 577a489a7a1727a4d8f129a388e8bf5f
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/SharedData/Scripts/Networking/Messages/Messages/GameMessage.cs
+  uploadId: 857340

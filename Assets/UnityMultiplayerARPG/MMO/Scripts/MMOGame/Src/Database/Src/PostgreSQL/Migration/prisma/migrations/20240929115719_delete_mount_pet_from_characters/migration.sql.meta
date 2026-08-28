@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 11a2ed21f4c191b49bceece2109dc1de
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/MMO/Scripts/MMOGame/Src/Database/Src/PostgreSQL/Migration/prisma/migrations/20240929115719_delete_mount_pet_from_characters/migration.sql
+  uploadId: 857340

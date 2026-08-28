@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 73dcc600303e9cc4ca7dcd1f99e6374f
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoAddressable/Scenes/00Init_MMO_AA.unity
+  uploadId: 857340

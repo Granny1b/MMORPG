@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6d938c861e3ef694bbc6e6aed2f6a082
+timeCreated: 1470370933
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Models/ArmorModels/010/Hip010.prefab
+  uploadId: 857340

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d3abdeb3c6fd6b94d953d47a8f774512
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Effects/IceHitEffect.prefab
+  uploadId: 857340

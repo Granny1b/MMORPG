@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 04d1f267774b0ba4c9af9a5e1c3a1951
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/Sprites/Tiles/terrain_atlas_487.asset
+  uploadId: 857340

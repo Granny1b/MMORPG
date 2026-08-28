@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 38bbdd8c644d419d98229b3e755b6518
+timeCreated: 1761104490
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Social/PlayerBackground/UIPlayerBackgroundSelectionManager.cs
+  uploadId: 857340

@@ -1,0 +1,9 @@
+fileFormatVersion: 2
+guid: 8722004265a9d50459d9fa4cc4b1465b
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/LiteNetLibManager/Scripts/GameApi/LiteNetLibSyncFieldMode.cs
+  uploadId: 857340

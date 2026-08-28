@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 5eb57f6eeedab4b438e520548c38052b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/GameData/Model/EquipmentEntity/InstantiateObjectsByEquipmentEntitySockets.cs
+  uploadId: 857340

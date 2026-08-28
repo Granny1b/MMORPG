@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: ada842360c517a94b827ca26e2d5d1a0
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Item/DragAndDropHandler/UIRefineItemDropHandler.cs
+  uploadId: 857340

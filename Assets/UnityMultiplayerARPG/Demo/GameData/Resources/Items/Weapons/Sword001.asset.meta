@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 93c389fe9d40638469bffd9de26d31ba
+timeCreated: 1521885226
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Items/Weapons/Sword001.asset
+  uploadId: 857340

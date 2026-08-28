@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 53cc75875a8e04040bb5ef91c07d2704
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Animations/Character/Animations/Idle_Gun.anim
+  uploadId: 857340

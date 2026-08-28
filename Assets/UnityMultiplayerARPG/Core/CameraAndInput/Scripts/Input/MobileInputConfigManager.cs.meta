@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: f1b5af41ac67d094b917541adf787452
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/CameraAndInput/Scripts/Input/MobileInputConfigManager.cs
+  uploadId: 857340

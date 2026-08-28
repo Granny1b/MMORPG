@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5e9e08b0a5a7ee64a8cb35d683e7987c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/Animations/OrcsWarrior2D/IdleLeft.anim
+  uploadId: 857340

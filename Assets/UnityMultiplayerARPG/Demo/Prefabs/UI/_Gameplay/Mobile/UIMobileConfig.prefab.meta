@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 452f828d24a8805469f76c30c92c0ba6
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/UI/_Gameplay/Mobile/UIMobileConfig.prefab
+  uploadId: 857340

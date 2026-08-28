@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 0554eec4d42d7174d9c0a70734d91090
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/Animations/OrcsWarrior2D/AttackUp.anim
+  uploadId: 857340

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c4adffa6de23ca74a9078a60fa03912d
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Animations/Mount/AlpacaMove.anim
+  uploadId: 857340

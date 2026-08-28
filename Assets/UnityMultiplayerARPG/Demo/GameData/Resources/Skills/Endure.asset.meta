@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: b9f63b3b2f7be634e9493c7acfb8ef54
+timeCreated: 1520440796
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Skills/Endure.asset
+  uploadId: 857340

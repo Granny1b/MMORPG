@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: c5e70869262598d49809c2cf63f2f3c3
+timeCreated: 1522526047
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Animations/Character/_Action.anim
+  uploadId: 857340

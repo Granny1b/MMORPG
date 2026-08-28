@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a888d112eafd61c4681f7095b2035eae
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 4890085278179872738
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/MMO/Demo/Scenes/00Init_MMOSettings.lighting
+  uploadId: 857340

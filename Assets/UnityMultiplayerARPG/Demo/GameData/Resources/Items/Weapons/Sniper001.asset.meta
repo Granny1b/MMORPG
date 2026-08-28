@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: cef25d7570c129340a039818a8fca7c6
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Items/Weapons/Sniper001.asset
+  uploadId: 857340

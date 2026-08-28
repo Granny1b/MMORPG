@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: ea8889d2a42dc824697d997531ea0c14
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/LiteNetLibManager/Plugins/ZString/Utf8ValueStringBuilder.cs
+  uploadId: 857340

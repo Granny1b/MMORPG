@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: c29533c9e4284dee914b71a6579ea274
+timeCreated: 1698895807
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/LiteNetLibManager/Plugins/UniTask/Runtime/UnityAwaitableExtensions.cs
+  uploadId: 857340

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f82b91349e182814cb7f3ac8312d8183
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/GameData/Skills/FireBolt2D.asset
+  uploadId: 857340

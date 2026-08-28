@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a6965368e9bbec745905a65f29e97c61
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoSurvival/Prefabs/Gameplay/Harvestables/StoneEntity001.prefab
+  uploadId: 857340

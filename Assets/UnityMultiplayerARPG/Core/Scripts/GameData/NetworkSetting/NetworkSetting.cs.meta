@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: e49a50e8cd8609846b7d19a8d6061b94
+timeCreated: 1519974152
+licenseType: Store
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/GameData/NetworkSetting/NetworkSetting.cs
+  uploadId: 857340

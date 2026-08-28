@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b28d6c935f76b5b40bcdf20930628ac5
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Items/Represent/Gold.asset
+  uploadId: 857340

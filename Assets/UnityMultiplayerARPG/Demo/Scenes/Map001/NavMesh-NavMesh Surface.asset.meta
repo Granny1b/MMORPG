@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 7df71423ed30e26498b8db6f3a2d81e1
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 23800000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Scenes/Map001/NavMesh-NavMesh Surface.asset
+  uploadId: 857340

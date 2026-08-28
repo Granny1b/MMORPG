@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 3b7a98e2023c0c644977765aa167c094
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/DevExtension/Scripts/DevExtension.asmdef
+  uploadId: 857340

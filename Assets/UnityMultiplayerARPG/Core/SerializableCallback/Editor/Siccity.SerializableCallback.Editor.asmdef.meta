@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a49fd1d25e23fd14e85d1cbf342bb06f
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/SerializableCallback/Editor/Siccity.SerializableCallback.Editor.asmdef
+  uploadId: 857340

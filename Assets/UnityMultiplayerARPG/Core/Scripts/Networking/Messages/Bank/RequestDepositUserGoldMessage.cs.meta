@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: db4bcb8ac3c123c4b9c3e9aac79cc498
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/Networking/Messages/Bank/RequestDepositUserGoldMessage.cs
+  uploadId: 857340

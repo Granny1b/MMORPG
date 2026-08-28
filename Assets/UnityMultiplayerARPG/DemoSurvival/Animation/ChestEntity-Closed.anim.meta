@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a1ce80fab722f44418fd958a374961c0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoSurvival/Animation/ChestEntity-Closed.anim
+  uploadId: 857340

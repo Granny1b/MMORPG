@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: cd7a69468d0d71f41a52bf7266cf7141
+timeCreated: 1522543448
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Models/ItemDrops/DropSniper001.prefab
+  uploadId: 857340

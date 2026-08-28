@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: 2121a3a4b3a44514bb14459b94709a87
+timeCreated: 1520742603
+licenseType: Store
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/CharacterData/RelatesData/EquipWeapons.cs
+  uploadId: 857340

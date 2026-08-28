@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 80b049ea6ccbdd644b451085b92ecf70
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/Prefabs/CharacterEntities/Warrior2D.prefab
+  uploadId: 857340

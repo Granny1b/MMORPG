@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ce9bf82034cc31847884de81c6a85fc5
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Animations/Character/Animations/HolsterWeaponL_Combined.anim
+  uploadId: 857340

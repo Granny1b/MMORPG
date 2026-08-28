@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: bfeff0003171e78459ff4c54b6c56f9c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Gameplay/DamageEntities/GrenadeDamageEntity.prefab
+  uploadId: 857340

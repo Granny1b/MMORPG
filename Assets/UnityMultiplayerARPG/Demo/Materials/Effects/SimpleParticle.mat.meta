@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2fee5ce142b423f408474dc08dc75969
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Materials/Effects/SimpleParticle.mat
+  uploadId: 857340

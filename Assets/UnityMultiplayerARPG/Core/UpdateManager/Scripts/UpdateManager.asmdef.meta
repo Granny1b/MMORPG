@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0915dca47b08f0e41a809e729e0385b0
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/UpdateManager/Scripts/UpdateManager.asmdef
+  uploadId: 857340

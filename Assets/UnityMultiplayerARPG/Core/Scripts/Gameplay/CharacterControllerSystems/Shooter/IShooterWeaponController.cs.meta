@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 103ff28bb220dad4b85bc8a381980a60
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/Gameplay/CharacterControllerSystems/Shooter/IShooterWeaponController.cs
+  uploadId: 857340

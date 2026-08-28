@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: df4b0a5cc68c15a4090f0dc937a52246
+timeCreated: 1516987605
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/GameData/PlayerCharacters/Warrior2D.asset
+  uploadId: 857340

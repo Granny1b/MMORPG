@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: c8c44e596fdcb05468389fb3aafd6e63
+timeCreated: 1523530819
+licenseType: Store
+NativeFormatImporter:
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Nature Kit/Models/FBX format/Materials/natureKit-water.mat
+  uploadId: 857340

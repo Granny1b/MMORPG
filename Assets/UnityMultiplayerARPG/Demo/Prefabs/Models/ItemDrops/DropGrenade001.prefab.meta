@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 1ae15d9c56d768f42b46f3abac423b10
+timeCreated: 1522543448
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Models/ItemDrops/DropGrenade001.prefab
+  uploadId: 857340

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: fac1760f3f3d22a47a8e14e34a1d7440
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoSurvival/GameData/Resources/Items/Tools/StonePick.asset
+  uploadId: 857340

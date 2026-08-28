@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 65e452651277bff4abd14b59158fa925
+timeCreated: 1522543442
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Models/ItemDrops/DropShoes002.prefab
+  uploadId: 857340

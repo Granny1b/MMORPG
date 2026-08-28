@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e94f0fa12d0291e4595b02a31ffc8a36
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 4890085278179872738
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoGuildWar/Scenes/Map_GuildWarSettings.lighting
+  uploadId: 857340

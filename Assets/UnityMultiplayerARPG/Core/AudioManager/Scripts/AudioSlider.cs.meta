@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: 8e07f4ccbf1d58045874134ba7c0ff81
+timeCreated: 1511611531
+licenseType: Store
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/AudioManager/Scripts/AudioSlider.cs
+  uploadId: 857340

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 50fe064b3ca83a340b03759d08c2064d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/GameData/Item/Interfaces/ISocketEnhancerItem.cs
+  uploadId: 857340

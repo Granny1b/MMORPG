@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: dfe3dd84cd9dfb94e95d9c52e0643dfb
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/GraphicSettings/Scripts/UrpAntiAliasingSetting.cs
+  uploadId: 857340

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d31640f88e399ff42a44b2bc82624fa0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoSurvival/Prefabs/Gameplay/Harvestables/TreeEntity004.prefab
+  uploadId: 857340

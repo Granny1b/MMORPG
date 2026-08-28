@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: bfa44f312e28fa74f8141f93505e2836
+timeCreated: 1522543448
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Models/ItemDrops/DropMachineGunBullet.prefab
+  uploadId: 857340

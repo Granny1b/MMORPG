@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 44a5b192c83fd194abc9c802ed30f17e
+timeCreated: 1522543448
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Models/ItemDrops/DropPistolBullet.prefab
+  uploadId: 857340

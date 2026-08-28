@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 526ec951a3646104eabc7ed548e89726
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Items/Skills/SkillReset.asset
+  uploadId: 857340

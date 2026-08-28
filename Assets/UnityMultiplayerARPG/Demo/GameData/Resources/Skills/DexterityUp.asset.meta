@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 3d6a6428fdcc7354aa8334e92cb5405b
+timeCreated: 1520445766
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Skills/DexterityUp.asset
+  uploadId: 857340

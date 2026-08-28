@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4cb83b0f469fa674a841e7d2510227d4
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/ThirdPartyNotices.txt
+  uploadId: 857340

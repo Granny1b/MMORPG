@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: effa88bea19e7fe4babaf64ec0c771a2
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Items/Ammos/SniperBullet.asset
+  uploadId: 857340

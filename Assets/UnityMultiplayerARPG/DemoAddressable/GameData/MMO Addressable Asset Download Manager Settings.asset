@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8db3d3f2fda5d5c4c8e621d8a0b568c0, type: 3}
+  m_Name: MMO Addressable Asset Download Manager Settings
+  m_EditorClassIdentifier: 
+  initialObjects:
+  - m_AssetGUID: 40873cdb1d9eb21408f51bed82d92447
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0
+  - m_AssetGUID: 16b2c0544b2d04c4c94eb1e5d854b997
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0
+  mapNetworkManager:
+    m_AssetGUID: fb4085b2ccccaef4eba587b6db45c7b4
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0
+  mmoClientInstance:
+    m_AssetGUID: aea5f7c25eab33041b253c93bea7b0fd
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0
+  mmoServerInstance:
+    m_AssetGUID: d2c274d504629844ba9d4993edf72817
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0
+  gameInstance:
+    m_AssetGUID: f43a1aa93f464484eab833314bd12b4b
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0

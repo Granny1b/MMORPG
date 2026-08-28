@@ -1,0 +1,10 @@
+fileFormatVersion: 2
+guid: 16e0bca65aca48468bdaf8ab93776a6a
+timeCreated: 1761104531
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Social/PlayerBackground/Events/UIPlayerBackgroundEvent.cs
+  uploadId: 857340

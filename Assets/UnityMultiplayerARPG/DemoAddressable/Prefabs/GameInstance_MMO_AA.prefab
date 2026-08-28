@@ -1,0 +1,251 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &88426455694409627
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: gameDatabase
+      value: 
+      objectReference: {fileID: 11400000, guid: 772dbc9e7d0e62748abd861cdfa04345,
+        type: 2}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: playerCorpsePrefab
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: homeScene.sceneName
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: monsterCorpsePrefab
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: homeScene.sceneAsset
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: itemDropEntityPrefab
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: uiSceneGameplayPrefab
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: warpPortalEntityPrefab
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: defaultControllerPrefab
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: levelUpEffects.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: uiSceneGameplayMobilePrefab
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableHomeScene.sceneName
+      value: 01Home_MMO
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableHomeScene.m_AssetGUID
+      value: d529c814bb9fcd14289ac4141b27e951
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: defaultDamageHitEffects.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableLevelUpEffects.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressablePlayerCorpsePrefab.hashAssetId
+      value: 681296942
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressablePlayerCorpsePrefab.m_AssetGUID
+      value: d98696903f1afa34fba36b435c7fb329
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableExpDropEntityPrefab.hashAssetId
+      value: 899121218
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableExpDropEntityPrefab.m_AssetGUID
+      value: 04ddef1b9ba6c5b4d9ecd7e0340ec925
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableMonsterCorpsePrefab.hashAssetId
+      value: 681296942
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableMonsterCorpsePrefab.m_AssetGUID
+      value: d98696903f1afa34fba36b435c7fb329
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableGoldDropEntityPrefab.hashAssetId
+      value: 1905278432
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableGoldDropEntityPrefab.m_AssetGUID
+      value: c7b59ee4aa52d314d82d250d5e5be808
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableItemDropEntityPrefab.hashAssetId
+      value: -1356308120
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableItemDropEntityPrefab.m_AssetGUID
+      value: 611b907cf80c87a4eb9e0d5d4a8688f5
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableUiSceneGameplayPrefab.m_AssetGUID
+      value: 4af36d4bdf0cf07409f4412130b793ec
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableDefaultDamageHitEffects.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableWarpPortalEntityPrefab.hashAssetId
+      value: -1143261476
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableWarpPortalEntityPrefab.m_AssetGUID
+      value: 5773ff22c96e3ab4bb12d8202ec86244
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableDefaultControllerPrefab.m_AssetGUID
+      value: 147be1283e4eb834d94ad1c905a031e7
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableCurrencyDropEntityPrefab.hashAssetId
+      value: -1650155453
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableCurrencyDropEntityPrefab.m_AssetGUID
+      value: 22d8a0b1d2e2d4e45b293aca8bdde705
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableUiSceneGameplayMobilePrefab.m_AssetGUID
+      value: 70474cf4f9f686c45b0305621722205f
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableLevelUpEffects.Array.data[0].m_AssetGUID
+      value: 6f6e255b4877f874c985ed9fb46293a1
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableUiSceneGameplayConsolePrefab.m_AssetGUID
+      value: 9d2b800b808080849ac2a18372ae1c05
+      objectReference: {fileID: 0}
+    - target: {fileID: 205807986548817939, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: addressableDefaultDamageHitEffects.Array.data[0].m_AssetGUID
+      value: fa67f0b7f994d9548821d15fbf67531d
+      objectReference: {fileID: 0}
+    - target: {fileID: 987338275038060923, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 987338275038060923, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 987338275038060923, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 987338275038060923, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 987338275038060923, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 987338275038060923, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 987338275038060923, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 987338275038060923, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 987338275038060923, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 987338275038060923, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6325369373293676653, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe,
+        type: 3}
+      propertyPath: m_Name
+      value: GameInstance_MMO_AA
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 38d06e6a8e4a7604e9b904fb32ddb5fe, type: 3}

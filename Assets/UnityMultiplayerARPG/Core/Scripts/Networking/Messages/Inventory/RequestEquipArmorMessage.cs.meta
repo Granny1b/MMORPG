@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: c7320347a1c5a5d4c9efaec941b1fcd5
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/Networking/Messages/Inventory/RequestEquipArmorMessage.cs
+  uploadId: 857340

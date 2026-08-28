@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: e2c11be03344fec46893f358fb1617ac
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/MMO/SQLs/mysql_main.sql
+  uploadId: 857340

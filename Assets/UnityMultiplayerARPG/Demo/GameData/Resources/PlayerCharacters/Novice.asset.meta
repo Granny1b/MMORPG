@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 1f9d2937bcd564b47b49c53b58e4e8af
+timeCreated: 1516987605
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/PlayerCharacters/Novice.asset
+  uploadId: 857340

@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: e3235e181e88b534fac66e7cd7764d16
+timeCreated: 1524752070
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Npcs/NpcDialog_QuestAccepted.asset
+  uploadId: 857340

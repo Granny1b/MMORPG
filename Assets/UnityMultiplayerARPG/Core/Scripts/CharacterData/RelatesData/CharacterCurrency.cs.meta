@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: fef8da3332d0d7842b0ee422b991b0ff
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/CharacterData/RelatesData/CharacterCurrency.cs
+  uploadId: 857340

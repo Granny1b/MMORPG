@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 731378a9e8363e44f9f97db489208ebc
+timeCreated: 1522543432
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Models/ItemDrops/DropBow001.prefab
+  uploadId: 857340

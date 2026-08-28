@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 52d2c6fb152031542b7798e45c786553
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoSurvival/GameData/Resources/Items/Buildings/Building_Workbench.asset
+  uploadId: 857340

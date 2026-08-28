@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 710bb81e710b80d4fbd7c6d15db81106
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/MMO/Scripts/MMOGame/Src/Database/Src/SQLite/SQLiteDatabase_CharacterBuff.cs
+  uploadId: 857340

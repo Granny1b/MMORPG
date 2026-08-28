@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 4177a2328a749b14cbf5c6ed94ebcd8d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/SharedData/Scripts/Gameplay/Social/Guild/GuildData.cs
+  uploadId: 857340

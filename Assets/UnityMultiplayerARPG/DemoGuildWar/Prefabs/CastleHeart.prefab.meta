@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0586cf25f965f3a4fb8545233fd5f6eb
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoGuildWar/Prefabs/CastleHeart.prefab
+  uploadId: 857340

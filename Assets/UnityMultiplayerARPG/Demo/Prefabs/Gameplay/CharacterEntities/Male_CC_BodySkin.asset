@@ -1,0 +1,338 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd86461eb4de06c4284c88cead85d6c9, type: 3}
+  m_Name: Male_CC_BodySkin
+  m_EditorClassIdentifier: 
+  data:
+    defaultTitle: Body Skin
+    languageSpecificTitles: []
+    icon: {fileID: 0}
+    models:
+    - equipSocket: BodySkin
+      useInstantiatedObject: 1
+      meshPrefab: {fileID: 0}
+      addressableMeshPrefab:
+        m_AssetGUID: 
+        m_SubObjectName: 
+        m_SubObjectType: 
+        m_EditorAssetChanged: 0
+      instantiatedObjectIndex: 0
+      priority: 0
+      doNotSetupBones: 0
+      equipmentModelBonesSetupManager: {fileID: 0}
+      localPosition: {x: 0, y: 0, z: 0}
+      localEulerAngles: {x: 0, y: 0, z: 0}
+      doNotChangeScale: 0
+      localScale: {x: 0, y: 0, z: 0}
+      useSpecificSheathEquipWeaponSet: 0
+      specificSheathEquipWeaponSet: 0
+    colors:
+    - defaultTitle: A
+      languageSpecificTitles: []
+      icon: {fileID: 21300000, guid: f72e834682cb1224d8ee12cc882a9420, type: 3}
+      iconColor: {r: 1, g: 1, b: 1, a: 1}
+      materialColor: {r: 1, g: 1, b: 1, a: 1}
+      modelColorSettings:
+      - name: BodySkin
+        useUpperLevelMaterialColorSetting: 1
+        materialColor: {r: 1, g: 1, b: 1, a: 1}
+        materials: []
+        properties: []
+        materialGroups:
+        - name: HipL
+          materials:
+          - {fileID: 2100000, guid: 69f8ca4923ad4ab4496ca8be2c377295, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: KneeL
+          materials:
+          - {fileID: 2100000, guid: 69f8ca4923ad4ab4496ca8be2c377295, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: HipR
+          materials:
+          - {fileID: 2100000, guid: 69f8ca4923ad4ab4496ca8be2c377295, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: KneeR
+          materials:
+          - {fileID: 2100000, guid: 69f8ca4923ad4ab4496ca8be2c377295, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: ElbowL
+          materials:
+          - {fileID: 2100000, guid: c9760861b9b6be848bd660c03a702657, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: ShoulderL
+          materials:
+          - {fileID: 2100000, guid: c9760861b9b6be848bd660c03a702657, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: ElbowR
+          materials:
+          - {fileID: 2100000, guid: c9760861b9b6be848bd660c03a702657, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: ShoulderR
+          materials:
+          - {fileID: 2100000, guid: c9760861b9b6be848bd660c03a702657, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+    - defaultTitle: B
+      languageSpecificTitles: []
+      icon: {fileID: 21300000, guid: f72e834682cb1224d8ee12cc882a9420, type: 3}
+      iconColor: {r: 0.61960787, g: 0.61960787, b: 0.61960787, a: 1}
+      materialColor: {r: 0.61960787, g: 0.61960787, b: 0.61960787, a: 1}
+      modelColorSettings:
+      - name: BodySkin
+        useUpperLevelMaterialColorSetting: 1
+        materialColor: {r: 1, g: 1, b: 1, a: 1}
+        materials: []
+        properties: []
+        materialGroups:
+        - name: HipL
+          materials:
+          - {fileID: 2100000, guid: 69f8ca4923ad4ab4496ca8be2c377295, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: KneeL
+          materials:
+          - {fileID: 2100000, guid: 69f8ca4923ad4ab4496ca8be2c377295, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: HipR
+          materials:
+          - {fileID: 2100000, guid: 69f8ca4923ad4ab4496ca8be2c377295, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: KneeR
+          materials:
+          - {fileID: 2100000, guid: 69f8ca4923ad4ab4496ca8be2c377295, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: ElbowL
+          materials:
+          - {fileID: 2100000, guid: c9760861b9b6be848bd660c03a702657, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: ShoulderL
+          materials:
+          - {fileID: 2100000, guid: c9760861b9b6be848bd660c03a702657, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: ElbowR
+          materials:
+          - {fileID: 2100000, guid: c9760861b9b6be848bd660c03a702657, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: ShoulderR
+          materials:
+          - {fileID: 2100000, guid: c9760861b9b6be848bd660c03a702657, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+    - defaultTitle: C
+      languageSpecificTitles: []
+      icon: {fileID: 21300000, guid: f72e834682cb1224d8ee12cc882a9420, type: 3}
+      iconColor: {r: 0.25882354, g: 0.25882354, b: 0.25882354, a: 1}
+      materialColor: {r: 0.25882354, g: 0.25882354, b: 0.25882354, a: 1}
+      modelColorSettings:
+      - name: BodySkin
+        useUpperLevelMaterialColorSetting: 1
+        materialColor: {r: 1, g: 1, b: 1, a: 1}
+        materials: []
+        properties: []
+        materialGroups:
+        - name: HipL
+          materials:
+          - {fileID: 2100000, guid: 69f8ca4923ad4ab4496ca8be2c377295, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: KneeL
+          materials:
+          - {fileID: 2100000, guid: 69f8ca4923ad4ab4496ca8be2c377295, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: HipR
+          materials:
+          - {fileID: 2100000, guid: 69f8ca4923ad4ab4496ca8be2c377295, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: KneeR
+          materials:
+          - {fileID: 2100000, guid: 69f8ca4923ad4ab4496ca8be2c377295, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: ElbowL
+          materials:
+          - {fileID: 2100000, guid: c9760861b9b6be848bd660c03a702657, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: ShoulderL
+          materials:
+          - {fileID: 2100000, guid: c9760861b9b6be848bd660c03a702657, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: ElbowR
+          materials:
+          - {fileID: 2100000, guid: c9760861b9b6be848bd660c03a702657, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1
+        - name: ShoulderR
+          materials:
+          - {fileID: 2100000, guid: c9760861b9b6be848bd660c03a702657, type: 2}
+          properties:
+          - applyMaterialTexture: 0
+            materialTextureProperty: 
+            materialTexture: {fileID: 0}
+            applyMaterialColor: 1
+            materialColorProperty: _BaseColor
+            materialColor: {r: 1, g: 1, b: 1, a: 1}
+            useUpperLevelMaterialColorSetting: 1

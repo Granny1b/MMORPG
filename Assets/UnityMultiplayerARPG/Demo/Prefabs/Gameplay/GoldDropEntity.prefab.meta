@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c7b59ee4aa52d314d82d250d5e5be808
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Gameplay/GoldDropEntity.prefab
+  uploadId: 857340

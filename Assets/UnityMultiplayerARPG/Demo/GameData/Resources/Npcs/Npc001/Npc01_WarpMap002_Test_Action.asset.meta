@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 19f258f75d4b2ed468cfad9e6b4c40db
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Npcs/Npc001/Npc01_WarpMap002_Test_Action.asset
+  uploadId: 857340

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 103a45f749b6e04428b22916700e5228
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/GameData/Damage/BuiltInDamageInfo/ThrowableDamageInfo.cs
+  uploadId: 857340

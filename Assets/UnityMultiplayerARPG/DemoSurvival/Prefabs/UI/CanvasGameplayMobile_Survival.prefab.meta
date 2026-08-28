@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a8f853c8264bea046b8c4e628ad7ba78
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoSurvival/Prefabs/UI/CanvasGameplayMobile_Survival.prefab
+  uploadId: 857340

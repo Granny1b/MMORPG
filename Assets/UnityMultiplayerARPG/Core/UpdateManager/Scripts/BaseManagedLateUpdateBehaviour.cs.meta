@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: d9e1e3e17e638a44fb99f683d0868f0b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/UpdateManager/Scripts/BaseManagedLateUpdateBehaviour.cs
+  uploadId: 857340

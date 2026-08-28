@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 81e4aab12cd11924bbb141e924b6aacc
+AssemblyDefinitionImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/UnityEditorUtils/Editor/UnityEditorUtilsEditor.asmdef
+  uploadId: 857340

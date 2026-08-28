@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: d3c9ebcd92d8b6842821732af2a75fba
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/LiteNetLibManager/Plugins/ZString/Utf8/Utf8ValueStringBuilder.SpanFormattableAppend.cs
+  uploadId: 857340

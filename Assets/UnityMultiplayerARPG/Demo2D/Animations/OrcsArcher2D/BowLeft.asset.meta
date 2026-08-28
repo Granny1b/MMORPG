@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f2a955cac6b38c648a71b8ba5ff988fe
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/Animations/OrcsArcher2D/BowLeft.asset
+  uploadId: 857340

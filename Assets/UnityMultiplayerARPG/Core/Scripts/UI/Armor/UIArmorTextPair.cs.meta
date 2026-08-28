@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: f8ad969b110342345ac2814f6bfdeb3f
+timeCreated: 1520627354
+licenseType: Store
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Armor/UIArmorTextPair.cs
+  uploadId: 857340

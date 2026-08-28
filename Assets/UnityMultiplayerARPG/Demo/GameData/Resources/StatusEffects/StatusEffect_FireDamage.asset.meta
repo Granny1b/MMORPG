@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 03e8369db761e104e9a44a6735825393
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/StatusEffects/StatusEffect_FireDamage.asset
+  uploadId: 857340

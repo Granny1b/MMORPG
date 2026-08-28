@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 712c3fc5d9eeb4c45b1e23918df6018f
+timeCreated: 1505462176
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/xNode/Scripts/Editor/NodeEditor.cs
+  uploadId: 857340

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: e8aea38937fdeda46b83f8b985f7a9dd
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Hotkey/Events/CharacterHotkeyEvent.cs
+  uploadId: 857340

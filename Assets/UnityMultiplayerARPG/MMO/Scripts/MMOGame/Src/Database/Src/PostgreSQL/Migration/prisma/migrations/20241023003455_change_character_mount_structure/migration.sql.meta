@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 932f3ef99239e164cbc61589e868b189
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/MMO/Scripts/MMOGame/Src/Database/Src/PostgreSQL/Migration/prisma/migrations/20241023003455_change_character_mount_structure/migration.sql
+  uploadId: 857340

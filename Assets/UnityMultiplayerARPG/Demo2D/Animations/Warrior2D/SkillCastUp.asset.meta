@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 88884e350ed4e3d4a9514fa6a8326176
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/Animations/Warrior2D/SkillCastUp.asset
+  uploadId: 857340

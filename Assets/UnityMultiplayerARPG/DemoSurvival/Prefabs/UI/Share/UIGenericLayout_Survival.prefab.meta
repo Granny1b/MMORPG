@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0e3e70c283b2a6f4fa83f06eb9a6404d
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoSurvival/Prefabs/UI/Share/UIGenericLayout_Survival.prefab
+  uploadId: 857340

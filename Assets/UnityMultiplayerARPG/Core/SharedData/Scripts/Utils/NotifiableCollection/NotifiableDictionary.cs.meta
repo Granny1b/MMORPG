@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 460067fac767c97488c110f97e1e5cef
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/SharedData/Scripts/Utils/NotifiableCollection/NotifiableDictionary.cs
+  uploadId: 857340

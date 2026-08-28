@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f936eadaf84b7c64f9b0015e52dd609b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Npcs/NpcDialog_CraftItemDone.asset
+  uploadId: 857340

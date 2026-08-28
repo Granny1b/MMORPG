@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b877ea96d155fa542b61fb1ab75a804f
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 4890085278179872738
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Scenes/Map001Settings.lighting
+  uploadId: 857340

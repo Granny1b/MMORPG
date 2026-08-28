@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: cf7ed9725f385314b86745a453e6fc10
+timeCreated: 1524942014
+licenseType: Store
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/MMO/Scripts/MMOGame/UI/UIMmoCharacterCreate.cs
+  uploadId: 857340

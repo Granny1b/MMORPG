@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: a30b76e88c56d3549b63173b27df53b2
+timeCreated: 1521099643
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/GameData/WeaponTypes/OneHandStaff_2D.asset
+  uploadId: 857340

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 9f93f63d068b08c459038c40fce897d8
+timeCreated: 1427463081
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/PhysicsMaterials/Bouncy.physicmaterial
+  uploadId: 857340

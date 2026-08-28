@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 34342a09346349345a4313fd6e7657e1
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoSurvival/GameData/Resources/Items/Junks/Material_Wood.asset
+  uploadId: 857340

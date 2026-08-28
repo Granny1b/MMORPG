@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a46be55d0bb06d841869dcc11c617100
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Items/SocketEnhancer/SocketEnhancer002.asset
+  uploadId: 857340

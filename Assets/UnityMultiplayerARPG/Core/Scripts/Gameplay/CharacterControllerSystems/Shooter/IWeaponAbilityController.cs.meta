@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 8578c39fd6ae27b45808713f6b3c4fd2
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/Gameplay/CharacterControllerSystems/Shooter/IWeaponAbilityController.cs
+  uploadId: 857340

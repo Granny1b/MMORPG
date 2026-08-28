@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: fdd3ebcd52bf99547a82e65d42562f98
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/CharacterData/CharacterInventoryExtensions_Ammo.cs
+  uploadId: 857340

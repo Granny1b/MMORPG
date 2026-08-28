@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 2672f5d9221d73643b31c77b3c8f2586
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Social/PlayerIcon/UIPlayerIcon.cs
+  uploadId: 857340

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ade6fa5747c04c54b99f067a5ed7f2f1
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: scenes
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Scenes/01Home.unity
+  uploadId: 857340

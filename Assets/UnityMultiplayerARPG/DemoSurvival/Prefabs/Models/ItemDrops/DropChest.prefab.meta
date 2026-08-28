@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 129ad82ccb64bcb41bbafef9262fc7a4
+timeCreated: 1522543430
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoSurvival/Prefabs/Models/ItemDrops/DropChest.prefab
+  uploadId: 857340

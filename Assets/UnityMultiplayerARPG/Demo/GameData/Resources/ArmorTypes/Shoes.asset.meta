@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 745bc973ccf3f5640af5285026a87d5d
+timeCreated: 1520890134
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/ArmorTypes/Shoes.asset
+  uploadId: 857340

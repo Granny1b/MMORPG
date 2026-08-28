@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 32c7af49ce1b6994d9280febebec54d8
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Social/PlayerFrame/UIPlayerFrameSelectionManager.cs
+  uploadId: 857340

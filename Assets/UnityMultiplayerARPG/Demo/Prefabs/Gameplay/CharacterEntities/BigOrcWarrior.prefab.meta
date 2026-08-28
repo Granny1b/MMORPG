@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: fbe9b355dd4e810409312de38efbae6e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Gameplay/CharacterEntities/BigOrcWarrior.prefab
+  uploadId: 857340

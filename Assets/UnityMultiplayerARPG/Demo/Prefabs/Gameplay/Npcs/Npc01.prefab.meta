@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 22f0cf0a463913b4a8a22353449e9599
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Gameplay/Npcs/Npc01.prefab
+  uploadId: 857340

@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 8db3d3f2fda5d5c4c8e621d8a0b568c0
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/MMO/Scripts/MMOGame/AddressableAssets/MMOAddressableAssetDownloadManagerSettings.cs
+  uploadId: 857340

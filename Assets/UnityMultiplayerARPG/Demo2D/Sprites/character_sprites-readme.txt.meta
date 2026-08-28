@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 7dc90c39c6315364eb518fe4c77c2408
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/Sprites/character_sprites-readme.txt
+  uploadId: 857340

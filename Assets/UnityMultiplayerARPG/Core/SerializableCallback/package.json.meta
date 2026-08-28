@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 70b54a564f424a742af19bd2af6873c5
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/SerializableCallback/package.json
+  uploadId: 857340

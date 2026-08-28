@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3c5dad6257d32dd4aaba102d5f16d4d3
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoSurvival/Materials/WallMaterial.mat
+  uploadId: 857340

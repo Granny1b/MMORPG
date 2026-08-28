@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e79f63c4833486149b4b52dd689e3e03
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Npcs/Npc001/Npc01_SaveMapConfirmed.asset
+  uploadId: 857340

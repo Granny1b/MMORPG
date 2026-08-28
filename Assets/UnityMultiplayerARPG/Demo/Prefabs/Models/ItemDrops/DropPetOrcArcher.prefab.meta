@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 16c3e71e70cc4c342ba989f370278a0a
+timeCreated: 1522543448
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Models/ItemDrops/DropPetOrcArcher.prefab
+  uploadId: 857340

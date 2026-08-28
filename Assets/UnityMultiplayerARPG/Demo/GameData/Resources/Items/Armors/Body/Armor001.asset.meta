@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 64774d4b5cf3f9846a2d2088fb52e44a
+timeCreated: 1521884682
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Items/Armors/Body/Armor001.asset
+  uploadId: 857340

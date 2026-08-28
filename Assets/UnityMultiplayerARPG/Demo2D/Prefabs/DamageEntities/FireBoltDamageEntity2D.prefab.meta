@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 3ec0269ef2af07340a45c66cffccdfe7
+timeCreated: 1523571711
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/Prefabs/DamageEntities/FireBoltDamageEntity2D.prefab
+  uploadId: 857340

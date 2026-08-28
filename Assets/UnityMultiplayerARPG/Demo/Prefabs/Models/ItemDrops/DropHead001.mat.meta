@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 7ca38e043a2476b43b747e6749b5e18d
+timeCreated: 1522542675
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Models/ItemDrops/DropHead001.mat
+  uploadId: 857340

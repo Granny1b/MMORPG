@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5a38661bc0bbd714eb70730a6e726c8b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoSurvival/Animation/DoorEntity-Close.anim
+  uploadId: 857340

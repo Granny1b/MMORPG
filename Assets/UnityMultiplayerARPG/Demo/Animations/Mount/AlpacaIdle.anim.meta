@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 2b5165056d0f93847a777d1a3a3a559c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Animations/Mount/AlpacaIdle.anim
+  uploadId: 857340

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: fcdc3b6ce41c68a46a66bd80f781bb50
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Gameplay/CharacterEntities/Male_CC.prefab
+  uploadId: 857340

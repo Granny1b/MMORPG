@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: c02aa62c144599443b42f6f35dd770ba
+timeCreated: 1523933687
+licenseType: Store
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/AudioManager/Demo/Scenes/TestAudioManager.unity
+  uploadId: 857340

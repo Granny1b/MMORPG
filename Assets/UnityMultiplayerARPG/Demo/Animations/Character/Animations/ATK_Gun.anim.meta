@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e78ec75f26c88a041aba682b10c5a911
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Animations/Character/Animations/ATK_Gun.anim
+  uploadId: 857340

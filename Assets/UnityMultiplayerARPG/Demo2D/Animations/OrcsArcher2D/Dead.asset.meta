@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 79c4ae03214f33e4f8947253af26ea31
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/Animations/OrcsArcher2D/Dead.asset
+  uploadId: 857340

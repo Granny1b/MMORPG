@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a7e568e57a2233c4596444a044932a50
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/Animations/OrcsWarrior2D/AttackRight.anim
+  uploadId: 857340

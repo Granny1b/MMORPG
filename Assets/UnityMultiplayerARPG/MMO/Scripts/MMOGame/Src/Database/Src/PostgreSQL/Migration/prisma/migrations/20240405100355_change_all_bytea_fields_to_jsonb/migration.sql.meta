@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 3f4b3c91b4012fa4f8b7e90f290f7d9c
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/MMO/Scripts/MMOGame/Src/Database/Src/PostgreSQL/Migration/prisma/migrations/20240405100355_change_all_bytea_fields_to_jsonb/migration.sql
+  uploadId: 857340

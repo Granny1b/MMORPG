@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: ec9b95e75b25b1f46b51c491126f0de2
+timeCreated: 1470365697
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/FantasyCustomizablePack/Materials/Characters/010.mat
+  uploadId: 857340

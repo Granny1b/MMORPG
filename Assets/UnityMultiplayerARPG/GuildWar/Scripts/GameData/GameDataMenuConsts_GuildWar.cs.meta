@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: aa4c4c264941a8c4da21178bb1706d3e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/GuildWar/Scripts/GameData/GameDataMenuConsts_GuildWar.cs
+  uploadId: 857340

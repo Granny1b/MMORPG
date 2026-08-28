@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 755c0a524d07ee94d875f26045f13008
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/GameData/Buildings/Building_Chest2D.asset
+  uploadId: 857340

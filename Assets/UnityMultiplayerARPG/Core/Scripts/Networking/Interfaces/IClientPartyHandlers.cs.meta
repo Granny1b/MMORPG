@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 6c3c4fdf6f189cd46ae1fb86f62ec51e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/Networking/Interfaces/IClientPartyHandlers.cs
+  uploadId: 857340

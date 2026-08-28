@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d1a9c21854f9c3d4495cfbb98ec4aa5a
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Voxel_Animals/Prefab/Voxel_Alpaca.prefab
+  uploadId: 857340

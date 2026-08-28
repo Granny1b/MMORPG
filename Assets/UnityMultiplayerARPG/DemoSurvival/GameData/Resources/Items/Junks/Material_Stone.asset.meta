@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5842068f5743c524c967a28b483477ed
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoSurvival/GameData/Resources/Items/Junks/Material_Stone.asset
+  uploadId: 857340

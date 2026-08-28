@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 2d6c4c25eb8bb88438d2326396a19fe5
+timeCreated: 1522542675
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoSurvival/Prefabs/Models/ItemDrops/DropWorkbench.mat
+  uploadId: 857340

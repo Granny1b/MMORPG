@@ -1,0 +1,384 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &1232402327770502606
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2177629549756286885}
+  - component: {fileID: 8555914818564215374}
+  - component: {fileID: 2023418955761336281}
+  m_Layer: 0
+  m_Name: LanRpgNetworkManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2177629549756286885
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1232402327770502606}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1994735918267341726}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8555914818564215374
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1232402327770502606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4884384bff23a9c439e7ce9681ea5724, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  playerSpawnRandomly: 0
+  playerPrefab: {fileID: 0}
+  spawnablePrefabs: []
+  offlineScene:
+    sceneAsset: {fileID: 0}
+    sceneName: 
+  onlineScene:
+    sceneAsset: {fileID: 0}
+    sceneName: 
+  addressablePlayerPrefab:
+    m_AssetGUID: 
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0
+    hashAssetId: 0
+  addressableSpawnablePrefabs: []
+  addressableOfflineScene:
+    m_AssetGUID: 
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0
+    sceneName: 
+  addressableOnlineScene:
+    m_AssetGUID: 
+    m_SubObjectName: 
+    m_SubObjectType: 
+    m_EditorAssetChanged: 0
+    sceneName: 
+  onInitialize:
+    m_PersistentCalls:
+      m_Calls: []
+  onLoadSceneStart:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1811646676897077324}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: OnLoadSceneStart
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onLoadSceneProgress:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1811646676897077324}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: OnLoadSceneProgress
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onLoadSceneFinish:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1811646676897077324}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: OnLoadSceneFinish
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onSceneFileSizeRetrieving:
+    m_PersistentCalls:
+      m_Calls: []
+  onSceneFileSizeRetrieved:
+    m_PersistentCalls:
+      m_Calls: []
+  onSceneDepsDownloading:
+    m_PersistentCalls:
+      m_Calls: []
+  onSceneDepsFileDownloading:
+    m_PersistentCalls:
+      m_Calls: []
+  onSceneDepsDownloaded:
+    m_PersistentCalls:
+      m_Calls: []
+  onLoadAdditiveSceneStart:
+    m_PersistentCalls:
+      m_Calls: []
+  onLoadAdditiveSceneProgress:
+    m_PersistentCalls:
+      m_Calls: []
+  onLoadAdditiveSceneFinish:
+    m_PersistentCalls:
+      m_Calls: []
+  onObjectSpawn:
+    m_PersistentCalls:
+      m_Calls: []
+  onObjectDestroy:
+    m_PersistentCalls:
+      m_Calls: []
+  disablePooling: 0
+--- !u!114 &2023418955761336281
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1232402327770502606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ee13c7c5631aacf45bcc60e5a5a8939b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  currentLogLevel: 2
+  networkAddress: localhost
+  networkPort: 7770
+  useWebSocket: 0
+  webSocketSecure: 0
+  webSocketCertificateFilePath: 
+  webSocketCertificatePassword: 
+  updateFps: 20
+  maxConnections: 4
+  transportFactory: {fileID: 0}
+  packetVersion: 1
+  pingDuration: 1
+  doNotEnterGameOnConnect: 0
+  doNotReadyOnSceneLoaded: 0
+  doNotDestroyOnSceneChanges: 0
+  loadOfflineSceneWhenClientStopped: 1
+  auctionHouseMessageTypes:
+    createAuctionRequestType: 1300
+    bidRequestType: 1301
+    buyoutRequestType: 1302
+    cancelAuctionRequestType: 1304
+  auctionHouseServiceUrl: http://localhost:9800
+  auctionHouseServiceUrlForClient: http://localhost:9800
+  auctionHouseSecretKey: secret
+  dailyRewardingServiceUrlForClient: http://localhost:9803
+  hitToSomeoneNotifyMessageId: 2001
+  hitToSomeoneNotifyDataChannel: 0
+  hitToSomeoneNotifyDeliveryMethod: 4
+  hitFromSomeoneNotifyMessageId: 2002
+  hitFromSomeoneNotifyDataChannel: 0
+  hitFromSomeoneNotifyDeliveryMethod: 4
+  killNotifyMessageId: 2000
+  killNotifyDataChannel: 0
+  killNotifyDeliveryMethod: 1
+  getOnlineCharacterDataRequestType: 1500
+  getOnlineCharactersRequestType: 1501
+  useUnityAutoPhysicSyncTransform: 1
+  onSpawnEntitiesStart:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1811646676897077324}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: OnLoadSceneStart
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onSpawnEntitiesProgress:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1811646676897077324}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: OnLoadSceneProgress
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  onSpawnEntitiesFinish:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1811646676897077324}
+        m_TargetAssemblyTypeName: 
+        m_MethodName: OnLoadSceneFinish
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  guildWarMessageTypes:
+    statusMsgType: 1001
+  recoverMonstersWhenGuildWarRoundEnd: 1
+  guildWarMailSenderId: GUILDWAR
+  guildWarMailSenderName: Guild War Manager
+  guildWarServiceUrl: http://localhost:9801
+  guildWarServiceUrlForClient: http://localhost:9801
+  guildWarSecretKey: secret
+  autoSaveDuration: 2
+  startType: 0
+  selectedCharacterSummonBuffs: []
+  selectedCharacterStorageItems: []
+  enableGmCommands: 0
+  writeAddonLog: 0
+--- !u!1001 &1779911517713955872
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2177629549756286885}
+    m_Modifications:
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_Pivot.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: eb6737dc528a143499748ce0d673b59c, type: 3}
+--- !u!114 &1811646676897077324 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 114779210844791916, guid: eb6737dc528a143499748ce0d673b59c,
+    type: 3}
+  m_PrefabInstance: {fileID: 1779911517713955872}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4a337e47669c9e46b404eafabe7ba0a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!224 &1994735918267341726 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 224403346423736254, guid: eb6737dc528a143499748ce0d673b59c,
+    type: 3}
+  m_PrefabInstance: {fileID: 1779911517713955872}
+  m_PrefabAsset: {fileID: 0}

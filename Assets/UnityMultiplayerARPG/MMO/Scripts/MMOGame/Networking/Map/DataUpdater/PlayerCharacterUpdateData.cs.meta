@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 961c6356778c9374d89d39f99fa90d88
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/MMO/Scripts/MMOGame/Networking/Map/DataUpdater/PlayerCharacterUpdateData.cs
+  uploadId: 857340

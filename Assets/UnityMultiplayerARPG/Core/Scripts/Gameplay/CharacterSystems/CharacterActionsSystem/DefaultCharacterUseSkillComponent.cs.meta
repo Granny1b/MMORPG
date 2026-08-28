@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 7e7ae6d49d900d44f9ee7b5e151f5a38
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/Gameplay/CharacterSystems/CharacterActionsSystem/DefaultCharacterUseSkillComponent.cs
+  uploadId: 857340

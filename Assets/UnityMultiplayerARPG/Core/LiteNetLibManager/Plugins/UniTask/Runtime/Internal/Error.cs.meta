@@ -1,0 +1,19 @@
+fileFormatVersion: 2
+guid: 5f39f495294d4604b8082202faf98554
+timeCreated: 1532361007
+licenseType: Store
+MonoImporter:
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/LiteNetLibManager/Plugins/UniTask/Runtime/Internal/Error.cs
+  uploadId: 857340

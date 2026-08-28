@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 5603241c2a4ebf543becec6a8d96a41b
+timeCreated: 1522542675
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Models/ItemDrops/DropSocketEnhancer004.mat
+  uploadId: 857340

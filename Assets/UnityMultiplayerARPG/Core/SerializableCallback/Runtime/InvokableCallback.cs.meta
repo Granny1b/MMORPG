@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: ca67a6ce15814b743b8e123c175ce649
+timeCreated: 1515587326
+licenseType: Store
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/SerializableCallback/Runtime/InvokableCallback.cs
+  uploadId: 857340

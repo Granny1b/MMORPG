@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: e097ceeaf1d098249ba63c7ac1882174
+timeCreated: 1524111808
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/GameData/Items/Potions/MpPotion_2D.asset
+  uploadId: 857340

@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 27d24b71204da774b8e5231dbb209fe5
+timeCreated: 1522543430
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/DemoSurvival/Prefabs/Models/ItemDrops/DropStone.prefab
+  uploadId: 857340

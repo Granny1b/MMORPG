@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: bc2d9dcf15e0fd74f8d75b212b02d2f9
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/Networking/Messages/Party/RequestAcceptPartyInvitationMessage.cs
+  uploadId: 857340

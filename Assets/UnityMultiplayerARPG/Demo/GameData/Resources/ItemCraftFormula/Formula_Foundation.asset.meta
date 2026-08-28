@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 927cadfbf8222a34489efa7030404f87
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/ItemCraftFormula/Formula_Foundation.asset
+  uploadId: 857340

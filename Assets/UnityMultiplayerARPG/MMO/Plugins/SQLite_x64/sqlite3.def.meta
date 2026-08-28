@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: c767673150fb23e4abdba74c55e952f7
+DefaultImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/MMO/Plugins/SQLite_x64/sqlite3.def
+  uploadId: 857340

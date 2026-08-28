@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: fb8d31cd5bed57548859acbe5046b9da
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/CameraAndInput/Demo/Materials/Ground.mat
+  uploadId: 857340

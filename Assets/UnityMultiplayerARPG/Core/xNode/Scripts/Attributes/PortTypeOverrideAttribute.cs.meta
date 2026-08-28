@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 1410c1437e863ab4fac7a7428aaca35b
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/xNode/Scripts/Attributes/PortTypeOverrideAttribute.cs
+  uploadId: 857340

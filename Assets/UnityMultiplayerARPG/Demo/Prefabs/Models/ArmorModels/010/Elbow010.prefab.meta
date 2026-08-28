@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 04ec2736a7a8cf34db7005edae88ac44
+timeCreated: 1470369751
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Models/ArmorModels/010/Elbow010.prefab
+  uploadId: 857340

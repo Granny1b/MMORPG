@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: c1c6899f0771eb246a75ae6bd2f9ae0e
+timeCreated: 1470383281
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Models/ArmorModels/012b/Root012b.prefab
+  uploadId: 857340

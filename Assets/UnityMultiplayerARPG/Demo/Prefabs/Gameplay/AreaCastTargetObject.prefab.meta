@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 96979ca6e5ab9244a8a8e6406df251bb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Gameplay/AreaCastTargetObject.prefab
+  uploadId: 857340

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 8ff2a83c58a78c246968c0034442130b
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Animations/Character/Animations/Move_Gun.anim
+  uploadId: 857340

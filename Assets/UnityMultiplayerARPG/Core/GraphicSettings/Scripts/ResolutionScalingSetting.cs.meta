@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 605e44e8fd3c9e347b07eca09b6fb45d
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/GraphicSettings/Scripts/ResolutionScalingSetting.cs
+  uploadId: 857340

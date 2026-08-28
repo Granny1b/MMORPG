@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: c26675f5ea04ade429c509dd5998a3a3
+timeCreated: 1522402510
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Gameplay/CharacterEntities/OrcWarrior.prefab
+  uploadId: 857340

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4b07c9070989c914bab54ba750a26541
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/UI/Quest/UIQuestDialog.prefab
+  uploadId: 857340

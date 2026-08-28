@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 4ddd694fd87d1d24cbbec3b4aeb81d6c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/Animations/OrcsArcher2D/AttackLeft.asset
+  uploadId: 857340

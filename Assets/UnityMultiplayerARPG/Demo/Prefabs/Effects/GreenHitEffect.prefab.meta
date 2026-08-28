@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 401ba91060b6a584d865695a8b92e456
+timeCreated: 1512511252
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Effects/GreenHitEffect.prefab
+  uploadId: 857340

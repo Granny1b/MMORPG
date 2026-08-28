@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: e43af8a3a8f9a7a478dc243c7b15ff5f
+timeCreated: 1521884776
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Items/Armors/Gloves/Gloves001.asset
+  uploadId: 857340

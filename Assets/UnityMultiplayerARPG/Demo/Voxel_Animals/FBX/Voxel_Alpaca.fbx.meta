@@ -1,0 +1,212 @@
+fileFormatVersion: 2
+guid: f7f846aaf3c2b9a41bc3fffb0511eabd
+ModelImporter:
+  serializedVersion: 23
+  fileIDToRecycleName:
+    100000: Alpaca_Pieces
+    100002: Alpaca_Pieces 1
+    100004: Alpaca_Pieces1
+    100006: Alpaca_Pieces10
+    100008: Alpaca_Pieces11
+    100010: Alpaca_Pieces2
+    100012: Alpaca_Pieces3
+    100014: Alpaca_Pieces4
+    100016: Alpaca_Pieces5
+    100018: Alpaca_Pieces6
+    100020: Alpaca_Pieces7
+    100022: Alpaca_Pieces8
+    100024: Alpaca_Pieces9
+    100026: backAnkle_L
+    100028: backAnkle_R
+    100030: backHip_L
+    100032: backHip_R
+    100034: backKnee_L
+    100036: backKnee_R
+    100038: backRump_L
+    100040: backRump_R
+    100042: backToes_L
+    100044: backToes_R
+    100046: backToesEnd_L
+    100048: backToesEnd_R
+    100050: Chest
+    100052: frontAnkle_L
+    100054: frontAnkle_R
+    100056: frontHip_L
+    100058: frontHip_R
+    100060: frontKnee_L
+    100062: frontKnee_R
+    100064: frontRump_L
+    100066: frontRump_R
+    100068: frontToes_L
+    100070: frontToes_R
+    100072: frontToesEnd_L
+    100074: frontToesEnd_R
+    100076: Head
+    100078: HeadEnd
+    100080: Neck
+    100082: Root
+    100084: Spine1
+    100086: //RootNode
+    400000: Alpaca_Pieces
+    400002: Alpaca_Pieces 1
+    400004: Alpaca_Pieces1
+    400006: Alpaca_Pieces10
+    400008: Alpaca_Pieces11
+    400010: Alpaca_Pieces2
+    400012: Alpaca_Pieces3
+    400014: Alpaca_Pieces4
+    400016: Alpaca_Pieces5
+    400018: Alpaca_Pieces6
+    400020: Alpaca_Pieces7
+    400022: Alpaca_Pieces8
+    400024: Alpaca_Pieces9
+    400026: backAnkle_L
+    400028: backAnkle_R
+    400030: backHip_L
+    400032: backHip_R
+    400034: backKnee_L
+    400036: backKnee_R
+    400038: backRump_L
+    400040: backRump_R
+    400042: backToes_L
+    400044: backToes_R
+    400046: backToesEnd_L
+    400048: backToesEnd_R
+    400050: Chest
+    400052: frontAnkle_L
+    400054: frontAnkle_R
+    400056: frontHip_L
+    400058: frontHip_R
+    400060: frontKnee_L
+    400062: frontKnee_R
+    400064: frontRump_L
+    400066: frontRump_R
+    400068: frontToes_L
+    400070: frontToes_R
+    400072: frontToesEnd_L
+    400074: frontToesEnd_R
+    400076: Head
+    400078: HeadEnd
+    400080: Neck
+    400082: Root
+    400084: Spine1
+    400086: //RootNode
+    2100000: Voxel_Alpaca_material
+    4300000: Alpaca_Pieces
+    4300002: Alpaca_Pieces1
+    4300004: Alpaca_Pieces2
+    4300006: Alpaca_Pieces3
+    4300008: Alpaca_Pieces4
+    4300010: Alpaca_Pieces5
+    4300012: Alpaca_Pieces7
+    4300014: Alpaca_Pieces6
+    4300016: Alpaca_Pieces8
+    4300018: Alpaca_Pieces9
+    4300020: Alpaca_Pieces10
+    4300022: Alpaca_Pieces11
+    9500000: //RootNode
+    13700000: Alpaca_Pieces 1
+    13700002: Alpaca_Pieces1
+    13700004: Alpaca_Pieces10
+    13700006: Alpaca_Pieces11
+    13700008: Alpaca_Pieces2
+    13700010: Alpaca_Pieces3
+    13700012: Alpaca_Pieces4
+    13700014: Alpaca_Pieces5
+    13700016: Alpaca_Pieces6
+    13700018: Alpaca_Pieces7
+    13700020: Alpaca_Pieces8
+    13700022: Alpaca_Pieces9
+  externalObjects: {}
+  materials:
+    importMaterials: 1
+    materialName: 0
+    materialSearch: 2
+    materialLocation: 0
+  animations:
+    legacyGenerateAnimations: 4
+    bakeSimulation: 0
+    resampleCurves: 1
+    optimizeGameObjects: 0
+    motionNodeName: 
+    rigImportErrors: 
+    rigImportWarnings: 
+    animationImportErrors: 
+    animationImportWarnings: 
+    animationRetargetingWarnings: 
+    animationDoRetargetingWarnings: 0
+    importAnimatedCustomProperties: 0
+    importConstraints: 0
+    animationCompression: 1
+    animationRotationError: 0.5
+    animationPositionError: 0.5
+    animationScaleError: 0.5
+    animationWrapMode: 0
+    extraExposedTransformPaths: []
+    extraUserProperties: []
+    clipAnimations: []
+    isReadable: 1
+  meshes:
+    lODScreenPercentages: []
+    globalScale: 1
+    meshCompression: 0
+    addColliders: 0
+    useSRGBMaterialColor: 1
+    importVisibility: 1
+    importBlendShapes: 1
+    importCameras: 1
+    importLights: 1
+    swapUVChannels: 0
+    generateSecondaryUV: 0
+    useFileUnits: 1
+    optimizeMeshForGPU: 1
+    keepQuads: 0
+    weldVertices: 1
+    preserveHierarchy: 0
+    indexFormat: 0
+    secondaryUVAngleDistortion: 8
+    secondaryUVAreaDistortion: 15.000001
+    secondaryUVHardAngle: 88
+    secondaryUVPackMargin: 4
+    useFileScale: 1
+    previousCalculatedGlobalScale: 0.01
+    hasPreviousCalculatedGlobalScale: 1
+  tangentSpace:
+    normalSmoothAngle: 60
+    normalImportMode: 0
+    tangentImportMode: 3
+    normalCalculationMode: 4
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
+    blendShapeNormalImportMode: 1
+    normalSmoothingSource: 0
+  importAnimation: 1
+  copyAvatar: 0
+  humanDescription:
+    serializedVersion: 2
+    human: []
+    skeleton: []
+    armTwist: 0.5
+    foreArmTwist: 0.5
+    upperLegTwist: 0.5
+    legTwist: 0.5
+    armStretch: 0.05
+    legStretch: 0.05
+    feetSpacing: 0
+    rootMotionBoneName: 
+    hasTranslationDoF: 0
+    hasExtraRoot: 0
+    skeletonHasParents: 1
+  lastHumanDescriptionAvatarSource: {instanceID: 0}
+  animationType: 2
+  humanoidOversampling: 1
+  additionalBone: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Voxel_Animals/FBX/Voxel_Alpaca.fbx
+  uploadId: 857340

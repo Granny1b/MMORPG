@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 3afa55aee773f47438e6f7f3a03cd0b9
+timeCreated: 1524131490
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/DamageElements/Fire.asset
+  uploadId: 857340

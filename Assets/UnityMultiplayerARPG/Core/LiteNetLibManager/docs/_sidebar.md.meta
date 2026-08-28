@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 7ba71d943ca0df1449d82feff2434326
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/LiteNetLibManager/docs/_sidebar.md
+  uploadId: 857340

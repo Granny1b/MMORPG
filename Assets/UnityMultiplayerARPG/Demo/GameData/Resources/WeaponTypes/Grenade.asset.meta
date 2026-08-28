@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a10c36dadc50a1e48881f48483f2ccc6
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/WeaponTypes/Grenade.asset
+  uploadId: 857340

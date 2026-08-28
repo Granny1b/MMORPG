@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: b32a17fe41e31964ba21f749d39b05ce
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/UpdateManager/Scripts/IManagedUpdate.cs
+  uploadId: 857340

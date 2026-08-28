@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 86a9b0c0335083b40b1f025055c7539e
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/GraphicSettings/README.md
+  uploadId: 857340

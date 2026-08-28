@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: ebfca35f6180dbd4c87a9ec562b68d5c
+timeCreated: 1522543435
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 100100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Models/ItemDrops/DropGloves001.prefab
+  uploadId: 857340

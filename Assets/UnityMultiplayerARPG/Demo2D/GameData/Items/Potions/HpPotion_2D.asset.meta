@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: 30b53cbf79c8ff5478f0e25827ea7961
+timeCreated: 1524111808
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/GameData/Items/Potions/HpPotion_2D.asset
+  uploadId: 857340

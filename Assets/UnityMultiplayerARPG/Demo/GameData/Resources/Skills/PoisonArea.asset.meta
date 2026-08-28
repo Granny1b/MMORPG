@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 7082a6e38d055b6488ab9c67d95d3907
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/GameData/Resources/Skills/PoisonArea.asset
+  uploadId: 857340

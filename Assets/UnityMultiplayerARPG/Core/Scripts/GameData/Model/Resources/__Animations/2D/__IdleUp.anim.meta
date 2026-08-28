@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d46862b7fc506034397902b45feaf5ae
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: animation
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/GameData/Model/Resources/__Animations/2D/__IdleUp.anim
+  uploadId: 857340

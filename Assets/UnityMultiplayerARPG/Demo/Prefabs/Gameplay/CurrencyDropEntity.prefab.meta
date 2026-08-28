@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 22d8a0b1d2e2d4e45b293aca8bdde705
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/Prefabs/Gameplay/CurrencyDropEntity.prefab
+  uploadId: 857340

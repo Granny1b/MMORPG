@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e52fb17f9b1e7fd48b8955f1391d3688
+timeCreated: 1427463081
+licenseType: Store
+NativeFormatImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/PhysicsMaterials/MaxFriction.physicMaterial
+  uploadId: 857340

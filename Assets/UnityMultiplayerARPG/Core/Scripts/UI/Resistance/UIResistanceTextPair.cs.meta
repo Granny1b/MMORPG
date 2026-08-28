@@ -1,0 +1,20 @@
+fileFormatVersion: 2
+guid: efd1e237ea33e2245804e9139fe1146d
+timeCreated: 1520627354
+licenseType: Store
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Resistance/UIResistanceTextPair.cs
+  uploadId: 857340

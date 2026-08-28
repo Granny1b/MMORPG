@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: daac34ce98c6bc7488cbdd74782140a0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 13400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo/PhysicsMaterials/Character.physicMaterial
+  uploadId: 857340

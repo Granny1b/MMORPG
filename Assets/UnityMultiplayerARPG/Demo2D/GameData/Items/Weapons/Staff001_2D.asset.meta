@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: b1f20ff31fcefe846b026293b3f06990
+timeCreated: 1521885128
+licenseType: Store
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 110188
+  packageName: MMORPG KIT (2D/3D/Survival)
+  packageVersion: 1.97b
+  assetPath: Assets/UnityMultiplayerARPG/Demo2D/GameData/Items/Weapons/Staff001_2D.asset
+  uploadId: 857340
