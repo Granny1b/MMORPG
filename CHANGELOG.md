@@ -9,6 +9,19 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Changed
 
+- **`.gitignore`** (2026-08-29) — the BLINK icon pack is no longer committed.
+  `Assets/2. Art/Blink/` is ~214 MB across 608 PNG icons and 15 PSD sources, all of it purchased
+  and re-downloadable, and every PNG/PSD would otherwise go through Git LFS. It was still
+  untracked when the rule was added, so nothing had to be removed from history.
+  - Scoped to the vendor folder rather than a blanket `*.png` rule. A global PNG rule would not
+    have removed the 176 kit PNGs already tracked under `Assets/UnityMultiplayerARPG/` — ignore
+    rules do not apply to tracked files — and would silently swallow future PNGs worth committing.
+  - `Assets/2. Art.meta` stays tracked so hand-made art can be added next to the pack. Until
+    something else lives in `Assets/2. Art/`, a fresh clone has that meta with no folder beside
+    it and Unity will drop it on import; adding any own art there makes it moot.
+  - Icons referenced by `GameDatabase.asset` will show as missing sprites until the pack is
+    re-imported into the same path.
+
 - **`.gitignore`** (2026-08-29) — Synty Asset Store content is no longer committed. `Assets/Synty/`
   alone is ~1.8 GB of FBX meshes, animation clips and UI sprite sheets (`InterfaceCore`,
   `InterfaceFantasyWarriorHUD`), all of it re-downloadable from the Synty/Asset Store, and every

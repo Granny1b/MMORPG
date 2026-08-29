@@ -121,3 +121,10 @@ InitTestScene*.unity*
 /[Aa]ssets/Interface*.meta
 /[Aa]ssets/AnimationBaseLocomotion/
 /[Aa]ssets/AnimationBaseLocomotion.meta
+
+# --- Asset Store content (BLINK icons) ---
+# Purchased icon pack, ~214 MB of PNG icons and PSD sources, re-downloadable.
+# Only the vendor folder is ignored, so your own art under "Assets/2. Art/" is
+# still tracked as normal.
+/[Aa]ssets/2. Art/Blink/
+/[Aa]ssets/2. Art/Blink.meta
