@@ -53927,6 +53927,7 @@ GameObject:
   - component: {fileID: 4521513632628143208}
   - component: {fileID: 2916001743171473355}
   - component: {fileID: 143658971448182001}
+  - component: {fileID: 7437229708212974662}
   m_Layer: 0
   m_Name: SyntyPlayerCharacter
   m_TagString: Untagged
@@ -53973,7 +53974,7 @@ Animator:
   m_Controller: {fileID: 0}
   m_CullingMode: 1
   m_UpdateMode: 0
-  m_ApplyRootMotion: 1
+  m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
@@ -54806,7 +54807,8 @@ MonoBehaviour:
   transitionDuration: 0.1
   defaultAnimations:
     idleState:
-      clip: {fileID: 0}
+      clip: {fileID: 1827226128182048838, guid: a4b8f2deec6a99945987cfc59b1b4e54,
+        type: 3}
       animSpeedRate: 0
       transitionDuration: 0
       isAdditive: 0
@@ -54814,28 +54816,32 @@ MonoBehaviour:
       applyPlayableIk: 0
     moveStates:
       forwardState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: 4f79281e6eb3df54889369eba3aa1c67,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       backwardState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: b28d41dc2454f694fac9ab766e54323a,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       leftState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: d294a4226e928db4fbbd933c19ccf5a1,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       rightState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: 4699ac7f1156bfc4dba616d9b3a05234,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
@@ -54856,28 +54862,32 @@ MonoBehaviour:
         applyFootIk: 0
         applyPlayableIk: 0
       forwardLeftState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: 4c272e8ffeefc6a4ab141f84a6712559,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       forwardRightState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: b982f3686334e9248b6b2020e5682d9e,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       backwardLeftState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: d466621781c6a7449aa01e5ac0dd2c0f,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       backwardRightState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: 49a9d6fed8f13c945af5b01859e975c3,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
@@ -54885,7 +54895,8 @@ MonoBehaviour:
         applyPlayableIk: 0
     sprintStates:
       forwardState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: d2995d8a62be0ce42a4e73698b62b275,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
@@ -54956,28 +54967,32 @@ MonoBehaviour:
         applyPlayableIk: 0
     walkStates:
       forwardState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: 190a58a12980995419db837d86e230d8,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       backwardState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: a74912d595c2d934b82146ebbd5ea36f,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       leftState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: 0eb3e976ef3ccbb4b9bb3ec2e1d7164f,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       rightState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: b87784217dc9c8c4fa00d2e1a45cb404,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
@@ -54998,35 +55013,40 @@ MonoBehaviour:
         applyFootIk: 0
         applyPlayableIk: 0
       forwardLeftState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: 92c649d225502eb40af8e5abdb49f6b6,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       forwardRightState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: 4c35cb045c0fa2f439a5496cc3401ea3,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       backwardLeftState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: c29e899bc714b254aa6d3dc609e4cf63,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       backwardRightState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: 8be8e373f8317b741a4d4447e3a19eca,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
     crouchIdleState:
-      clip: {fileID: 0}
+      clip: {fileID: 1827226128182048838, guid: 52a2eb3158000934eb33267c807b8b15,
+        type: 3}
       animSpeedRate: 0
       transitionDuration: 0
       isAdditive: 0
@@ -55034,28 +55054,32 @@ MonoBehaviour:
       applyPlayableIk: 0
     crouchMoveStates:
       forwardState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: db828642e342e7a469d83568b41af133,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       backwardState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: 311f313eae5f24c4ea66070f5b8342f5,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       leftState:
-        clip: {fileID: 0}
+        clip: {fileID: -5273236785355700695, guid: 14439d6b546a820478659db25db4a4d4,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       rightState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: 9c360478cd4308d47891db4ce38ff3a9,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
@@ -55076,28 +55100,32 @@ MonoBehaviour:
         applyFootIk: 0
         applyPlayableIk: 0
       forwardLeftState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: dc5c4f10a47d0b14e951eb18a515cab8,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       forwardRightState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: 247639eb44e42d44aaa0f20090c09f3f,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       backwardLeftState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: 44364be111ad6524f9d4fceb7266206f,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
         applyFootIk: 0
         applyPlayableIk: 0
       backwardRightState:
-        clip: {fileID: 0}
+        clip: {fileID: 1827226128182048838, guid: 02ce7f10b160db245871b570d0369204,
+          type: 3}
         animSpeedRate: 0
         transitionDuration: 0
         isAdditive: 0
@@ -55260,21 +55288,24 @@ MonoBehaviour:
         applyFootIk: 0
         applyPlayableIk: 0
     jumpState:
-      clip: {fileID: 0}
+      clip: {fileID: -2993534804863918692, guid: b3f40610e0721964c9679e65bd5a61bd,
+        type: 3}
       animSpeedRate: 0
       transitionDuration: 0
       isAdditive: 0
       applyFootIk: 0
       applyPlayableIk: 0
     fallState:
-      clip: {fileID: 0}
+      clip: {fileID: 3874071007334998130, guid: 8a47dcc6235cb2746aa329ea965a6900,
+        type: 3}
       animSpeedRate: 0
       transitionDuration: 0
       isAdditive: 0
       applyFootIk: 0
       applyPlayableIk: 0
     landedState:
-      clip: {fileID: 0}
+      clip: {fileID: -7734881759595652149, guid: ac4a40b639e33a0409a005769a922b74,
+        type: 3}
       animSpeedRate: 0
       transitionDuration: 0
       isAdditive: 0
@@ -56990,6 +57021,68 @@ MonoBehaviour:
     logTagName: 
     isDebug: 0
   writeAddonLog: 0
+--- !u!114 &7437229708212974662
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6611212440638421215}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ebc9636f5e5c37468d5f932a3ccb3c7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MultiplayerARPG.LocomotionPhaseSync
+  maxLengthRatio: 1.5
+  clipPhases:
+  - clip: {fileID: 1827226128182048838, guid: 4f79281e6eb3df54889369eba3aa1c67, type: 3}
+    offset: 0
+  - clip: {fileID: 1827226128182048838, guid: 4c272e8ffeefc6a4ab141f84a6712559, type: 3}
+    offset: 0
+  - clip: {fileID: 1827226128182048838, guid: b982f3686334e9248b6b2020e5682d9e, type: 3}
+    offset: 0
+  - clip: {fileID: 1827226128182048838, guid: d294a4226e928db4fbbd933c19ccf5a1, type: 3}
+    offset: 0
+  - clip: {fileID: 1827226128182048838, guid: 4699ac7f1156bfc4dba616d9b3a05234, type: 3}
+    offset: 0
+  - clip: {fileID: 1827226128182048838, guid: b28d41dc2454f694fac9ab766e54323a, type: 3}
+    offset: 0.4047619
+  - clip: {fileID: 1827226128182048838, guid: d466621781c6a7449aa01e5ac0dd2c0f, type: 3}
+    offset: 0.42857143
+  - clip: {fileID: 1827226128182048838, guid: 49a9d6fed8f13c945af5b01859e975c3, type: 3}
+    offset: 0.42857143
+  - clip: {fileID: 1827226128182048838, guid: 190a58a12980995419db837d86e230d8, type: 3}
+    offset: 0
+  - clip: {fileID: 1827226128182048838, guid: 92c649d225502eb40af8e5abdb49f6b6, type: 3}
+    offset: 0
+  - clip: {fileID: 1827226128182048838, guid: 4c35cb045c0fa2f439a5496cc3401ea3, type: 3}
+    offset: 0
+  - clip: {fileID: 1827226128182048838, guid: 0eb3e976ef3ccbb4b9bb3ec2e1d7164f, type: 3}
+    offset: 0
+  - clip: {fileID: 1827226128182048838, guid: b87784217dc9c8c4fa00d2e1a45cb404, type: 3}
+    offset: 0
+  - clip: {fileID: 1827226128182048838, guid: a74912d595c2d934b82146ebbd5ea36f, type: 3}
+    offset: 0.35714287
+  - clip: {fileID: 1827226128182048838, guid: c29e899bc714b254aa6d3dc609e4cf63, type: 3}
+    offset: 0.47619048
+  - clip: {fileID: 1827226128182048838, guid: 8be8e373f8317b741a4d4447e3a19eca, type: 3}
+    offset: 0.35714287
+  - clip: {fileID: 1827226128182048838, guid: db828642e342e7a469d83568b41af133, type: 3}
+    offset: 0
+  - clip: {fileID: 1827226128182048838, guid: dc5c4f10a47d0b14e951eb18a515cab8, type: 3}
+    offset: 0
+  - clip: {fileID: 1827226128182048838, guid: 247639eb44e42d44aaa0f20090c09f3f, type: 3}
+    offset: 0
+  - clip: {fileID: -5273236785355700695, guid: 14439d6b546a820478659db25db4a4d4, type: 3}
+    offset: 0
+  - clip: {fileID: 1827226128182048838, guid: 9c360478cd4308d47891db4ce38ff3a9, type: 3}
+    offset: 0
+  - clip: {fileID: 1827226128182048838, guid: 311f313eae5f24c4ea66070f5b8342f5, type: 3}
+    offset: 0.30952382
+  - clip: {fileID: 1827226128182048838, guid: 44364be111ad6524f9d4fceb7266206f, type: 3}
+    offset: 0.30952382
+  - clip: {fileID: 1827226128182048838, guid: 02ce7f10b160db245871b570d0369204, type: 3}
+    offset: 0.33333334
 --- !u!1 &6614410992954433435
 GameObject:
   m_ObjectHideFlags: 0

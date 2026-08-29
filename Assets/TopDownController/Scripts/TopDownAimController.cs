@@ -37,6 +37,11 @@ namespace MultiplayerARPG
         [Tooltip("Ignore aim points closer than this to the character, to avoid spinning when the cursor is on top of it.")]
         protected float minAimDistance = 0.2f;
 
+        [Header("Strafe Animation")]
+        [SerializeField]
+        [Tooltip("Report the movement direction relative to where the character is facing, so strafing and back-pedalling play their own animations instead of the forward run. Needs the model's eight directional move states filled in.")]
+        protected bool strafeMovementStates = true;
+
         /// <summary>Last valid cursor position projected onto the aim plane.</summary>
         public Vector3 AimWorldPosition { get; protected set; }
 
@@ -61,6 +66,7 @@ namespace MultiplayerARPG
             // the base calls UpdateWASDInput() -> UpdateWASDAttack() in the same frame, so
             // applying it later would let an attack fire using the movement direction.
             UpdateTopDownAim();
+            ApplyStrafeMovementState();
             RedirectPendingActionToCursor();
         }
 
@@ -130,6 +136,34 @@ namespace MultiplayerARPG
             {
                 _turnToTargetPosition = AimWorldPosition;
             }
+        }
+
+        /// <summary>
+        /// The stock controller reports <see cref="MovementState.Forward"/> for any WASD input,
+        /// because it turns the character into the move direction before sending it. Facing the
+        /// cursor breaks that assumption, so the direction is recomputed relative to the
+        /// character's actual facing and re-sent.
+        ///
+        /// Re-sending in the same frame is safe: `KeyMovement` only overwrites the pending state,
+        /// and the jump/dash bits dropped here are re-derived from the `_isJumping`/`_isDashing`
+        /// latches the base call already set, in `AfterMovementUpdate`.
+        /// </summary>
+        protected virtual void ApplyStrafeMovementState()
+        {
+            if (!strafeMovementStates || _moveDirection.sqrMagnitude <= 0f)
+                return;
+
+            if (PlayingCharacterEntity == null || PlayingCharacterEntity.IsDead())
+                return;
+
+            // Swimming and ladder climbing carry the Up/Down direction bits, which this would
+            // overwrite, and neither has a strafe animation set.
+            if (PlayingCharacterEntity.MovementState.Has(MovementState.IsUnderWater))
+                return;
+            if (PlayingCharacterEntity.LadderComponent != null && PlayingCharacterEntity.LadderComponent.ClimbingLadder)
+                return;
+
+            PlayingCharacterEntity.KeyMovement(_moveDirection, GameplayUtils.GetMovementStateByDirection(_moveDirection, MovementTransform.forward));
         }
 
         protected virtual void UpdateTopDownAim()
