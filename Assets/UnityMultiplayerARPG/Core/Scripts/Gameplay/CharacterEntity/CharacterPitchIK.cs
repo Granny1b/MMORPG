@@ -75,12 +75,12 @@ namespace MultiplayerARPG
 
         private void OnEnable()
         {
-            UpdateManager.Register(DefaultExecutionOrders.PITCH_IK, this);
+            UpdateManager.Register(DefaultExecutionOrders.GAME_ENTITY_MODEL_IK, this);
         }
 
         private void OnDisable()
         {
-            UpdateManager.Unregister(DefaultExecutionOrders.PITCH_IK, this);
+            UpdateManager.Unregister(DefaultExecutionOrders.GAME_ENTITY_MODEL_IK, this);
         }
 
         public void ManagedLateUpdate()

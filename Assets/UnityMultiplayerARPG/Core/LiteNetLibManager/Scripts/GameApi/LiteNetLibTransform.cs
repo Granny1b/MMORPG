@@ -99,7 +99,7 @@ namespace LiteNetLibManager
                     writer.Put(Scale.z);
 
                 byte extraLength = 0;
-                if (Extra != null)
+                if (Extra != null && Extra.Length > 0)
                 {
                     extraLength = (byte)Extra.Length;
                     writer.Put(extraLength);
@@ -139,6 +139,52 @@ namespace LiteNetLibManager
             }
         }
 
+        public class SyncTransforms : SortedList<uint, TransformData>, INetSerializable
+        {
+            public void Serialize(NetDataWriter writer)
+            {
+                writer.Put(Count);
+                foreach (var entry in this)
+                {
+                    entry.Value.Serialize(writer);
+                }
+            }
+
+            public void Deserialize(NetDataReader reader)
+            {
+                Clear();
+                int count = reader.GetInt();
+                for (int i = 0; i < count; ++i)
+                {
+                    TransformData entry = reader.Get<TransformData>();
+                    Add(entry.Tick, entry);
+                }
+            }
+        }
+
+        public class SyncTransformsField : LiteNetLibSyncField<SyncTransforms>
+        {
+            public SyncTransformsField()
+            {
+                _value = new SyncTransforms();
+            }
+
+            internal override void SerializeValue(NetDataWriter writer)
+            {
+                _value.Serialize(writer);
+            }
+
+            internal override void DeserializeValue(NetDataReader reader)
+            {
+                _value.Deserialize(reader);
+            }
+
+            protected override bool IsValueChanged(SyncTransforms oldValue, SyncTransforms newValue)
+            {
+                return true;
+            }
+        }
+
         [Header("Sync Settings")]
         [Tooltip("If this is TRUE, transform data will be sent from owner client to server to update to another clients")]
         [FormerlySerializedAs("ownerClientCanSendTransform")]
@@ -154,8 +200,6 @@ namespace LiteNetLibManager
         [Tooltip("If distance between current frame and previous frame is greater than this value, then it will determine that changes occurs and will sync transform later")]
         [Min(0.01f)]
         public float scaleThreshold = 0.1f;
-        [Tooltip("Keep alive ticks before it is stop syncing (after has no changes)")]
-        public int keepAliveTicks = 10;
         [Tooltip("Ticks for interpolation")]
         [Min(1)]
         public uint interpolationTicks = 2;
@@ -172,13 +216,27 @@ namespace LiteNetLibManager
         private float _startInterpTime;
         private float _endInterpTime;
 
-        private SortedList<uint, TransformData> _syncBuffers = new SortedList<uint, TransformData>();
+        private readonly SyncTransforms _clientSyncBuffers = new SyncTransforms();
+        private readonly SyncTransformsField _syncBuffers = new SyncTransformsField()
+        {
+            syncMode = LiteNetLibSyncFieldMode.ServerToClients,
+        };
         private SortedList<uint, TransformData> _interpBuffers = new SortedList<uint, TransformData>();
 
         private LogicUpdater _logicUpdater = null;
         private uint _interpTick;
         public uint InitialInterpTick { get; private set; }
         public uint RenderTick => _interpTick - interpolationTicks;
+
+        private void Awake()
+        {
+            _syncBuffers.onChange += OnSyncBuffersChanged;
+        }
+
+        private void OnDestroy()
+        {
+            _syncBuffers.onChange -= OnSyncBuffersChanged;
+        }
 
         public override void OnIdentityInitialize()
         {
@@ -209,7 +267,8 @@ namespace LiteNetLibManager
 
         private void ResetBuffersAndStates()
         {
-            _syncBuffers.Clear();
+            _clientSyncBuffers.Clear();
+            _syncBuffers.Value.Clear();
             _interpBuffers.Clear();
             _interpTick = InitialInterpTick = 0;
             _prevSyncData = new TransformData()
@@ -236,11 +295,10 @@ namespace LiteNetLibManager
             TransformData transformData = _prevSyncData;
             bool changed =
                 Vector3.Distance(transform.position, transformData.Position) > positionThreshold ||
-                Vector3.Angle(transform.eulerAngles, transformData.EulerAngles) > eulerAnglesThreshold ||
+                Vector3.Angle(transform.forward, Quaternion.Euler(transformData.EulerAngles) * Vector3.forward) > eulerAnglesThreshold ||
                 Vector3.Distance(transform.localScale, transformData.Scale) > scaleThreshold;
-            bool keepAlive = updater.LocalTick - transformData.Tick <= keepAliveTicks;
 
-            if (!changed && !keepAlive)
+            if (!changed)
                 return;
 
             if (changed)
@@ -256,18 +314,18 @@ namespace LiteNetLibManager
             transformData.Tick = updater.LocalTick;
             if (!syncByOwnerClient && IsServer)
             {
-                StoreSyncBuffer(transformData);
-                RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _syncBuffers.Values.ToArray());
+                StoreSyncBuffer(_syncBuffers.Value, transformData);
+                _syncBuffers.MarkAsChanged();
             }
             else if (syncByOwnerClient && IsOwnedByServer)
             {
-                StoreSyncBuffer(transformData);
-                RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _syncBuffers.Values.ToArray());
+                StoreSyncBuffer(_syncBuffers.Value, transformData);
+                _syncBuffers.MarkAsChanged();
             }
             else if (syncByOwnerClient && IsOwnerClient)
             {
-                StoreSyncBuffer(transformData);
-                RPC(OwnerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _syncBuffers.Values.ToArray());
+                StoreSyncBuffer(_clientSyncBuffers, transformData);
+                RPC(OwnerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, _clientSyncBuffers);
             }
         }
 
@@ -355,7 +413,7 @@ namespace LiteNetLibManager
         }
 
         [ServerRpc]
-        private void OwnerSyncTransform(TransformData[] data)
+        private void OwnerSyncTransform(SyncTransforms data)
         {
             if (!syncByOwnerClient && IsServer)
                 return;
@@ -371,17 +429,20 @@ namespace LiteNetLibManager
                     _interpTick = InitialInterpTick = interpTick;
             }
             // Sync to other clients immediately
-            RPC(ServerSyncTransform, 0, LiteNetLib.DeliveryMethod.Unreliable, data);
+            foreach (var entry in data)
+            {
+                StoreSyncBuffer(_syncBuffers.Value, entry.Value);
+            }
+            _syncBuffers.MarkAsChanged();
         }
 
-        [AllRpc]
-        private void ServerSyncTransform(TransformData[] data)
+        private void OnSyncBuffersChanged(bool initial, SyncTransforms oldValue, SyncTransforms newValue)
         {
             if (IsServer)
                 return;
             if (syncByOwnerClient && IsOwnerClient)
                 return;
-            StoreInterpolateBuffers(data, 30);
+            StoreInterpolateBuffers(newValue, 30);
             if (_interpBuffers.Count > 0)
             {
                 uint interpTick = _interpBuffers.Keys[_interpBuffers.Count - 1];
@@ -393,18 +454,18 @@ namespace LiteNetLibManager
             }
         }
 
-        private void StoreInterpolateBuffers(TransformData[] data, int maxBuffers = 3)
+        private void StoreInterpolateBuffers(SyncTransforms data, int maxBuffers = 3)
         {
             foreach (var entry in data)
             {
-                if (_interpBuffers.ContainsKey(entry.Tick))
+                if (_interpBuffers.ContainsKey(entry.Key))
                     continue;
-                if (entry.Extra != null)
+                if (entry.Value.Extra != null)
                 {
-                    s_ExtraReader.SetSource(entry.Extra);
-                    onReadInterpBuffer?.Invoke(s_ExtraReader, entry.Tick);
+                    s_ExtraReader.SetSource(entry.Value.Extra);
+                    onReadInterpBuffer?.Invoke(s_ExtraReader, entry.Key);
                 }
-                _interpBuffers.Add(entry.Tick, entry);
+                _interpBuffers.Add(entry.Key, entry.Value);
             }
             // Prune old ticks (keep last N)
             while (_interpBuffers.Count > maxBuffers)
@@ -413,20 +474,20 @@ namespace LiteNetLibManager
             }
         }
 
-        private void StoreSyncBuffer(TransformData entry, int maxBuffers = 3)
+        private void StoreSyncBuffer(SortedList<uint, TransformData> buffers, TransformData entry, int maxBuffers = 3)
         {
-            if (!_syncBuffers.ContainsKey(entry.Tick))
+            if (!buffers.ContainsKey(entry.Tick))
             {
                 s_ExtraWriter.Reset();
                 onWriteSyncBuffer?.Invoke(s_ExtraWriter, entry.Tick);
                 if (s_ExtraWriter.Length > 0)
                     entry.Extra = s_ExtraWriter.CopyData();
-                _syncBuffers.Add(entry.Tick, entry);
+                buffers.Add(entry.Tick, entry);
             }
             // Prune old ticks (keep last N)
-            while (_syncBuffers.Count > maxBuffers)
+            while (buffers.Count > maxBuffers)
             {
-                _syncBuffers.RemoveAt(0);
+                buffers.RemoveAt(0);
             }
         }
     }

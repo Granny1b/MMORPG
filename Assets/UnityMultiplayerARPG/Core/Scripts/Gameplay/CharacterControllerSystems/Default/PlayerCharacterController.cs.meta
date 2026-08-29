@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 43638d0fc9612d5448c201d1038910d8
 timeCreated: 1523381045
-licenseType: Store
+licenseType: Free
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/Gameplay/CharacterControllerSystems/Default/PlayerCharacterController.cs
-  uploadId: 857340

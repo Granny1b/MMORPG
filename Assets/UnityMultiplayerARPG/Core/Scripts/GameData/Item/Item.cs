@@ -145,9 +145,17 @@ namespace MultiplayerARPG
         [FormerlySerializedAs("fireSpread")]
         public byte fireSpreadAmount;
         public float recoil = 1f;
+        public float recoilYaw = float.MinValue;
+        public float recoilRoll = float.MinValue;
         public float recoilWhileFpsViewMode = float.MinValue;
+        public float recoilYawWhileFpsViewMode = float.MinValue;
+        public float recoilRollWhileFpsViewMode = float.MinValue;
         public float recoilWhileShoulderViewMode = float.MinValue;
+        public float recoilYawWhileShoulderViewMode = float.MinValue;
+        public float recoilRollWhileShoulderViewMode = float.MinValue;
         public float recoilWhileAiming = float.MinValue;
+        public float recoilYawWhileAiming = float.MinValue;
+        public float recoilRollWhileAiming = float.MinValue;
         public float chargeDuration;
         public bool destroyImmediatelyAfterFired;
 
@@ -734,9 +742,29 @@ namespace MultiplayerARPG
             get { return recoil; }
         }
 
+        public float RecoilYaw
+        {
+            get { return recoilYaw; }
+        }
+
+        public float RecoilRoll
+        {
+            get { return recoilRoll; }
+        }
+
         public float RecoilWhileFpsViewMode
         {
             get { return recoilWhileFpsViewMode; }
+        }
+
+        public float RecoilYawWhileFpsViewMode
+        {
+            get { return recoilYawWhileFpsViewMode; }
+        }
+
+        public float RecoilRollWhileFpsViewMode
+        {
+            get { return recoilRollWhileFpsViewMode; }
         }
 
         public float RecoilWhileShoulderViewMode
@@ -744,9 +772,29 @@ namespace MultiplayerARPG
             get { return recoilWhileShoulderViewMode; }
         }
 
+        public float RecoilYawWhileShoulderViewMode
+        {
+            get { return recoilYawWhileShoulderViewMode; }
+        }
+
+        public float RecoilRollWhileShoulderViewMode
+        {
+            get { return recoilRollWhileShoulderViewMode; }
+        }
+
         public float RecoilWhileAiming
         {
             get { return recoilWhileAiming; }
+        }
+
+        public float RecoilYawWhileAiming
+        {
+            get { return recoilYawWhileAiming; }
+        }
+
+        public float RecoilRollWhileAiming
+        {
+            get { return recoilRollWhileAiming; }
         }
 
         public float ChargeDuration

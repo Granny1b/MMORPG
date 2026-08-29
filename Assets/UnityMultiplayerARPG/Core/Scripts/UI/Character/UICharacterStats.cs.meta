@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 1d55ce5494e7fe444829a2618a420b1d
 timeCreated: 1520364666
-licenseType: Store
+licenseType: Pro
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Character/UICharacterStats.cs
-  uploadId: 857340

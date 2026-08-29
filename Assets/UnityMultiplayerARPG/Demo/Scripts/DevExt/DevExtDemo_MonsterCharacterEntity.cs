@@ -38,51 +38,51 @@ namespace MultiplayerARPG
             onReceivedDamage -= DevExtReceivedDamageDemo;
         }
 
-        protected void DevExtStartDemo()
+        protected void DevExtStartDemo(BaseGameEntity target)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] MonsterCharacterEntity.Start()");
         }
 
-        protected void DevExtOnEnableDemo()
+        protected void DevExtOnEnableDemo(BaseGameEntity target)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] MonsterCharacterEntity.OnEnable()");
         }
 
-        protected void DevExtOnDisableDemo()
+        protected void DevExtOnDisableDemo(BaseGameEntity target)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] MonsterCharacterEntity.OnDisable()");
         }
 
-        protected void DevExtUpdateDemo()
+        protected void DevExtUpdateDemo(BaseGameEntity target)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] MonsterCharacterEntity.Update()");
         }
 
-        protected void DevExtOnSetupDemo()
+        protected void DevExtOnSetupDemo(BaseGameEntity target)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] MonsterCharacterEntity.OnSetup()");
         }
 
-        protected void DevExtSetupNetElementsDemo()
+        protected void DevExtSetupNetElementsDemo(BaseGameEntity target)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] MonsterCharacterEntity.SetupNetElements()");
         }
 
-        protected void DevExtOnNetworkDestroyDemo(byte reasons)
+        protected void DevExtOnNetworkDestroyDemo(BaseGameEntity target, byte reasons)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] MonsterCharacterEntity.OnNetworkDestroy(" + reasons + ")");
         }
 
-        protected void DevExtReceiveDamageDemo(HitBoxPosition position, Vector3 fromPosition, IGameEntity attacker, Dictionary<DamageElement, MinMaxFloat> allDamageAmounts, CharacterItem weapon, BaseSkill skill, int skillLevel)
+        protected void DevExtReceiveDamageDemo(DamageableEntity target, HitBoxPosition position, Vector3 fromPosition, EntityInfo attacker, Dictionary<DamageElement, MinMaxFloat> allDamageAmounts, CharacterItem weapon, BaseSkill skill, int skillLevel)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] MonsterCharacterEntity.ReceiveDamage("
-                + attacker.GetGameObject().name + ", " + weapon + ", " + allDamageAmounts.Count + ", " + (skill != null ? skill.Title : "No Debuff") + ")");
+                + (attacker.Entity != null ? attacker.Entity.GetGameObject().name : attacker.Id) + ", " + weapon + ", " + allDamageAmounts.Count + ", " + (skill != null ? skill.Title : "No Debuff") + ")");
         }
 
-        protected void DevExtReceivedDamageDemo(HitBoxPosition position, Vector3 fromPosition, IGameEntity attacker, CombatAmountType combatAmountType, int damage, CharacterItem weapon, BaseSkill skill, int skillLevel, CharacterBuff buff, bool isDamageOverTime)
+        protected void DevExtReceivedDamageDemo(DamageableEntity target, HitBoxPosition position, Vector3 fromPosition, EntityInfo attacker, CombatAmountType combatAmountType, int damage, CharacterItem weapon, BaseSkill skill, int skillLevel, CharacterBuff buff, bool isDamageOverTime)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] MonsterCharacterEntity.ReceivedDamage("
-                + attacker.GetGameObject().name + ", " + combatAmountType + ", " + damage + ")");
+                + (attacker.Entity != null ? attacker.Entity.GetGameObject().name : attacker.Id) + ", " + combatAmountType + ", " + damage + ")");
         }
     }
 }

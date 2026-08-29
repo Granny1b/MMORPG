@@ -15,18 +15,21 @@ namespace MultiplayerARPG
         public TextWrapper uiTextFee;
         public UIInputDialog uiDepositInput;
         public UIInputDialog uiWithdrawInput;
+        private int _lastAmount = -1;
 
         private void OnEnable()
         {
             ResetDepositUIs();
             ResetWithdrawUIs();
             ResetFeeUIs();
+            _lastAmount = -1;
         }
 
         public void ResetDepositUIs()
         {
             if (uiDepositInput == null)
-                uiDepositInput.SetupForIntegerInput(OnDepositConfirm, 0, null, 0);
+                return;               
+            uiDepositInput.SetupForIntegerInput(OnDepositConfirm, 0, null, 0);
             if (uiDepositInput.uiInputField != null)
             {
                 uiDepositInput.uiInputField.onValueChanged.RemoveListener(OnDepositValueChangedProceeding);
@@ -66,9 +69,14 @@ namespace MultiplayerARPG
         {
             if (uiTextAmount != null)
             {
-                uiTextAmount.text = ZString.Format(
-                    LanguageManager.GetText(formatKeyAmount),
-                    GetAmount().ToString("N0"));
+                int amount = GetAmount();
+                if (amount != _lastAmount)
+                {
+                    _lastAmount = amount;
+                    uiTextAmount.text = ZString.Format(
+                        LanguageManager.GetText(formatKeyAmount),
+                        amount.ToString("N0"));
+                }
             }
         }
 

@@ -169,6 +169,8 @@ namespace Insthync.GraphicSettings
             {
                 Debug.LogException(ex);
             }
+
+            SceneManager.sceneLoaded -= SceneManager_sceneLoaded;
             SceneManager.sceneLoaded += SceneManager_sceneLoaded;
         }
 

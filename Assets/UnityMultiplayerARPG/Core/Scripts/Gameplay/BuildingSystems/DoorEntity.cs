@@ -1,6 +1,5 @@
 ﻿using Insthync.UnityEditorUtils;
 using LiteNetLibManager;
-using LiteNetLib;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -33,16 +32,11 @@ namespace MultiplayerARPG
             set { isOpen.Value = value; }
         }
 
-        public override void OnSetup()
-        {
-            base.OnSetup();
-            isOpen.onChange += OnIsOpenChange;
-        }
-
         protected override void SetupNetElements()
         {
             base.SetupNetElements();
             isOpen.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+            isOpen.onChange += OnIsOpenChange;
         }
 
         protected override void EntityOnDestroy()
@@ -72,6 +66,8 @@ namespace MultiplayerARPG
         public override bool CanActivate()
         {
             if (Identity != null && Identity.IsServer && GameInstance.PlayingCharacterEntity != null && Identity.IsHideFrom(GameInstance.PlayingCharacterEntity.Identity))
+                return false;
+            if (CanUseByCreatorOnly && !IsCreator(GameInstance.PlayingCharacterEntity))
                 return false;
             return !this.IsDead();
         }

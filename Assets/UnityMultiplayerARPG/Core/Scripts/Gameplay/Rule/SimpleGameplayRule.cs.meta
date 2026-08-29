@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: befe87f74d372b343a1e4474763c11e6
 timeCreated: 1521242086
-licenseType: Store
+licenseType: Pro
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/Gameplay/Rule/SimpleGameplayRule.cs
-  uploadId: 857340

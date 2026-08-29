@@ -1,7 +1,6 @@
 ﻿using Cysharp.Text;
 using UnityEngine;
 using UnityEngine.Events;
-using UnityEngine.Serialization;
 using UnityEngine.UI;
 
 namespace MultiplayerARPG
@@ -61,8 +60,11 @@ namespace MultiplayerARPG
 
         [Header("Options")]
         public UIGuildSkill uiNextLevelSkill;
+        public bool changeObjectNameByData = true;
 
         protected float _coolDownRemainsDuration;
+        private int _lastDisplayedCoolDown = -1;
+        private int _lastDisplayedCoolDownRemains = -1;
         protected bool _dirtyIsCountDown;
         protected bool _dirtyAbleToLevelUp;
         protected bool _dirtyAbleToUse;
@@ -112,6 +114,8 @@ namespace MultiplayerARPG
         {
             base.OnDisable();
             _coolDownRemainsDuration = 0f;
+            _lastDisplayedCoolDown = -1;
+            _lastDisplayedCoolDownRemains = -1;
         }
 
         public override void ManagedUpdate()
@@ -135,18 +139,30 @@ namespace MultiplayerARPG
 
             if (uiTextCoolDownDuration != null)
             {
-                uiTextCoolDownDuration.SetGameObjectActive(isSkillActive && coolDownDuration > 0f);
-                uiTextCoolDownDuration.text = ZString.Format(
-                    LanguageManager.GetText(formatKeyCoolDownDuration),
-                    coolDownDuration.ToString("N0"));
+                bool coolDownActive = isSkillActive && coolDownDuration > 0f;
+                uiTextCoolDownDuration.SetGameObjectActive(coolDownActive);
+                int displayedCoolDown = Mathf.RoundToInt(coolDownDuration);
+                if (displayedCoolDown != _lastDisplayedCoolDown)
+                {
+                    _lastDisplayedCoolDown = displayedCoolDown;
+                    uiTextCoolDownDuration.text = ZString.Format(
+                        LanguageManager.GetText(formatKeyCoolDownDuration),
+                        displayedCoolDown.ToString("N0"));
+                }
             }
 
             if (uiTextCoolDownRemainsDuration != null)
             {
-                uiTextCoolDownRemainsDuration.SetGameObjectActive(isSkillActive && _coolDownRemainsDuration > 0);
-                uiTextCoolDownRemainsDuration.text = ZString.Format(
-                    LanguageManager.GetText(formatKeyCoolDownRemainsDuration),
-                    _coolDownRemainsDuration.ToString("N0"));
+                bool remainsActive = isSkillActive && _coolDownRemainsDuration > 0;
+                uiTextCoolDownRemainsDuration.SetGameObjectActive(remainsActive);
+                int displayedRemains = Mathf.RoundToInt(_coolDownRemainsDuration);
+                if (displayedRemains != _lastDisplayedCoolDownRemains)
+                {
+                    _lastDisplayedCoolDownRemains = displayedRemains;
+                    uiTextCoolDownRemainsDuration.text = ZString.Format(
+                        LanguageManager.GetText(formatKeyCoolDownRemainsDuration),
+                        displayedRemains.ToString("N0"));
+                }
             }
 
             if (imageCoolDownGage != null)
@@ -191,12 +207,14 @@ namespace MultiplayerARPG
         protected override void UpdateUI()
         {
             UpdateCoolDownRemainsDuration(0f);
-            IPlayerCharacterData targetPlayer = GameInstance.PlayingCharacter;
+        }
 
-            bool ableToLevelUp = targetPlayer != null &&
+        protected void UpdateAbleToLevelUp()
+        {
+            bool ableToLevelUp = GameInstance.PlayingCharacter != null &&
                 GuildSkill != null && Level < GuildSkill.MaxLevel &&
                 GameInstance.JoinedGuild != null &&
-                GameInstance.JoinedGuild.IsLeader(targetPlayer.Id) &&
+                GameInstance.JoinedGuild.IsLeader(GameInstance.PlayingCharacter.Id) &&
                 GameInstance.JoinedGuild.skillPoint > 0;
             if (_forceUpdateUi || _dirtyAbleToLevelUp != ableToLevelUp)
             {
@@ -206,8 +224,11 @@ namespace MultiplayerARPG
                 else
                     onUnableToLevelUp.Invoke();
             }
+        }
 
-            bool ableToUse = targetPlayer != null && GuildSkill != null && GuildSkill.IsActive && Level > 0;
+        protected void UpdateAbleToUse()
+        {
+            bool ableToUse = GameInstance.PlayingCharacter != null && GuildSkill != null && GuildSkill.IsActive && Level > 0;
             if (_forceUpdateUi || _dirtyAbleToUse != ableToUse)
             {
                 _dirtyAbleToUse = ableToUse;
@@ -216,7 +237,10 @@ namespace MultiplayerARPG
                 else
                     onUnableToUse.Invoke();
             }
+        }
 
+        protected void UpdateMaxedLevel()
+        {
             bool maxedLevel = GuildSkill != null && GuildSkill.MaxLevel <= Level;
             if (_forceUpdateUi || _dirtyMaxedLevel != maxedLevel)
             {
@@ -230,7 +254,13 @@ namespace MultiplayerARPG
 
         protected override void UpdateData()
         {
+            if (changeObjectNameByData)
+                name = $"(UIGuildSkill){(GuildSkill == null ? string.Empty : GuildSkill.Id)}";
+
             UpdateCoolDownRemainsDuration(1f);
+            UpdateAbleToLevelUp();
+            UpdateAbleToUse();
+            UpdateMaxedLevel();
 
             if (Level <= 0)
             {

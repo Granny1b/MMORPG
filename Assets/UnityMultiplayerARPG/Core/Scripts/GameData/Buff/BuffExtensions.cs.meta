@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 4bef95916ecf3fc4b877c65a851d5b5e
 timeCreated: 1524046473
-licenseType: Store
+licenseType: Free
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/GameData/Buff/BuffExtensions.cs
-  uploadId: 857340

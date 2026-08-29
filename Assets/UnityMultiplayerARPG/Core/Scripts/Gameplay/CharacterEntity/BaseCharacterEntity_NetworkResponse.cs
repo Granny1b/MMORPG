@@ -1,6 +1,7 @@
 ﻿using LiteNetLibManager;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using UnityEngine.Pool;
 
 namespace MultiplayerARPG
 {
@@ -60,6 +61,12 @@ namespace MultiplayerARPG
                 return;
             }
 
+            if (itemsContainerIndex < 0 || itemsContainerIndex >= itemsContainerEntity.Items.Count)
+            {
+                GameInstance.ServerGameMessageHandlers.SendGameMessage(ConnectionId, UITextKeys.UI_ERROR_INVALID_ITEM_INDEX);
+                return;
+            }
+
             if (!IsGameEntityInDistance(itemsContainerEntity))
             {
                 GameInstance.ServerGameMessageHandlers.SendGameMessage(ConnectionId, UITextKeys.UI_ERROR_CHARACTER_IS_TOO_FAR);
@@ -72,23 +79,33 @@ namespace MultiplayerARPG
                 return;
             }
 
-            if (itemsContainerIndex < 0 || itemsContainerIndex >= itemsContainerEntity.Items.Count)
-            {
-                GameInstance.ServerGameMessageHandlers.SendGameMessage(ConnectionId, UITextKeys.UI_ERROR_INVALID_ITEM_INDEX);
-                return;
-            }
+            RewardGivenType rewardGivenType = itemsContainerEntity.GivenType;
 
             CharacterItem pickingItem = itemsContainerEntity.Items[itemsContainerIndex].Clone();
-            if (amount < 0)
+            if (amount < 0 || amount > pickingItem.amount)
                 amount = pickingItem.amount;
             pickingItem.amount = amount;
-            if (this.IncreasingItemsWillOverwhelming(pickingItem.dataId, pickingItem.amount))
-            {
-                GameInstance.ServerGameMessageHandlers.SendGameMessage(ConnectionId, UITextKeys.UI_ERROR_WILL_OVERWHELMING);
-                return;
-            }
 
-            this.IncreaseItems(pickingItem, characterItem => OnRewardItem(itemsContainerEntity.GivenType, characterItem));
+            if (CurrentGameInstance.GoldDropRepresentItem != null && pickingItem.dataId == CurrentGameInstance.GoldDropRepresentItem.DataId)
+            {
+                CurrentGameplayRule.RewardGold(this, pickingItem.amount, 1f, rewardGivenType, 1, 1, out int rewardedGold);
+                OnRewardGold(rewardGivenType, rewardedGold);
+            }
+            else if (CurrentGameInstance.ExpDropRepresentItem != null && pickingItem.dataId == CurrentGameInstance.ExpDropRepresentItem.DataId)
+            {
+                bool isLevelUp = CurrentGameplayRule.RewardExp(this, pickingItem.amount, 1f, rewardGivenType, 1, 1, out int rewardedGold);
+                OnRewardExp(rewardGivenType, rewardedGold, isLevelUp);
+            }
+            else
+            {
+                if (this.IncreasingItemsWillOverwhelming(pickingItem.dataId, pickingItem.amount))
+                {
+                    GameInstance.ServerGameMessageHandlers.SendGameMessage(ConnectionId, UITextKeys.UI_ERROR_WILL_OVERWHELMING);
+                    return;
+                }
+
+                this.IncreaseItems(pickingItem, characterItem => OnRewardItem(itemsContainerEntity.GivenType, characterItem));
+            }
             itemsContainerEntity.Items.DecreaseItemsByIndex(itemsContainerIndex, amount, false, true);
             itemsContainerEntity.PickedUp();
             this.FillEmptySlots();
@@ -125,16 +142,32 @@ namespace MultiplayerARPG
                 return;
             }
 
+            RewardGivenType rewardGivenType = itemsContainerEntity.GivenType;
+
             while (itemsContainerEntity.Items.Count > 0)
             {
                 CharacterItem pickingItem = itemsContainerEntity.Items[0];
-                if (this.IncreasingItemsWillOverwhelming(pickingItem.dataId, pickingItem.amount))
-                {
-                    GameInstance.ServerGameMessageHandlers.SendGameMessage(ConnectionId, UITextKeys.UI_ERROR_WILL_OVERWHELMING);
-                    break;
-                }
 
-                this.IncreaseItems(pickingItem, characterItem => OnRewardItem(itemsContainerEntity.GivenType, characterItem));
+                if (CurrentGameInstance.GoldDropRepresentItem != null && pickingItem.dataId == CurrentGameInstance.GoldDropRepresentItem.DataId)
+                {
+                    CurrentGameplayRule.RewardGold(this, pickingItem.amount, 1f, rewardGivenType, 1, 1, out int rewardedGold);
+                    OnRewardGold(rewardGivenType, rewardedGold);
+                }
+                else if (CurrentGameInstance.ExpDropRepresentItem != null && pickingItem.dataId == CurrentGameInstance.ExpDropRepresentItem.DataId)
+                {
+                    bool isLevelUp = CurrentGameplayRule.RewardExp(this, pickingItem.amount, 1f, rewardGivenType, 1, 1, out int rewardedGold);
+                    OnRewardExp(rewardGivenType, rewardedGold, isLevelUp);
+                }
+                else
+                {
+                    if (this.IncreasingItemsWillOverwhelming(pickingItem.dataId, pickingItem.amount))
+                    {
+                        GameInstance.ServerGameMessageHandlers.SendGameMessage(ConnectionId, UITextKeys.UI_ERROR_WILL_OVERWHELMING);
+                        break;
+                    }
+
+                    this.IncreaseItems(pickingItem, characterItem => OnRewardItem(rewardGivenType, characterItem));
+                }
                 itemsContainerEntity.Items.RemoveAt(0);
             }
             itemsContainerEntity.PickedUp();
@@ -151,10 +184,13 @@ namespace MultiplayerARPG
 #if UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES
             if (!CanPickup())
                 return;
-            List<ItemDropEntity> itemDropEntities = FindGameEntitiesInDistance<ItemDropEntity>(CurrentGameInstance.pickUpItemDistance, CurrentGameInstance.itemDropLayer.Mask);
-            foreach (ItemDropEntity itemDropEntity in itemDropEntities)
+            using (CollectionPool<List<ItemDropEntity>, ItemDropEntity>.Get(out List<ItemDropEntity> itemDropEntities))
             {
-                CmdPickup(itemDropEntity.ObjectId);
+                FindGameEntitiesInDistance(itemDropEntities, CurrentGameInstance.pickUpItemDistance, CurrentGameInstance.itemDropLayer.Mask);
+                foreach (ItemDropEntity itemDropEntity in itemDropEntities)
+                {
+                    CmdPickup(itemDropEntity.ObjectId);
+                }
             }
 #endif
         }

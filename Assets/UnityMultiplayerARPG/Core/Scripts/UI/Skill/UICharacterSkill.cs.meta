@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 087a9c96033373b4c84e0db5c98abd60
 timeCreated: 1520051830
-licenseType: Store
+licenseType: Pro
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Skill/UICharacterSkill.cs
-  uploadId: 857340

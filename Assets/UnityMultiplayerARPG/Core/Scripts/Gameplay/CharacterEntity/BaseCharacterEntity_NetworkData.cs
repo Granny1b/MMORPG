@@ -1,5 +1,4 @@
-﻿using Cysharp.Threading.Tasks;
-using Insthync.UnityEditorUtils;
+﻿using Insthync.UnityEditorUtils;
 using LiteNetLibManager;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,6 +11,8 @@ namespace MultiplayerARPG
         [Category("Sync Fields")]
         [SerializeField]
         protected SyncFieldString id = new SyncFieldString();
+        [SerializeField]
+        protected SyncFieldInt metaDataId = new SyncFieldInt();
         [SerializeField]
         protected SyncFieldInt level = new SyncFieldInt();
         [SerializeField]
@@ -38,6 +39,8 @@ namespace MultiplayerARPG
         protected SyncFieldUInt targetEntityId = new SyncFieldUInt();
         [SerializeField]
         protected SyncFieldCharacterMount mount = new SyncFieldCharacterMount();
+        [SerializeField]
+        protected SyncFieldCharacterSummoner summoner = new SyncFieldCharacterSummoner();
 
         [Category(101, "Sync Lists", false)]
         [SerializeField]
@@ -60,6 +63,22 @@ namespace MultiplayerARPG
 
         #region Fields/Interface implementation
         public string Id { get { return id.Value; } set { id.Value = value; } }
+        private int _localMetaDataId;
+        public int MetaDataId
+        {
+            get
+            {
+                if (metaDataId.Value != 0)
+                    return metaDataId.Value;
+                return _localMetaDataId;
+            }
+            set
+            {
+                if (CurrentGameManager.IsServer)
+                    metaDataId.Value = value;
+                _localMetaDataId = value;
+            }
+        }
         public string CharacterName { get { return syncTitle.Value; } set { syncTitle.Value = value; } }
         public int Level { get { return level.Value; } set { level.Value = value; } }
         public int Exp { get { return exp.Value; } set { exp.Value = value; } }
@@ -141,6 +160,65 @@ namespace MultiplayerARPG
             {
                 mount.Value = value;
             }
+        }
+
+        public CharacterSummoner Summoner
+        {
+            get { return summoner.Value; }
+            set { summoner.Value = value; }
+        }
+
+        private BaseCharacterEntity _summonerEntity;
+        public BaseCharacterEntity SummonerEntity
+        {
+            get
+            {
+                if (IsSummoned && _summonerEntity == null)
+                {
+                    LiteNetLibIdentity identity;
+                    if (Manager.Assets.TryGetSpawnedObject(Summoner.objectId, out identity))
+                        _summonerEntity = identity.GetComponent<BaseCharacterEntity>();
+                }
+                return _summonerEntity;
+            }
+            protected set
+            {
+                _summonerEntity = value;
+                if (IsServer)
+                {
+                    Summoner = new CharacterSummoner()
+                    {
+                        type = Summoner.type,
+                        objectId = _summonerEntity != null ? _summonerEntity.ObjectId : 0,
+                    };
+                }
+            }
+        }
+
+        public SummonType SummonType
+        {
+            get { return Summoner.type; }
+            protected set
+            {
+                if (IsServer)
+                {
+                    Summoner = new CharacterSummoner()
+                    {
+                        type = value,
+                        objectId = Summoner.objectId,
+                    };
+                }
+            }
+        }
+
+        public bool IsSummoned
+        {
+            get { return SummonType != SummonType.None; }
+        }
+
+        public bool IsSummonedAndSummonerExisted
+        {
+            get { return IsSummoned && SummonerEntity != null; }
         }
 
         public IList<EquipWeapons> SelectableWeaponSets
@@ -257,9 +335,12 @@ namespace MultiplayerARPG
             base.SetupNetElements();
             // Sync fields
             id.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+            id.redundancyCount = 0;
+            metaDataId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+            metaDataId.redundancyCount = 0;
             level.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             exp.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
-            isImmune.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+            isInvincible.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             currentHp.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             currentMp.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             currentStamina.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
@@ -271,6 +352,7 @@ namespace MultiplayerARPG
             aimPosition.syncMode = LiteNetLibSyncFieldMode.ClientMulticast;
             targetEntityId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             mount.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
+            summoner.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             // Sync lists
             selectableWeaponSets.forOwnerOnly = false;
             attributes.forOwnerOnly = false;
@@ -280,17 +362,14 @@ namespace MultiplayerARPG
             equipItems.forOwnerOnly = false;
             nonEquipItems.forOwnerOnly = true;
             summons.forOwnerOnly = true;
-        }
 
-        public override void OnSetup()
-        {
-            base.OnSetup();
             // On data changed events
             id.onChange += OnIdChange;
             syncTitle.onChange += OnCharacterNameChange;
+            metaDataId.onChange += OnMetaDataIdChange;
             level.onChange += OnLevelChange;
             exp.onChange += OnExpChange;
-            isImmune.onChange += OnIsImmuneChange;
+            isInvincible.onChange += OnIsInvincibleChange;
             currentMp.onChange += OnCurrentMpChange;
             currentStamina.onChange += OnCurrentStaminaChange;
             currentFood.onChange += OnCurrentFoodChange;
@@ -302,6 +381,7 @@ namespace MultiplayerARPG
             aimPosition.onChange += OnAimPositionChange;
             targetEntityId.onChange += OnTargetEntityIdChange;
             mount.onChange += OnMountChange;
+            summoner.onChange += OnSummonerChange;
             // On list changed events
             selectableWeaponSets.onOperation += OnSelectableWeaponSetsOperation;
             attributes.onOperation += OnAttributesOperation;
@@ -319,9 +399,10 @@ namespace MultiplayerARPG
             // On data changed events
             id.onChange -= OnIdChange;
             syncTitle.onChange -= OnCharacterNameChange;
+            metaDataId.onChange -= OnMetaDataIdChange;
             level.onChange -= OnLevelChange;
             exp.onChange -= OnExpChange;
-            isImmune.onChange -= OnIsImmuneChange;
+            isInvincible.onChange -= OnIsInvincibleChange;
             currentMp.onChange -= OnCurrentMpChange;
             currentStamina.onChange -= OnCurrentStaminaChange;
             currentFood.onChange -= OnCurrentFoodChange;
@@ -333,6 +414,7 @@ namespace MultiplayerARPG
             aimPosition.onChange -= OnAimPositionChange;
             targetEntityId.onChange -= OnTargetEntityIdChange;
             mount.onChange -= OnMountChange;
+            summoner.onChange -= OnSummonerChange;
             // On list changed events
             selectableWeaponSets.onOperation -= OnSelectableWeaponSetsOperation;
             attributes.onOperation -= OnAttributesOperation;
@@ -352,56 +434,64 @@ namespace MultiplayerARPG
         private void OnIdChange(bool isInitial, string oldId, string id)
         {
             if (onIdChange != null)
-                onIdChange.Invoke(id);
+                onIdChange.Invoke(this, oldId, id);
         }
 
         private void OnCharacterNameChange(bool isInitial, string oldCharacterName, string characterName)
         {
             if (onCharacterNameChange != null)
-                onCharacterNameChange.Invoke(characterName);
+                onCharacterNameChange.Invoke(this, oldCharacterName, characterName);
+        }
+
+        private void OnMetaDataIdChange(bool isInitial, int oldMetaDataId, int metaDataId)
+        {
+            _localMetaDataId = metaDataId;
+            IsRecaching = true;
+            if (onMetaDataIdChange != null)
+                onMetaDataIdChange.Invoke(this, oldMetaDataId, metaDataId);
         }
 
         private void OnLevelChange(bool isInitial, int oldLevel, int level)
         {
             IsRecaching = true;
             if (onLevelChange != null)
-                onLevelChange.Invoke(level);
+                onLevelChange.Invoke(this, oldLevel, level);
         }
 
         private void OnExpChange(bool isInitial, int oldExp, int exp)
         {
             if (onExpChange != null)
-                onExpChange.Invoke(exp);
+                onExpChange.Invoke(this, oldExp, exp);
         }
 
-        private void OnIsImmuneChange(bool isInitial, bool oldIsImmune, bool isImmune)
+        private void OnIsInvincibleChange(bool isInitial, bool oldIsInvincible, bool isInvincible)
         {
-            if (onIsImmuneChange != null)
-                onIsImmuneChange.Invoke(isImmune);
+            if (onIsInvincibleChange != null)
+                onIsInvincibleChange.Invoke(this, oldIsInvincible, isInvincible);
         }
 
         private void OnCurrentMpChange(bool isInitial, int oldCurrentMp, int currentMp)
         {
             if (onCurrentMpChange != null)
-                onCurrentMpChange.Invoke(currentMp);
+                onCurrentMpChange.Invoke(this, oldCurrentMp, currentMp);
         }
 
         private void OnCurrentStaminaChange(bool isInitial, int oldCurrentStamina, int currentStamina)
         {
             if (onCurrentStaminaChange != null)
-                onCurrentStaminaChange.Invoke(currentStamina);
+                onCurrentStaminaChange.Invoke(this, oldCurrentStamina, currentStamina);
         }
 
         private void OnCurrentFoodChange(bool isInitial, int oldCurrentFood, int currentFood)
         {
             if (onCurrentFoodChange != null)
-                onCurrentFoodChange.Invoke(currentFood);
+                onCurrentFoodChange.Invoke(this, oldCurrentFood, currentFood);
         }
 
         private void OnCurrentWaterChange(bool isInitial, int oldCurrentWater, int currentWater)
         {
             if (onCurrentWaterChange != null)
-                onCurrentWaterChange.Invoke(currentWater);
+                onCurrentWaterChange.Invoke(this, oldCurrentWater, currentWater);
         }
 
         protected virtual void OnEquipWeaponSetChange(bool isInitial, byte oldEquipWeaponSet, byte equipWeaponSet)
@@ -410,7 +500,7 @@ namespace MultiplayerARPG
             MarkToUpdateAmmoSim();
             IsRecaching = true;
             if (onEquipWeaponSetChange != null)
-                onEquipWeaponSetChange.Invoke(equipWeaponSet);
+                onEquipWeaponSetChange.Invoke(this, oldEquipWeaponSet, equipWeaponSet);
         }
 
         protected virtual void OnIsWeaponsSheathedChange(bool isInitial, bool oldIsWeaponsSheathed, bool isWeaponsSheathed)
@@ -418,38 +508,49 @@ namespace MultiplayerARPG
             MarkToUpdateAppearances();
             IsRecaching = true;
             if (onIsWeaponsSheathedChange != null)
-                onIsWeaponsSheathedChange.Invoke(isWeaponsSheathed);
+                onIsWeaponsSheathedChange.Invoke(this, oldIsWeaponsSheathed, isWeaponsSheathed);
         }
 
         private void OnPitchChange(bool isInitial, ushort oldPitch, ushort pitch)
         {
             if (onPitchChange != null)
-                onPitchChange.Invoke(pitch);
+                onPitchChange.Invoke(this, oldPitch, pitch);
         }
 
         private void OnLookPositionChange(bool isInitial, Vector3 oldLookPosition, Vector3 lookPosition)
         {
             if (onLookPositionChange != null)
-                onLookPositionChange.Invoke(lookPosition);
+                onLookPositionChange.Invoke(this, oldLookPosition, lookPosition);
         }
 
         private void OnAimPositionChange(bool isInitial, AimPosition oldAimPosition, AimPosition aimPosition)
         {
             if (onAimPositionChange != null)
-                onAimPositionChange.Invoke(aimPosition);
+                onAimPositionChange.Invoke(this, oldAimPosition, aimPosition);
         }
 
         private void OnTargetEntityIdChange(bool isInitial, uint oldTargetEntityId, uint targetEntityId)
         {
             if (onTargetEntityIdChange != null)
-                onTargetEntityIdChange.Invoke(targetEntityId);
+                onTargetEntityIdChange.Invoke(this, oldTargetEntityId, targetEntityId);
         }
 
         private void OnMountChange(bool isInitial, CharacterMount oldMount, CharacterMount mount)
         {
-            IsRecaching = true;
+            // Only recache when mount type/source/level changes (not timer/HP updates)
+            if (oldMount.type != mount.type || oldMount.sourceId != mount.sourceId || oldMount.level != mount.level)
+                IsRecaching = true;
             if (onMountChange != null)
-                onMountChange.Invoke(mount);
+                onMountChange.Invoke(this, oldMount, mount);
+        }
+
+        private void OnSummonerChange(bool isInitial, CharacterSummoner oldSummoner, CharacterSummoner mount)
+        {
+            // Only recache when mount type/source/level changes (not timer/HP updates)
+            if (oldSummoner.type != mount.type || oldSummoner.objectId != mount.objectId)
+                IsRecaching = true;
+            if (onSummonerChange != null)
+                onSummonerChange.Invoke(this, oldSummoner, mount);
         }
         #endregion
 

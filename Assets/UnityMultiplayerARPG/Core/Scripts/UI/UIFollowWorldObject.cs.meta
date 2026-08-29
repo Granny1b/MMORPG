@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 738df808d2b654a458fd4e62d27796d0
 timeCreated: 1511989336
-licenseType: Store
+licenseType: Pro
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/UIFollowWorldObject.cs
-  uploadId: 857340

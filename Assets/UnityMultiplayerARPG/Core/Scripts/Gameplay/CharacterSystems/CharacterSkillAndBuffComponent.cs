@@ -14,19 +14,18 @@ namespace MultiplayerARPG
         private float _deltaTime;
         private Dictionary<string, CharacterRecoveryData> _recoveryBuffs;
 
-        private void Awake()
-        {
-            UpdateManager.Register(this);
-        }
-
         private void Start()
         {
             _recoveryBuffs = new Dictionary<string, CharacterRecoveryData>();
         }
 
-        protected override void OnDestroy()
+        private void OnEnable()
         {
-            base.OnDestroy();
+            UpdateManager.Register(this);
+        }
+
+        private void OnDisable()
+        {
             UpdateManager.Unregister(this);
         }
 

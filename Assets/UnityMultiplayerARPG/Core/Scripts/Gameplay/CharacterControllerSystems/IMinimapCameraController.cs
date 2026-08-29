@@ -8,9 +8,7 @@ namespace MultiplayerARPG
         bool enabled { get; }
         Camera Camera { get; }
         Transform CameraTransform { get; }
-        Transform FollowingEntityTransform { get; set; }
-        Transform FollowingGameplayCameraTransform { get; set; }
-        void Init();
+        void Init(BasePlayerCharacterController controller);
         void Setup(BasePlayerCharacterEntity characterEntity);
         void Desetup(BasePlayerCharacterEntity characterEntity);
     }

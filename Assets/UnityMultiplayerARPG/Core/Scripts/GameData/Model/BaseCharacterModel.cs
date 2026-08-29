@@ -16,13 +16,16 @@ namespace MultiplayerARPG
 {
     public abstract partial class BaseCharacterModel : GameEntityModel, IMoveableModel, IHittableModel, IJumppableModel, IPickupableModel, IDeadableModel
     {
+        public static readonly object DefaultIKDisabler = new object();
+
         public int Id { get; protected set; }
+        public CharacterModelManager Manager { get; set; }
         public BaseCharacterModel MainModel { get; set; }
         public bool IsMainModel { get { return MainModel == this; } }
         public bool IsActiveModel { get; protected set; } = false;
         public bool IsTpsModel { get; internal set; }
         public bool IsFpsModel { get; internal set; }
-        public bool DisableIKs { get; set; }
+        public readonly StateFlag IKsDisableState = new StateFlag();
         public bool UpdateEquipmentImmediately { get; set; }
 
         [Header("Model Switching Settings")]
@@ -85,7 +88,6 @@ namespace MultiplayerARPG
         public bool activateInstantiatedObject = false;
 #endif
 
-        public CharacterModelManager Manager { get; protected set; }
 
         protected Dictionary<string, EquipmentModel> _equippedModels = new Dictionary<string, EquipmentModel>();
         /// <summary>
@@ -174,7 +176,7 @@ namespace MultiplayerARPG
 
         // Public events
         public event UpdateEquipmentModelsDelegate onBeforeUpdateEquipmentModels;
-        public event OnInstantiatedEquipmentDelegate onInstantiatedEquipment;
+        public event OnCharacterEquipmentModelInstantiateDelegate onInstantiatedEquipment;
 
         // Optimize garbage collector
         protected readonly List<string> _tempAddingKeys = new List<string>();
@@ -455,7 +457,7 @@ namespace MultiplayerARPG
 
             // Setup appearances before equip items
             if (onBeforeUpdateEquipmentModels != null)
-                onBeforeUpdateEquipmentModels.Invoke(cancellationTokenSource, this, showingModels, storingModels, unequippingSockets);
+                onBeforeUpdateEquipmentModels.Invoke(this, cancellationTokenSource, showingModels, storingModels, unequippingSockets);
 
             // Setup equipping models from equip items
             if (equipItems != null && equipItems.Count > 0)
@@ -465,7 +467,7 @@ namespace MultiplayerARPG
                     IArmorItem armorItem = equipItem.GetArmorItem();
                     if (armorItem == null)
                         continue;
-                    await SetupEquippingModels(cancellationTokenSource, showingModels, storingModels, unequippingSockets, armorItem.EquipmentModels, armorItem.GetEquipPosition(), equipItem);
+                    SetupEquippingModels(cancellationTokenSource, showingModels, storingModels, unequippingSockets, armorItem.EquipmentModels, armorItem.GetEquipPosition(), equipItem);
                     if (cancellationTokenSource.IsCancellationRequested)
                     {
                         cancellationTokenSource.Dispose();
@@ -498,7 +500,7 @@ namespace MultiplayerARPG
             IEquipmentItem leftHandItem = equipWeapons.GetLeftHandEquipmentItem();
             if (rightHandItem != null && rightHandItem.IsWeapon())
             {
-                await SetupEquippingModels(cancellationTokenSource, showingModels, storingModels, unequippingSockets, (rightHandItem as IWeaponItem).EquipmentModels, GameDataConst.EQUIP_POSITION_RIGHT_HAND, equipWeapons.rightHand);
+                SetupEquippingModels(cancellationTokenSource, showingModels, storingModels, unequippingSockets, (rightHandItem as IWeaponItem).EquipmentModels, GameDataConst.EQUIP_POSITION_RIGHT_HAND, equipWeapons.rightHand);
                 if (cancellationTokenSource.IsCancellationRequested)
                 {
                     cancellationTokenSource.Dispose();
@@ -508,7 +510,7 @@ namespace MultiplayerARPG
 
             if (leftHandItem != null && leftHandItem.IsWeapon())
             {
-                await SetupEquippingModels(cancellationTokenSource, showingModels, storingModels, unequippingSockets, (leftHandItem as IWeaponItem).OffHandEquipmentModels, GameDataConst.EQUIP_POSITION_LEFT_HAND, equipWeapons.leftHand);
+                SetupEquippingModels(cancellationTokenSource, showingModels, storingModels, unequippingSockets, (leftHandItem as IWeaponItem).OffHandEquipmentModels, GameDataConst.EQUIP_POSITION_LEFT_HAND, equipWeapons.leftHand);
                 if (cancellationTokenSource.IsCancellationRequested)
                 {
                     cancellationTokenSource.Dispose();
@@ -518,7 +520,7 @@ namespace MultiplayerARPG
 
             if (leftHandItem != null && leftHandItem.IsShield())
             {
-                await SetupEquippingModels(cancellationTokenSource, showingModels, storingModels, unequippingSockets, (leftHandItem as IShieldItem).EquipmentModels, GameDataConst.EQUIP_POSITION_LEFT_HAND, equipWeapons.leftHand);
+                SetupEquippingModels(cancellationTokenSource, showingModels, storingModels, unequippingSockets, (leftHandItem as IShieldItem).EquipmentModels, GameDataConst.EQUIP_POSITION_LEFT_HAND, equipWeapons.leftHand);
                 if (cancellationTokenSource.IsCancellationRequested)
                 {
                     cancellationTokenSource.Dispose();
@@ -538,7 +540,7 @@ namespace MultiplayerARPG
 
                         if (rightHandItem != null && rightHandItem.IsWeapon())
                         {
-                            await SetupEquippingModels(cancellationTokenSource, showingModels, storingModels, unequippingSockets, (rightHandItem as IWeaponItem).SheathModels, ZString.Concat(GameDataConst.EQUIP_POSITION_RIGHT_HAND, "_", i), equipWeapons.rightHand, true, i);
+                            SetupEquippingModels(cancellationTokenSource, showingModels, storingModels, unequippingSockets, (rightHandItem as IWeaponItem).SheathModels, ZString.Concat(GameDataConst.EQUIP_POSITION_RIGHT_HAND, "_", i), equipWeapons.rightHand, true, i);
                             if (cancellationTokenSource.IsCancellationRequested)
                             {
                                 cancellationTokenSource.Dispose();
@@ -548,7 +550,7 @@ namespace MultiplayerARPG
 
                         if (leftHandItem != null && leftHandItem.IsWeapon())
                         {
-                            await SetupEquippingModels(cancellationTokenSource, showingModels, storingModels, unequippingSockets, (leftHandItem as IWeaponItem).OffHandSheathModels, ZString.Concat(GameDataConst.EQUIP_POSITION_LEFT_HAND, "_", i), equipWeapons.leftHand, true, i);
+                            SetupEquippingModels(cancellationTokenSource, showingModels, storingModels, unequippingSockets, (leftHandItem as IWeaponItem).OffHandSheathModels, ZString.Concat(GameDataConst.EQUIP_POSITION_LEFT_HAND, "_", i), equipWeapons.leftHand, true, i);
                             if (cancellationTokenSource.IsCancellationRequested)
                             {
                                 cancellationTokenSource.Dispose();
@@ -558,7 +560,7 @@ namespace MultiplayerARPG
 
                         if (leftHandItem != null && leftHandItem.IsShield())
                         {
-                            await SetupEquippingModels(cancellationTokenSource, showingModels, storingModels, unequippingSockets, (leftHandItem as IShieldItem).SheathModels, ZString.Concat(GameDataConst.EQUIP_POSITION_LEFT_HAND, "_", i), equipWeapons.leftHand, true, i);
+                            SetupEquippingModels(cancellationTokenSource, showingModels, storingModels, unequippingSockets, (leftHandItem as IShieldItem).SheathModels, ZString.Concat(GameDataConst.EQUIP_POSITION_LEFT_HAND, "_", i), equipWeapons.leftHand, true, i);
                             if (cancellationTokenSource.IsCancellationRequested)
                             {
                                 cancellationTokenSource.Dispose();
@@ -710,7 +712,7 @@ namespace MultiplayerARPG
             }
         }
 
-        public async UniTask SetupEquippingModels(CancellationTokenSource cancellationTokenSource, Dictionary<string, EquipmentModel> showingModels, Dictionary<string, EquipmentModel> storingModels, HashSet<string> unequippingSockets, EquipmentModel[] equipmentModels, string equipPosition, CharacterItem item, bool isSheathModels = false, byte equipWeaponSet = 0, EquipmentModelDelegate onInstantiated = null)
+        public void SetupEquippingModels(CancellationTokenSource cancellationTokenSource, Dictionary<string, EquipmentModel> showingModels, Dictionary<string, EquipmentModel> storingModels, HashSet<string> unequippingSockets, EquipmentModel[] equipmentModels, string equipPosition, CharacterItem item, bool isSheathModels = false, byte equipWeaponSet = 0, OnEquipmentModelInstantiateDelegate onInstantiated = null)
         {
             if (equipmentModels == null || equipmentModels.Length == 0 || string.IsNullOrWhiteSpace(equipPosition))
                 return;
@@ -719,15 +721,19 @@ namespace MultiplayerARPG
             for (int i = 0; i < equipmentModels.Length; ++i)
             {
                 tempModel = equipmentModels[i];
-                GameObject meshPrefab = await tempModel.GetMeshPrefab();
+
                 if (cancellationTokenSource != null && cancellationTokenSource.IsCancellationRequested)
                 {
                     // Cancelled
                     return;
                 }
-                if (string.IsNullOrEmpty(tempModel.equipSocket) || (!tempModel.useInstantiatedObject && meshPrefab == null))
+                if (string.IsNullOrEmpty(tempModel.equipSocket) ||
+                    (!tempModel.useInstantiatedObject && tempModel.MeshPrefab == null
+#if !DISABLE_ADDRESSABLES
+    && !tempModel.AddressableMeshPrefab.IsDataValid()
+#endif
+                    ))
                 {
-                    // Required data are empty, skip it
                     continue;
                 }
 
@@ -972,6 +978,8 @@ namespace MultiplayerARPG
 
         public Transform GetRightHandMissileDamageTransform()
         {
+            if (Manager != null && Manager.IsFps && BasePlayerCharacterController.Singleton is ShooterPlayerCharacterController shooterController)
+                return shooterController.CacheGameplayCameraController.CameraTransform;
             if (CacheRightHandEquipmentEntity != null)
                 return CacheRightHandEquipmentEntity.missileDamageTransform;
             return null;
@@ -979,6 +987,8 @@ namespace MultiplayerARPG
 
         public Transform GetLeftHandMissileDamageTransform()
         {
+            if (Manager != null && Manager.IsFps && BasePlayerCharacterController.Singleton is ShooterPlayerCharacterController shooterController)
+                return shooterController.CacheGameplayCameraController.CameraTransform;
             if (CacheLeftHandEquipmentEntity != null)
                 return CacheLeftHandEquipmentEntity.missileDamageTransform;
             return null;
@@ -1018,7 +1028,7 @@ namespace MultiplayerARPG
 
         public virtual void OnInstantiatedEquipment(EquipmentModel model, GameObject instantiatedObject, BaseEquipmentEntity instantiatedEntity, EquipmentInstantiatedObjectGroup instantiatedObjectGroup, EquipmentContainer equipmentContainer)
         {
-            onInstantiatedEquipment?.Invoke(model, instantiatedObject, instantiatedEntity, instantiatedObjectGroup, equipmentContainer);
+            onInstantiatedEquipment?.Invoke(this, model, instantiatedObject, instantiatedEntity, instantiatedObjectGroup, equipmentContainer);
             if (model.useInstantiatedObject || model.doNotSetupBones)
                 return;
             BaseEquipmentModelBonesSetupManager equipmentModelBonesSetupManager = GameInstance.Singleton.EquipmentModelBonesSetupManager;

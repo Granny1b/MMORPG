@@ -97,10 +97,6 @@ namespace MultiplayerARPG
             else
                 simulateSeed = simulateState.SimulateSeed;
 
-            // Prepare time
-            float time = Time.unscaledTime;
-            float deltaTime = Time.unscaledDeltaTime;
-
             // Prepare required data and get weapon data
             Entity.GetAttackingData(
                 ref isLeftHand,
@@ -111,7 +107,7 @@ namespace MultiplayerARPG
 
             // Get playing animation index
             int randomMax = Entity.GetRandomMaxAnimationData(animActionType, animActionDataId);
-            if (time - LastAttackEndTime > animationResetDelay || _lastAttackDataId != animActionDataId)
+            if (Time.unscaledTime - LastAttackEndTime > animationResetDelay || _lastAttackDataId != animActionDataId)
                 _lastAttackAnimationIndex = 0;
             int animationIndex = _lastAttackAnimationIndex++;
             if (!doNotRandomAnimation)
@@ -145,7 +141,8 @@ namespace MultiplayerARPG
             MovementRestrictionWhileAttacking = Entity.GetMovementRestrictionWhileAttacking(weaponItem);
 
             // Get play speed multiplier will use it to play animation faster or slower based on attack speed stats
-            animSpeedRate *= Entity.GetAnimSpeedRate(AnimActionType);
+            animSpeedRate *= entityCaches.AtkSpeed;
+            animSpeedRate = Mathf.Clamp(animSpeedRate, 0.1f, animSpeedRate);
 
             if (IsServer)
             {
@@ -197,7 +194,8 @@ namespace MultiplayerARPG
                 float remainsDuration = totalDuration;
                 if (weaponItem.RateOfFire > 0)
                 {
-                    totalDuration = RATE_OF_FIRE_BASE / (weaponItem.RateOfFire + entityCaches.RateOfFire);
+                    float baseRateOfFire = weaponItem.RateOfFire;
+                    totalDuration = RATE_OF_FIRE_BASE / (baseRateOfFire + entityCaches.RateOfFireModifier + (entityCaches.RateOfFireRate * baseRateOfFire));
                     remainsDuration = BaseCharacterModel.GetAnimationDuration(totalDuration, animSpeedRate, 0f);
                     triggerDurations = new float[] { 0f };
                     LastAttackEndTime = Time.unscaledTime + remainsDuration;
@@ -240,7 +238,7 @@ namespace MultiplayerARPG
                     // Wait until triggger before play special effects
                     float tempTriggerDuration = triggerDurations[triggerIndex] / animSpeedRate;
                     remainsDuration -= tempTriggerDuration;
-                    await UniTask.Delay((int)(tempTriggerDuration * 1000f), true, PlayerLoopTiming.FixedUpdate, attackCancellationTokenSource.Token);
+                    await GenericUtils.FrameBasedDelay(tempTriggerDuration, attackCancellationTokenSource.Token);
 
                     // Special effects will plays on clients only
                     if (IsClient)
@@ -334,7 +332,7 @@ namespace MultiplayerARPG
                 if (remainsDuration > 0f)
                 {
                     // Wait until animation ends to stop actions
-                    await UniTask.Delay((int)(remainsDuration * 1000f), true, PlayerLoopTiming.FixedUpdate, attackCancellationTokenSource.Token);
+                    await GenericUtils.FrameBasedDelay(remainsDuration, attackCancellationTokenSource.Token);
                 }
             }
             catch (System.OperationCanceledException)
@@ -407,30 +405,35 @@ namespace MultiplayerARPG
             }
 
             bool isLeftHand = weaponHandlingState.Has(WeaponHandlingState.IsLeftHand);
-            byte fireSpreadAmount = 0;
-            Vector3 fireSpreadRange = Vector3.zero;
+            byte basefireSpreadAmount = 0;
+            Vector3 baseFireSpreadRange = Vector3.zero;
             IWeaponItem weaponItem = weapon.GetWeaponItem();
             if (weaponItem != null)
             {
                 // For monsters, their weapon can be null so have to avoid null exception
-                fireSpreadAmount = weaponItem.FireSpreadAmount;
-                fireSpreadRange = weaponItem.FireSpreadRange;
+                basefireSpreadAmount = weaponItem.FireSpreadAmount;
+                baseFireSpreadRange = weaponItem.FireSpreadRange;
                 if (weaponHandlingState.Has(WeaponHandlingState.IsAiming) && weaponItem.FireSpreadRangeWhileAiming.x > float.MinValue)
                 {
-                    fireSpreadRange = weaponItem.FireSpreadRangeWhileAiming;
+                    baseFireSpreadRange = weaponItem.FireSpreadRangeWhileAiming;
                 }
                 else if (weaponHandlingState.Has(WeaponHandlingState.IsShoulderView) && weaponItem.FireSpreadRangeWhileShoulderViewMode.x > float.MinValue)
                 {
-                    fireSpreadRange = weaponItem.FireSpreadRangeWhileShoulderViewMode;
+                    baseFireSpreadRange = weaponItem.FireSpreadRangeWhileShoulderViewMode;
                 }
                 else if (weaponHandlingState.Has(WeaponHandlingState.IsFpsView) && weaponItem.FireSpreadRangeWhileFpsViewMode.x > float.MinValue)
                 {
-                    fireSpreadRange = weaponItem.FireSpreadRangeWhileFpsViewMode;
+                    baseFireSpreadRange = weaponItem.FireSpreadRangeWhileFpsViewMode;
                 }
             }
 
-            fireSpreadAmount += (byte)Mathf.CeilToInt(entityCaches.FireSpread);
-            fireSpreadRange *= 1 + entityCaches.FireSpreadRangeRate;
+            byte fireSpreadAmount = basefireSpreadAmount;
+            fireSpreadAmount += (byte)Mathf.CeilToInt(entityCaches.FireSpreadModifier);
+            fireSpreadAmount += (byte)Mathf.CeilToInt(entityCaches.FireSpreadRate * basefireSpreadAmount);
+
+            Vector3 fireSpreadRange = baseFireSpreadRange;
+            fireSpreadRange += Vector3.one * entityCaches.FireSpreadRangeModifier;
+            fireSpreadRange += baseFireSpreadRange * entityCaches.FireSpreadRangeRate;
 
             // Make sure it won't increase damage to the wrong collction
             for (byte spreadIndex = 0; spreadIndex < fireSpreadAmount + 1; ++spreadIndex)
@@ -465,8 +468,8 @@ namespace MultiplayerARPG
             long timestamp = Manager.ServerTimestamp;
             if (!IsServer && IsOwnerClient)
             {
-                ProceedAttack(timestamp, weaponHandlingState);
                 RPC(CmdAttack, BaseGameEntity.ACTION_DATA_CHANNEL, DeliveryMethod.ReliableOrdered, timestamp, weaponHandlingState);
+                ProceedAttack(timestamp, weaponHandlingState);
             }
             else if (IsOwnerClientOrOwnedByServer)
             {
@@ -482,8 +485,8 @@ namespace MultiplayerARPG
 
         protected void PreceedCmdAttack(long peerTimestamp, WeaponHandlingState weaponHandlingState)
         {
-            ProceedAttack(peerTimestamp, weaponHandlingState);
             RPC(RpcAttack, BaseGameEntity.ACTION_DATA_CHANNEL, DeliveryMethod.ReliableOrdered, peerTimestamp, weaponHandlingState);
+            ProceedAttack(peerTimestamp, weaponHandlingState);
         }
 
         [AllRpc]

@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: f13e8093d1ab8fd42ac6c519c60b1f30
 timeCreated: 1508947932
-licenseType: Store
+licenseType: Pro
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/LiteNetLibManager/Scripts/GameApi/LiteNetLibSyncField.cs
-  uploadId: 857340

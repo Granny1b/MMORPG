@@ -154,6 +154,8 @@ namespace MultiplayerARPG
         protected float _forceUngroundCountdown = 0f;
         protected int _allowToJumpOrDashCheckFrame = 0;
         protected bool _isAllowToJumpOrDash = true;
+        protected bool _isMovementBoundsDirty = true;
+        protected Bounds _movementBounds;
 
         private void Awake()
         {
@@ -235,14 +237,22 @@ namespace MultiplayerARPG
         private void OnEnable()
         {
             Functions.ComponentEnabled();
-            CacheCharacterController.enabled = true;
             UpdateManager.Register(this);
         }
 
         private void OnDisable()
         {
-            CacheCharacterController.enabled = false;
             UpdateManager.Unregister(this);
+        }
+
+        public override void OnIdentityInitialize()
+        {
+            Functions.OnIdentityInitialize();
+        }
+
+        public override void OnNetworkDestroy(byte reasons)
+        {
+            Functions.OnNetworkDestroy(reasons);
         }
 
         public override void OnSetOwnerClient(bool isOwnerClient)
@@ -427,9 +437,32 @@ namespace MultiplayerARPG
             EntityTransform.position = position;
         }
 
+        public void MarkMovementBoundsDirty()
+        {
+            _isMovementBoundsDirty = true;
+        }
+
         public Bounds GetMovementBounds()
         {
-            return CacheCharacterController.bounds;
+            if (_isMovementBoundsDirty)
+            {
+                Vector3 scale = EntityTransform.lossyScale;
+
+                float horizontalScale = Mathf.Max(
+                    Mathf.Abs(scale.x),
+                    Mathf.Abs(scale.z));
+
+                float diameter =
+                    CacheCharacterController.radius * horizontalScale * 2f;
+
+                float height =
+                    CacheCharacterController.height * Mathf.Abs(scale.y);
+
+                _movementBounds = new Bounds(
+                    EntityTransform.TransformPoint(CacheCharacterController.center),
+                    new Vector3(diameter, height, diameter));
+            }
+            return _movementBounds;
         }
 
         public void Move(MovementState movementState, ExtraMovementState extraMovementState, Vector3 motion, float deltaTime)
@@ -534,10 +567,12 @@ namespace MultiplayerARPG
 
         public Vector3 GetSnapToGroundMotion(Vector3 motion, Vector3 platformMotion, Vector3 forceMotion)
         {
-            if (!Functions.IsUnderWater && Functions.IsGrounded && Physics.Raycast(EntityTransform.position, Vector3.down, out RaycastHit hit, groundSnapDistance) && hit.transform.gameObject.layer != PhysicLayers.Water)
-            {
-                return Vector3.down * (hit.distance - CacheCharacterController.skinWidth);
-            }
+            if (Functions.IsUnderWater || _forceUngroundCountdown > 0f || motion.y > 0f)
+                return Vector3.zero;
+
+            if (Physics.Raycast(EntityTransform.position + (Vector3.down * CacheCharacterController.skinWidth), Vector3.down, out RaycastHit hit, groundSnapDistance, GameInstance.Singleton.GetGameEntityGroundDetectionLayerMask(), QueryTriggerInteraction.Ignore) && hit.normal != Vector3.up)
+                return Vector3.down * hit.distance;
+
             return Vector3.zero;
         }
 

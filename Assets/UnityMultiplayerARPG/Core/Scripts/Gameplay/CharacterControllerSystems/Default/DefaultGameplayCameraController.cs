@@ -17,23 +17,15 @@ namespace MultiplayerARPG
         protected bool aimAssistHarvestable = false;
         public BasePlayerCharacterEntity PlayerCharacterEntity { get; protected set; }
         public FollowCameraControls CameraControls { get; protected set; }
-        public Camera Camera { get { return CameraControls.CacheCamera; } }
-        public Transform CameraTransform { get { return CameraControls.CacheCameraTransform; } }
-        public Transform FollowingEntityTransform { get; set; }
-        public Vector3 TargetOffset { get { return CameraControls.targetOffset; } set { CameraControls.targetOffset = value; } }
-        public float CameraFov { get { return Camera.fieldOfView; } set { Camera.fieldOfView = value; } }
-        public float CameraNearClipPlane { get { return Camera.nearClipPlane; } set { Camera.nearClipPlane = value; } }
-        public float CameraFarClipPlane { get { return Camera.farClipPlane; } set { Camera.farClipPlane = value; } }
-        public float MinZoomDistance { get { return CameraControls.minZoomDistance; } set { CameraControls.minZoomDistance = value; } }
-        public float MaxZoomDistance { get { return CameraControls.maxZoomDistance; } set { CameraControls.maxZoomDistance = value; } }
-        public float CurrentZoomDistance { get { return CameraControls.zoomDistance; } set { CameraControls.zoomDistance = value; } }
-        public bool EnableWallHitSpring { get { return CameraControls.enableWallHitSpring; } set { CameraControls.enableWallHitSpring = value; } }
-        public bool UpdateRotation { get { return CameraControls.updateRotation; } set { CameraControls.updateRotation = value; } }
-        public bool UpdateRotationX { get { return CameraControls.updateRotationX; } set { CameraControls.updateRotationX = value; } }
-        public bool UpdateRotationY { get { return CameraControls.updateRotationY; } set { CameraControls.updateRotationY = value; } }
-        public bool UpdateZoom { get { return CameraControls.updateZoom; } set { CameraControls.updateZoom = value; } }
+        public Camera Camera { get => CameraControls.CacheCamera; }
+        public Transform CameraTransform { get => CameraControls.CacheCameraTransform; }
+        public bool UpdateRotation { get => CameraControls.updateRotation; set => CameraControls.updateRotation = value; }
+        public bool UpdateRotationX { get => CameraControls.updateRotationX; set => CameraControls.updateRotationX = value; }
+        public bool UpdateRotationY { get => CameraControls.updateRotationY; set => CameraControls.updateRotationY = value; }
+        public bool UpdateZoom { get => CameraControls.updateZoom; set => CameraControls.updateZoom = value; }
+        public BasePlayerCharacterController PlayerCharacterController { get; protected set; }
 
-        public virtual void Init()
+        public virtual void Init(BasePlayerCharacterController controller)
         {
             if (gameplayCameraPrefab == null)
             {
@@ -41,6 +33,14 @@ namespace MultiplayerARPG
                 enabled = false;
             }
             CameraControls = Instantiate(gameplayCameraPrefab);
+            PlayerCharacterController = controller;
+            PlayerCharacterController.AssignedCameraTargetOffset = CameraControls.targetOffset;
+            PlayerCharacterController.AssignedCameraZoomDistance = CameraControls.zoomDistance;
+            PlayerCharacterController.AssignedCameraFov = Camera.fieldOfView;
+            PlayerCharacterController.AssignedCameraNearClipPlane = Camera.nearClipPlane;
+            PlayerCharacterController.AssignedCameraFarClipPlane = Camera.farClipPlane;
+            PlayerCharacterController.AssignedCameraRotationSpeedScale = CameraControls.rotationSpeedScale;
+            PlayerCharacterController.AssignedEnableWallHitSpring = CameraControls.enableWallHitSpring;
         }
 
         public virtual void SetData(FollowCameraControls gameplayCameraPrefab,
@@ -64,7 +64,13 @@ namespace MultiplayerARPG
 
         protected virtual void Update()
         {
-            CameraControls.target = FollowingEntityTransform;
+            CameraControls.target = PlayerCharacterController.CameraTargetTransform;
+            CameraControls.targetOffset = PlayerCharacterController.CameraTargetOffset;
+            Camera.fieldOfView = PlayerCharacterController.CameraFov;
+            Camera.nearClipPlane = PlayerCharacterController.CameraNearClipPlane;
+            Camera.farClipPlane = PlayerCharacterController.CameraFarClipPlane;
+            CameraControls.rotationSpeedScale = PlayerCharacterController.CameraRotationSpeedScale;
+            CameraControls.enableWallHitSpring = PlayerCharacterController.EnableWallHitSpring;
         }
 
         public virtual void Setup(BasePlayerCharacterEntity characterEntity)
@@ -75,7 +81,6 @@ namespace MultiplayerARPG
         public virtual void Desetup(BasePlayerCharacterEntity characterEntity)
         {
             PlayerCharacterEntity = null;
-            FollowingEntityTransform = null;
         }
     }
 }

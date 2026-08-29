@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 424cc208fb61d4e448b08fcfa0eee25e
 timeCreated: 1532361007
-licenseType: Store
+licenseType: Free
 MonoImporter:
   serializedVersion: 2
   defaultReferences: []
@@ -10,10 +10,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/LiteNetLibManager/Plugins/UniTask/Runtime/Internal/ArrayPoolUtil.cs
-  uploadId: 857340

@@ -14,7 +14,13 @@ namespace MultiplayerARPG
             BoxCast,
         }
         public HitDetectionMode hitDetectionMode = HitDetectionMode.Raycast;
+        /// <summary>
+        /// If it is nothing, it will use values from `GameInstance.Singleton.GetDamageEntityHitLayerMask()`
+        /// </summary>
+        public LayerMask hitLayers = 0;
         public float sphereCastRadius = 1f;
+        public float insideColliderOverlappingRadius = 0.05f;
+        public float minDistanceForRaycasting = 0.25f;
         public Vector3 boxCastSize = Vector3.one;
         public float destroyDelay;
         public UnityEvent onExploded = new UnityEvent();
@@ -31,7 +37,10 @@ namespace MultiplayerARPG
         protected Vector3? _previousPosition;
         protected RaycastHit2D[] _hits2D = new RaycastHit2D[8];
         protected RaycastHit[] _hits3D = new RaycastHit[8];
+        protected Collider2D[] _overlaps2D = new Collider2D[128];
+        protected Collider[] _overlaps3D = new Collider[128];
         protected readonly HashSet<uint> _alreadyHitObjects = new HashSet<uint>();
+        protected bool _overlappedInsideColliderOnce = false;
 
         protected bool _isExploded;
         protected bool IsExploded
@@ -124,6 +133,7 @@ namespace MultiplayerARPG
         {
             base.OnEnable();
             _previousPosition = CacheTransform.position;
+            _overlappedInsideColliderOnce = false;
             UpdateManager.Register(this);
         }
 
@@ -161,10 +171,26 @@ namespace MultiplayerARPG
             if (!_previousPosition.HasValue)
                 return;
 
+            Vector3 currentPosition = CacheTransform.position;
+            int layerMask = hitLayers == 0 ? GameInstance.Singleton.GetDamageEntityHitLayerMask() : hitLayers;
+            Vector3 offsetVector = currentPosition - _previousPosition.Value;
+            float dist = offsetVector.magnitude;
+            if (CurrentGameInstance.DimensionType != DimensionType.Dimension2D &&
+                OverlappedInsideCollider(currentPosition, layerMask))
+            {
+                // Overlapped inside collider, so it is hit already, don't continues and raycast
+                _previousPosition = currentPosition;
+                return;
+            }
+
+            if (dist < minDistanceForRaycasting)
+            {
+                // Not far enough for raycasting yet
+                return;
+            }
+
             int hitCount = 0;
-            int layerMask = GameInstance.Singleton.GetDamageEntityHitLayerMask();
-            Vector3 dir = (CacheTransform.position - _previousPosition.Value).normalized;
-            float dist = Vector3.Distance(CacheTransform.position, _previousPosition.Value);
+            Vector3 dir = offsetVector.normalized;
             // Raycast to previous position to check is it hitting something or not
             // If hit, explode
             bool queriesHitBackfaces = Physics.queriesHitBackfaces;
@@ -173,21 +199,51 @@ namespace MultiplayerARPG
             {
                 case HitDetectionMode.Raycast:
                     if (CurrentGameInstance.DimensionType == DimensionType.Dimension2D)
-                        hitCount = Physics2D.RaycastNonAlloc(_previousPosition.Value, dir, _hits2D, dist, layerMask);
+                    {
+                        ContactFilter2D contactFilter2D = new ContactFilter2D()
+                        {
+                            useLayerMask = true,
+                            layerMask = layerMask,
+                            useTriggers = true,
+                        };
+                        hitCount = Physics2D.Raycast(_previousPosition.Value, dir, contactFilter2D, _hits2D, dist);
+                    }
                     else
-                        hitCount = Physics.RaycastNonAlloc(_previousPosition.Value, dir, _hits3D, dist, layerMask);
+                    {
+                        hitCount = Physics.RaycastNonAlloc(_previousPosition.Value, dir, _hits3D, dist, layerMask, QueryTriggerInteraction.Collide);
+                    }
                     break;
                 case HitDetectionMode.SphereCast:
                     if (CurrentGameInstance.DimensionType == DimensionType.Dimension2D)
-                        hitCount = Physics2D.CircleCastNonAlloc(_previousPosition.Value, sphereCastRadius, dir, _hits2D, dist, layerMask);
+                    {
+                        ContactFilter2D contactFilter2D = new ContactFilter2D()
+                        {
+                            useLayerMask = true,
+                            layerMask = layerMask,
+                            useTriggers = true,
+                        };
+                        hitCount = Physics2D.CircleCast(_previousPosition.Value, sphereCastRadius, dir, contactFilter2D, _hits2D, dist);
+                    }
                     else
-                        hitCount = Physics.SphereCastNonAlloc(_previousPosition.Value, sphereCastRadius, dir, _hits3D, dist, layerMask);
+                    {
+                        hitCount = Physics.SphereCastNonAlloc(_previousPosition.Value, sphereCastRadius, dir, _hits3D, dist, layerMask, QueryTriggerInteraction.Collide);
+                    }
                     break;
                 case HitDetectionMode.BoxCast:
                     if (CurrentGameInstance.DimensionType == DimensionType.Dimension2D)
-                        hitCount = Physics2D.BoxCastNonAlloc(_previousPosition.Value, new Vector2(boxCastSize.x, boxCastSize.y), Vector2.SignedAngle(Vector2.zero, dir), dir, _hits2D, dist, layerMask);
+                    {
+                        ContactFilter2D contactFilter2D = new ContactFilter2D()
+                        {
+                            useLayerMask = true,
+                            layerMask = layerMask,
+                            useTriggers = true,
+                        };
+                        hitCount = Physics2D.BoxCast(_previousPosition.Value, new Vector2(boxCastSize.x, boxCastSize.y), Vector2.SignedAngle(Vector2.zero, dir), dir, contactFilter2D, _hits2D, dist);
+                    }
                     else
-                        hitCount = Physics.BoxCastNonAlloc(_previousPosition.Value, boxCastSize * 0.5f, dir, _hits3D, CacheTransform.rotation, dist, layerMask);
+                    {
+                        hitCount = Physics.BoxCastNonAlloc(_previousPosition.Value, boxCastSize * 0.5f, dir, _hits3D, CacheTransform.rotation, dist, layerMask, QueryTriggerInteraction.Collide);
+                    }
                     break;
             }
             Physics.queriesHitBackfaces = queriesHitBackfaces;
@@ -200,7 +256,25 @@ namespace MultiplayerARPG
                 if (Destroying)
                     break;
             }
-            _previousPosition = CacheTransform.position;
+            _previousPosition = currentPosition;
+        }
+
+        public bool OverlappedInsideCollider(Vector3 currentPosition, int layerMask)
+        {
+            if (_overlappedInsideColliderOnce)
+                return false;
+            _overlappedInsideColliderOnce = true;
+            int count = Physics.OverlapSphereNonAlloc(currentPosition, insideColliderOverlappingRadius, _overlaps3D, layerMask, QueryTriggerInteraction.Collide);
+            for (int i = 0; i < count; ++i)
+            {
+                Collider overlapped = _overlaps3D[i];
+                GameObject other = overlapped.gameObject;
+                if (!other.GetComponent<IUnHittable>().IsNull())
+                    continue;
+                if (FindTargetHitBox(other, true, out DamageableHitBox target) && TriggerEnter(other, target))
+                    return true;
+            }
+            return false;
         }
 
         public virtual void ManagedUpdate()
@@ -226,7 +300,7 @@ namespace MultiplayerARPG
                 CacheTransform.position += CacheTransform.forward * _missileSpeed * Time.deltaTime;
         }
 
-        protected override void OnPushBack()
+        public override void OnPushBack()
         {
             _previousPosition = null;
             if (onDestroy != null)
@@ -242,16 +316,24 @@ namespace MultiplayerARPG
             if (!other.GetComponent<IUnHittable>().IsNull())
                 return;
 
-            if (FindTargetHitBox(other, true, out DamageableHitBox target))
+            if (!FindTargetHitBox(other, true, out DamageableHitBox target))
+                target = null;
+
+            TriggerEnter(other, target);
+        }
+
+        protected virtual bool TriggerEnter(GameObject other, DamageableHitBox hitBox)
+        {
+            if (hitBox != null)
             {
                 // Hit a locking target
                 if (explodeDistance <= 0f)
                 {
-                    if (!_alreadyHitObjects.Contains(target.GetObjectId()))
+                    if (!_alreadyHitObjects.Contains(hitBox.GetObjectId()))
                     {
                         // If this is not going to explode, just apply damage to target
-                        _alreadyHitObjects.Add(target.GetObjectId());
-                        ApplyDamageTo(target);
+                        _alreadyHitObjects.Add(hitBox.GetObjectId());
+                        ApplyDamageTo(hitBox);
                     }
                 }
                 else
@@ -261,7 +343,7 @@ namespace MultiplayerARPG
                 }
                 PushBack(destroyDelay);
                 Destroying = true;
-                return;
+                return true;
             }
 
             // Must hit walls or grounds to explode
@@ -276,8 +358,10 @@ namespace MultiplayerARPG
                 }
                 PushBack(destroyDelay);
                 Destroying = true;
-                return;
+                return true;
             }
+
+            return false;
         }
 
         protected virtual bool FindTargetHitBox(GameObject other, bool checkLockingTarget, out DamageableHitBox target)
@@ -285,11 +369,28 @@ namespace MultiplayerARPG
             target = null;
 
             if (!other.GetComponent<IUnHittable>().IsNull())
+            {
                 return false;
+            }
 
-            target = other.GetComponent<DamageableHitBox>();
+            if (!other.TryGetComponent(out target))
+            {
+                return false;
+            }
 
-            if (target == null || target.IsDead() || target.GetObjectId() == _instigator.ObjectId || !target.CanReceiveDamageFrom(_instigator))
+            if (target.IsDead())
+            {
+                target = null;
+                return false;
+            }
+
+            if (target.GetObjectId() == _instigator.ObjectId)
+            {
+                target = null;
+                return false;
+            }
+
+            if (!target.CanReceiveDamageFrom(_instigator))
             {
                 target = null;
                 return false;
@@ -336,18 +437,19 @@ namespace MultiplayerARPG
         {
             if (CurrentGameInstance.DimensionType == DimensionType.Dimension2D)
             {
-                Collider2D[] colliders2D = Physics2D.OverlapCircleAll(CacheTransform.position, explodeDistance);
-                foreach (Collider2D collider in colliders2D)
+                ContactFilter2D contactFilter2D = new ContactFilter2D();
+                int hitCount = Physics2D.OverlapCircle(CacheTransform.position, explodeDistance, contactFilter2D, _overlaps2D);
+                for (int i = 0; i < hitCount; ++i)
                 {
-                    FindAndApplyDamage(collider.gameObject, false, _alreadyHitObjects);
+                    FindAndApplyDamage(_overlaps2D[i].gameObject, false, _alreadyHitObjects);
                 }
             }
             else
             {
-                Collider[] colliders = Physics.OverlapSphere(CacheTransform.position, explodeDistance);
-                foreach (Collider collider in colliders)
+                int hitCount = Physics.OverlapSphereNonAlloc(CacheTransform.position, explodeDistance, _overlaps3D);
+                for (int i = 0; i < hitCount; ++i)
                 {
-                    FindAndApplyDamage(collider.gameObject, false, _alreadyHitObjects);
+                    FindAndApplyDamage(_overlaps3D[i].gameObject, false, _alreadyHitObjects);
                 }
             }
         }

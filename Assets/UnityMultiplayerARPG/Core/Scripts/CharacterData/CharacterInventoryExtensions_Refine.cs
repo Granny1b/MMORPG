@@ -138,7 +138,7 @@ namespace MultiplayerARPG
             bool isDestroy = false;
             int decreaseLevels = 0;
             bool isReturning = false;
-            ItemRefineFailReturning returning = default;
+            ItemRefineFailReturning returning = null;
             if (Random.value <= refineLevel.SuccessRate + increaseSuccessRate)
             {
                 // If success, increase item level

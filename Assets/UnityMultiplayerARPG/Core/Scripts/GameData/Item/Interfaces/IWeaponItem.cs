@@ -26,7 +26,7 @@ namespace MultiplayerARPG
         /// </summary>
         EquipmentModel[] OffHandSheathModels { get; }
         /// <summary>
-        /// Damange amount which will be used when attacking characters, buildings and so on
+        /// Damage amount which will be used when attacking characters, buildings and so on
         /// </summary>
         DamageIncremental DamageAmount { get; }
         /// <summary>
@@ -136,17 +136,49 @@ namespace MultiplayerARPG
         /// </summary>
         float Recoil { get; }
         /// <summary>
+        /// Recoiling, while in TPS view mode (Yaw axis, if this value <= 0, it will use `Recoil` as `RecoilYaw`)
+        /// </summary>
+        float RecoilYaw { get; }
+        /// <summary>
+        /// Recoiling, while in TPS view mode (Roll axis, if this value <= 0, it will use `Recoil` as `RecoilRoll`)
+        /// </summary>
+        float RecoilRoll { get; }
+        /// <summary>
         /// Recoiling, while in FPS view mode
         /// </summary>
         float RecoilWhileFpsViewMode { get; }
+        /// <summary>
+        /// Recoiling, while in FPS view mode (Yaw axis, if this value <= 0, it will use `RecoilWhileFpsViewMode` as `RecoilYawWhileFpsViewMode`)
+        /// </summary>
+        float RecoilYawWhileFpsViewMode { get; }
+        /// <summary>
+        /// Recoiling, while in FPS view mode (Roll axis, if this value <= 0, it will use `RecoilWhileFpsViewMode` as `RecoilRollWhileFpsViewMode`)
+        /// </summary>
+        float RecoilRollWhileFpsViewMode { get; }
         /// <summary>
         /// Recoiling, while in shoulder view mode
         /// </summary>
         float RecoilWhileShoulderViewMode { get; }
         /// <summary>
+        /// Recoiling, while in shoulder view mode (Yaw axis, if this value <= 0, it will use `RecoilWhileShoulderViewMode` as `RecoilYawWhileShoulderViewMode`)
+        /// </summary>
+        float RecoilYawWhileShoulderViewMode { get; }
+        /// <summary>
+        /// Recoiling, while in shoulder view mode (Roll axis, if this value <= 0, it will use `RecoilWhileShoulderViewMode` as `RecoilRollWhileShoulderViewMode`)
+        /// </summary>
+        float RecoilRollWhileShoulderViewMode { get; }
+        /// <summary>
         /// Recoiling, while aiming
         /// </summary>
         float RecoilWhileAiming { get; }
+        /// <summary>
+        /// Recoiling, while aiming (Yaw axis, if this value <= 0, it will use `RecoilWhileAiming` as `RecoilYawWhileAiming`)
+        /// </summary>
+        float RecoilYawWhileAiming { get; }
+        /// <summary>
+        /// Recoiling, while aiming (Roll axis, if this value <= 0, it will use `RecoilWhileAiming` as `RecoilRollWhileAiming`)
+        /// </summary>
+        float RecoilRollWhileAiming { get; }
         /// <summary>
         /// Minimum charge duration to attack
         /// </summary>

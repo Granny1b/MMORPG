@@ -4,25 +4,31 @@ namespace MultiplayerARPG.GuildWar
 {
     public class GuildWarMonsterCharacterEntity : MonsterCharacterEntity
     {
-        public override EntityInfo GetInfo()
+        public override string GetId()
         {
-            string id;
             using (Utf16ValueStringBuilder strBuilder = ZString.CreateStringBuilder(true))
             {
+                strBuilder.Append(EntityTypes.GuildWarMonster);
+                strBuilder.Append('_');
                 strBuilder.Append(ObjectId);
-                id = strBuilder.ToString();
+                return strBuilder.ToString();
             }
-            return new EntityInfo(
+        }
+
+        public override EntityInfo GetInfo()
+        {
+            return _info.SetEntityInfo(
                 EntityTypes.GuildWarMonster,
                 ObjectId,
-                id,
+                Id,
                 SubChannelId,
                 DataId,
                 FactionId,
                 0 /* Party ID */,
                 0 /* Guild ID */,
                 IsInSafeArea,
-                Summoner);
+                this,
+                SummonerEntity);
         }
 
         public int GetGuildId(EntityInfo entityInfo)
@@ -35,9 +41,9 @@ namespace MultiplayerARPG.GuildWar
                 }
                 else if (entityInfo.Type == EntityTypes.Monster &&
                     entityInfo.HasSummoner &&
-                    entityInfo.SummonerType == EntityTypes.Player)
+                    entityInfo.Summoner.Type == EntityTypes.Player)
                 {
-                    return entityInfo.SummonerGuildId;
+                    return entityInfo.Summoner.GuildId;
                 }
             }
             return 0;

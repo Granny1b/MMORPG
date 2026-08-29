@@ -736,7 +736,7 @@ namespace MultiplayerARPG
             result.transform.SetParent(parent);
             result.transform.localPosition = Vector3.zero;
             result.transform.localEulerAngles = Vector3.zero;
-            result.CharacterModel.DisableIKs = true;
+            result.CharacterModel.IKsDisableState.Add(BaseCharacterModel.DefaultIKDisabler);
             return result.CharacterModel;
         }
 
@@ -746,6 +746,8 @@ namespace MultiplayerARPG
             PlayerCharacterBodyPartComponent[] comps = characterModel.GetComponentsInChildren<PlayerCharacterBodyPartComponent>();
             for (int i = 0; i < comps.Length; ++i)
             {
+                if (!comps[i].enabled)
+                    continue;
                 comps[i].SetupCharacterModelEvents(characterModel);
                 comps[i].ApplyModelAndColorBySavedData(data.PublicInts);
             }

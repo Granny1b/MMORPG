@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 3e56406532f7b1d4389d49f5e7599162
 timeCreated: 1517563725
-licenseType: Store
+licenseType: Pro
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/UISelectionManager.cs
-  uploadId: 857340

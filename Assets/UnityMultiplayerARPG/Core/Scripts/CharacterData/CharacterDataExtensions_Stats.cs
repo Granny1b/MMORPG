@@ -633,46 +633,15 @@ namespace MultiplayerARPG
             using (CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Get(out Dictionary<DamageElement, MinMaxFloat> increaseDamages))
             {
                 attributes.GetIncreaseDamages(increaseDamages);
-                GameDataHelpers.CombineDamages(resultDamages, increaseDamages);
-            }
-            GameDataHelpers.CombineDamages(resultDamages, buffDamages);
-            using (CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Get(out Dictionary<DamageElement, MinMaxFloat> multiplyDamages))
-            {
-                GameDataHelpers.CombineDamages(multiplyDamages, resultDamages);
-                GameDataHelpers.MultiplyDamages(multiplyDamages, buffDamagesRate);
-                GameDataHelpers.CombineDamages(resultDamages, multiplyDamages);
-            }
-            /*
-            // Sum with ammo
-            if (weaponItem != null)
-            {
-                // Ammo stored in magazine?
-                if (weaponItem.AmmoCapacity > 0)
+                GameDataHelpers.CombineDamages(increaseDamages, buffDamages);
+                using (CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Get(out Dictionary<DamageElement, MinMaxFloat> multiplyDamages))
                 {
-                    // Sum with ammo only when it have ammo in magazine
-                    if (characterItem.ammo > 0 && GameInstance.Items.TryGetValue(characterItem.ammoDataId, out BaseItem tempItemData) && tempItemData is IAmmoItem tempAmmoItem)
-                    {
-                        using (CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Get(out Dictionary<DamageElement, MinMaxFloat> tempDamages))
-                        {
-                            tempAmmoItem.GetIncreaseDamages(tempDamages);
-                            GameDataHelpers.CombineDamages(resultDamages, tempDamages);
-                        }
-                    }
-                }
-                else
-                {
-                    // No special condition, just sum with ammo
-                    if (GameInstance.Items.TryGetValue(characterItem.ammoDataId, out BaseItem tempItemData) && tempItemData is IAmmoItem tempAmmoItem)
-                    {
-                        using (CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Get(out Dictionary<DamageElement, MinMaxFloat> tempDamages))
-                        {
-                            tempAmmoItem.GetIncreaseDamages(tempDamages);
-                            GameDataHelpers.CombineDamages(resultDamages, tempDamages);
-                        }
-                    }
+                    GameDataHelpers.CombineDamages(multiplyDamages, resultDamages);
+                    GameDataHelpers.CombineDamages(resultDamages, increaseDamages);
+                    GameDataHelpers.MultiplyDamages(multiplyDamages, buffDamagesRate);
+                    GameDataHelpers.CombineDamages(resultDamages, multiplyDamages);
                 }
             }
-            */
         }
 
         public static void GetAllStats(this ICharacterData data, bool sumWithEquipments, bool sumWithBuffs, bool sumWithSkills,
@@ -716,34 +685,19 @@ namespace MultiplayerARPG
             bool willReleaseBuffDamages = true,
             bool willReleaseBuffDamagesRate = true)
         {
-            bool isCalculateRightHandWeaponDamages = onGetRightHandDamages != null || onGetRightHandWeaponDamage != null;
-            bool isCalculateLeftHandWeaponDamages = onGetLeftHandDamages != null || onGetLeftHandWeaponDamage != null;
-            bool isCalculateDamages = isCalculateRightHandWeaponDamages || isCalculateLeftHandWeaponDamages || onGetIncreasingDamages != null || onGetIncreasingDamagesRate != null;
-            bool isCalculateStats = onGetStats != null || onGetIncreasingStats != null || onGetIncreasingStatsRate != null;
-            bool isCalculateResistances = onGetResistances != null || onGetIncreasingResistances != null;
-            bool isCalculateArmors = onGetArmors != null || onGetIncreasingArmors != null || onGetIncreasingArmorsRate != null;
-            bool isCalculateAttributes = onGetAttributes != null || onGetIncreasingAttributes != null || onGetIncreasingAttributesRate != null || isCalculateDamages || isCalculateStats || isCalculateResistances || isCalculateArmors;
-            bool isCalculateStatusEffectResistances = onGetStatusEffectResistances != null || onGetIncreasingStatusEffectResistances != null;
-            bool isCalculateSkills = onGetSkills != null || onGetIncreasingSkills != null || isCalculateDamages || isCalculateStats || isCalculateResistances || isCalculateArmors || isCalculateAttributes || isCalculateStatusEffectResistances;
-
             // Prepare result stats, by using character's base stats
             // For weapons it will be based on equipped weapons
-            CharacterStats resultStats = !isCalculateStats ? new CharacterStats() : data.GetCharacterStats();
+            CharacterStats resultStats = data.GetCharacterStats();
             Dictionary<Attribute, float> resultAttributes = CollectionPool<Dictionary<Attribute, float>, KeyValuePair<Attribute, float>>.Get();
-            if (isCalculateAttributes)
-                data.GetCharacterAttributes(resultAttributes);
+            data.GetCharacterAttributes(resultAttributes);
             Dictionary<DamageElement, float> resultResistances = CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Get();
-            if (isCalculateResistances)
-                data.GetCharacterResistances(resultResistances);
+            data.GetCharacterResistances(resultResistances);
             Dictionary<DamageElement, float> resultArmors = CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Get();
-            if (isCalculateArmors)
-                data.GetCharacterArmors(resultArmors);
+            data.GetCharacterArmors(resultArmors);
             Dictionary<StatusEffect, float> resultStatusEffectResistances = CollectionPool<Dictionary<StatusEffect, float>, KeyValuePair<StatusEffect, float>>.Get();
-            if (isCalculateStatusEffectResistances)
-                data.GetCharacterStatusEffectResistances(resultStatusEffectResistances);
+            data.GetCharacterStatusEffectResistances(resultStatusEffectResistances);
             Dictionary<BaseSkill, int> resultSkills = CollectionPool<Dictionary<BaseSkill, int>, KeyValuePair<BaseSkill, int>>.Get();
-            if (isCalculateSkills)
-                data.GetCharacterSkills(resultSkills);
+            data.GetCharacterSkills(resultSkills);
             Dictionary<DamageElement, MinMaxFloat> resultRightHandDamages = CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Get();
             Dictionary<DamageElement, MinMaxFloat> resultLeftHandDamages = CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Get();
             Dictionary<EquipmentSet, int> resultEquipmentSets = CollectionPool<Dictionary<EquipmentSet, int>, KeyValuePair<EquipmentSet, int>>.Get();
@@ -776,24 +730,28 @@ namespace MultiplayerARPG
                 // Equip items
                 for (i = 0; i < data.EquipItems.Count; ++i)
                 {
-                    if (data.EquipItems[i].IsEmptySlot())
+                    CharacterItem item = data.EquipItems[i];
+                    if (item.IsEmptySlot())
                         continue;
-                    tempEquipmentItem = data.EquipItems[i].GetEquipmentItem();
+                    tempEquipmentItem = item.GetEquipmentItem();
                     if (tempEquipmentItem == null)
                         continue;
-                    GameDataHelpers.CombineArmors(resultArmors, data.EquipItems[i].GetArmorAmount());
-                    GetBuffs(data.EquipItems[i],
-                        !isCalculateStats ? null : (stats) => buffStats += stats,
-                        !isCalculateStats ? null : (statsRate) => buffStatsRate += statsRate,
-                        !isCalculateAttributes ? null : (attributes) => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
-                        !isCalculateAttributes ? null : (attributesRate) => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
-                        !isCalculateResistances ? null : (resistances) => GameDataHelpers.CombineResistances(buffResistances, resistances),
-                        !isCalculateArmors ? null : (armors) => GameDataHelpers.CombineArmors(buffArmors, armors),
-                        !isCalculateArmors ? null : (armorsRate) => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
-                        !isCalculateDamages ? null : (damages) => GameDataHelpers.CombineDamages(buffDamages, damages),
-                        !isCalculateDamages ? null : (damagesRate) => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
-                        !isCalculateSkills ? null : (skills) => GameDataHelpers.CombineSkills(buffSkills, skills),
-                        !isCalculateStatusEffectResistances ? null : (statusEffectResistances) => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
+                    if (!item.IsBroken())
+                    {
+                        GameDataHelpers.CombineArmors(resultArmors, item.GetArmorAmount());
+                        GetBuffs(item,
+                            stats => buffStats += stats,
+                            statsRate => buffStatsRate += statsRate,
+                            attributes => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
+                            attributesRate => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
+                            resistances => GameDataHelpers.CombineResistances(buffResistances, resistances),
+                            armors => GameDataHelpers.CombineArmors(buffArmors, armors),
+                            armorsRate => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
+                            damages => GameDataHelpers.CombineDamages(buffDamages, damages),
+                            damagesRate => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
+                            skills => GameDataHelpers.CombineSkills(buffSkills, skills),
+                            statusEffectResistances => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
+                    }
                     if (tempEquipmentItem.EquipmentSet != null)
                     {
                         if (resultEquipmentSets.ContainsKey(tempEquipmentItem.EquipmentSet))
@@ -812,19 +770,22 @@ namespace MultiplayerARPG
                         rightHandWeapon = data.EquipWeapons.rightHand.GetWeaponItem();
                         rightHandWeaponDamageAmount = data.EquipWeapons.rightHand.GetDamageAmount();
                     }
-                    GameDataHelpers.CombineArmors(resultArmors, data.EquipWeapons.rightHand.GetArmorAmount());
-                    GetBuffs(data.EquipWeapons.rightHand,
-                        !isCalculateStats ? null : (stats) => buffStats += stats,
-                        !isCalculateStats ? null : (statsRate) => buffStatsRate += statsRate,
-                        !isCalculateAttributes ? null : (attributes) => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
-                        !isCalculateAttributes ? null : (attributesRate) => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
-                        !isCalculateResistances ? null : (resistances) => GameDataHelpers.CombineResistances(buffResistances, resistances),
-                        !isCalculateArmors ? null : (armors) => GameDataHelpers.CombineArmors(buffArmors, armors),
-                        !isCalculateArmors ? null : (armorsRate) => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
-                        !isCalculateDamages ? null : (damages) => GameDataHelpers.CombineDamages(buffDamages, damages),
-                        !isCalculateDamages ? null : (damagesRate) => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
-                        !isCalculateSkills ? null : (skills) => GameDataHelpers.CombineSkills(buffSkills, skills),
-                        !isCalculateStatusEffectResistances ? null : (statusEffectResistances) => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
+                    if (!data.EquipWeapons.rightHand.IsBroken())
+                    {
+                        GameDataHelpers.CombineArmors(resultArmors, data.EquipWeapons.rightHand.GetArmorAmount());
+                        GetBuffs(data.EquipWeapons.rightHand,
+                            stats => buffStats += stats,
+                            statsRate => buffStatsRate += statsRate,
+                            attributes => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
+                            attributesRate => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
+                            resistances => GameDataHelpers.CombineResistances(buffResistances, resistances),
+                            armors => GameDataHelpers.CombineArmors(buffArmors, armors),
+                            armorsRate => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
+                            damages => GameDataHelpers.CombineDamages(buffDamages, damages),
+                            damagesRate => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
+                            skills => GameDataHelpers.CombineSkills(buffSkills, skills),
+                            statusEffectResistances => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
+                    }
                     if (tempEquipmentItem.EquipmentSet != null)
                     {
                         if (resultEquipmentSets.ContainsKey(tempEquipmentItem.EquipmentSet))
@@ -843,19 +804,22 @@ namespace MultiplayerARPG
                         leftHandWeapon = data.EquipWeapons.leftHand.GetWeaponItem();
                         leftHandWeaponDamageAmount = data.EquipWeapons.leftHand.GetDamageAmount();
                     }
-                    GameDataHelpers.CombineArmors(resultArmors, data.EquipWeapons.leftHand.GetArmorAmount());
-                    GetBuffs(data.EquipWeapons.leftHand,
-                        !isCalculateStats ? null : (stats) => buffStats += stats,
-                        !isCalculateStats ? null : (statsRate) => buffStatsRate += statsRate,
-                        !isCalculateAttributes ? null : (attributes) => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
-                        !isCalculateAttributes ? null : (attributesRate) => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
-                        !isCalculateResistances ? null : (resistances) => GameDataHelpers.CombineResistances(buffResistances, resistances),
-                        !isCalculateArmors ? null : (armors) => GameDataHelpers.CombineArmors(buffArmors, armors),
-                        !isCalculateArmors ? null : (armorsRate) => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
-                        !isCalculateDamages ? null : (damages) => GameDataHelpers.CombineDamages(buffDamages, damages),
-                        !isCalculateDamages ? null : (damagesRate) => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
-                        !isCalculateSkills ? null : (skills) => GameDataHelpers.CombineSkills(buffSkills, skills),
-                        !isCalculateStatusEffectResistances ? null : (statusEffectResistances) => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
+                    if (!data.EquipWeapons.rightHand.IsBroken())
+                    {
+                        GameDataHelpers.CombineArmors(resultArmors, data.EquipWeapons.leftHand.GetArmorAmount());
+                        GetBuffs(data.EquipWeapons.leftHand,
+                            stats => buffStats += stats,
+                            statsRate => buffStatsRate += statsRate,
+                            attributes => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
+                            attributesRate => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
+                            resistances => GameDataHelpers.CombineResistances(buffResistances, resistances),
+                            armors => GameDataHelpers.CombineArmors(buffArmors, armors),
+                            armorsRate => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
+                            damages => GameDataHelpers.CombineDamages(buffDamages, damages),
+                            damagesRate => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
+                            skills => GameDataHelpers.CombineSkills(buffSkills, skills),
+                            statusEffectResistances => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
+                    }
                     if (tempEquipmentItem.EquipmentSet != null)
                     {
                         if (resultEquipmentSets.ContainsKey(tempEquipmentItem.EquipmentSet))
@@ -868,49 +832,49 @@ namespace MultiplayerARPG
                 foreach (var cacheEquipmentSet in resultEquipmentSets)
                 {
                     GetBuffs(cacheEquipmentSet.Key, cacheEquipmentSet.Value,
-                        !isCalculateStats ? null : (stats) => buffStats += stats,
-                        !isCalculateStats ? null : (statsRate) => buffStatsRate += statsRate,
-                        !isCalculateAttributes ? null : (attributes) => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
-                        !isCalculateAttributes ? null : (attributesRate) => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
-                        !isCalculateResistances ? null : (resistances) => GameDataHelpers.CombineResistances(buffResistances, resistances),
-                        !isCalculateArmors ? null : (armors) => GameDataHelpers.CombineArmors(buffArmors, armors),
-                        !isCalculateArmors ? null : (armorsRate) => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
-                        !isCalculateDamages ? null : (damages) => GameDataHelpers.CombineDamages(buffDamages, damages),
-                        !isCalculateDamages ? null : (damagesRate) => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
-                        !isCalculateSkills ? null : (skills) => GameDataHelpers.CombineSkills(buffSkills, skills),
-                        !isCalculateStatusEffectResistances ? null : (statusEffectResistances) => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
+                        stats => buffStats += stats,
+                        statsRate => buffStatsRate += statsRate,
+                        attributes => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
+                        attributesRate => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
+                        resistances => GameDataHelpers.CombineResistances(buffResistances, resistances),
+                        armors => GameDataHelpers.CombineArmors(buffArmors, armors),
+                        armorsRate => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
+                        damages => GameDataHelpers.CombineDamages(buffDamages, damages),
+                        damagesRate => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
+                        skills => GameDataHelpers.CombineSkills(buffSkills, skills),
+                        statusEffectResistances => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
                 }
                 // From title
                 if (GameInstance.PlayerTitles.TryGetValue(data.TitleDataId, out PlayerTitle title))
                 {
                     GetBuffs(title,
-                        !isCalculateStats ? null : (stats) => buffStats += stats,
-                        !isCalculateStats ? null : (statsRate) => buffStatsRate += statsRate,
-                        !isCalculateAttributes ? null : (attributes) => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
-                        !isCalculateAttributes ? null : (attributesRate) => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
-                        !isCalculateResistances ? null : (resistances) => GameDataHelpers.CombineResistances(buffResistances, resistances),
-                        !isCalculateArmors ? null : (armors) => GameDataHelpers.CombineArmors(buffArmors, armors),
-                        !isCalculateArmors ? null : (armorsRate) => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
-                        !isCalculateDamages ? null : (damages) => GameDataHelpers.CombineDamages(buffDamages, damages),
-                        !isCalculateDamages ? null : (damagesRate) => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
-                        !isCalculateSkills ? null : (skills) => GameDataHelpers.CombineSkills(buffSkills, skills),
-                        !isCalculateStatusEffectResistances ? null : (statusEffectResistances) => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
+                        stats => buffStats += stats,
+                        statsRate => buffStatsRate += statsRate,
+                        attributes => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
+                        attributesRate => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
+                        resistances => GameDataHelpers.CombineResistances(buffResistances, resistances),
+                        armors => GameDataHelpers.CombineArmors(buffArmors, armors),
+                        armorsRate => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
+                        damages => GameDataHelpers.CombineDamages(buffDamages, damages),
+                        damagesRate => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
+                        skills => GameDataHelpers.CombineSkills(buffSkills, skills),
+                        statusEffectResistances => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
                 }
                 // From faction
                 if (GameInstance.Factions.TryGetValue(data.FactionId, out Faction faction))
                 {
                     GetBuffs(faction,
-                        !isCalculateStats ? null : (stats) => buffStats += stats,
-                        !isCalculateStats ? null : (statsRate) => buffStatsRate += statsRate,
-                        !isCalculateAttributes ? null : (attributes) => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
-                        !isCalculateAttributes ? null : (attributesRate) => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
-                        !isCalculateResistances ? null : (resistances) => GameDataHelpers.CombineResistances(buffResistances, resistances),
-                        !isCalculateArmors ? null : (armors) => GameDataHelpers.CombineArmors(buffArmors, armors),
-                        !isCalculateArmors ? null : (armorsRate) => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
-                        !isCalculateDamages ? null : (damages) => GameDataHelpers.CombineDamages(buffDamages, damages),
-                        !isCalculateDamages ? null : (damagesRate) => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
-                        !isCalculateSkills ? null : (skills) => GameDataHelpers.CombineSkills(buffSkills, skills),
-                        !isCalculateStatusEffectResistances ? null : (statusEffectResistances) => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
+                        stats => buffStats += stats,
+                        statsRate => buffStatsRate += statsRate,
+                        attributes => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
+                        attributesRate => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
+                        resistances => GameDataHelpers.CombineResistances(buffResistances, resistances),
+                        armors => GameDataHelpers.CombineArmors(buffArmors, armors),
+                        armorsRate => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
+                        damages => GameDataHelpers.CombineDamages(buffDamages, damages),
+                        damagesRate => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
+                        skills => GameDataHelpers.CombineSkills(buffSkills, skills),
+                        statusEffectResistances => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
                 }
             }
 
@@ -933,17 +897,17 @@ namespace MultiplayerARPG
                     rightHandWeapon = fakeDefaultItem.GetWeaponItem();
                     rightHandWeaponDamageAmount = fakeDefaultItem.GetDamageAmount();
                     GetBuffs(fakeDefaultItem,
-                        !isCalculateStats ? null : (stats) => buffStats += stats,
-                        !isCalculateStats ? null : (statsRate) => buffStatsRate += statsRate,
-                        !isCalculateAttributes ? null : (attributes) => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
-                        !isCalculateAttributes ? null : (attributesRate) => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
-                        !isCalculateResistances ? null : (resistances) => GameDataHelpers.CombineResistances(buffResistances, resistances),
-                        !isCalculateArmors ? null : (armors) => GameDataHelpers.CombineArmors(buffArmors, armors),
-                        !isCalculateArmors ? null : (armorsRate) => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
-                        !isCalculateDamages ? null : (damages) => GameDataHelpers.CombineDamages(buffDamages, damages),
-                        !isCalculateDamages ? null : (damagesRate) => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
-                        !isCalculateSkills ? null : (skills) => GameDataHelpers.CombineSkills(buffSkills, skills),
-                        !isCalculateStatusEffectResistances ? null : (statusEffectResistances) => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
+                        stats => buffStats += stats,
+                        statsRate => buffStatsRate += statsRate,
+                        attributes => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
+                        attributesRate => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
+                        resistances => GameDataHelpers.CombineResistances(buffResistances, resistances),
+                        armors => GameDataHelpers.CombineArmors(buffArmors, armors),
+                        armorsRate => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
+                        damages => GameDataHelpers.CombineDamages(buffDamages, damages),
+                        damagesRate => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
+                        skills => GameDataHelpers.CombineSkills(buffSkills, skills),
+                        statusEffectResistances => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
                 }
             }
 
@@ -953,49 +917,49 @@ namespace MultiplayerARPG
                 for (i = 0; i < data.Buffs.Count; ++i)
                 {
                     GetBuffs(data.Buffs[i],
-                        !isCalculateStats ? null : (stats) => buffStats += stats,
-                        !isCalculateStats ? null : (statsRate) => buffStatsRate += statsRate,
-                        !isCalculateAttributes ? null : (attributes) => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
-                        !isCalculateAttributes ? null : (attributesRate) => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
-                        !isCalculateResistances ? null : (resistances) => GameDataHelpers.CombineResistances(buffResistances, resistances),
-                        !isCalculateArmors ? null : (armors) => GameDataHelpers.CombineArmors(buffArmors, armors),
-                        !isCalculateArmors ? null : (armorsRate) => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
-                        !isCalculateDamages ? null : (damages) => GameDataHelpers.CombineDamages(buffDamages, damages),
-                        !isCalculateDamages ? null : (damagesRate) => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
-                        !isCalculateSkills ? null : (skills) => GameDataHelpers.CombineSkills(buffSkills, skills),
-                        !isCalculateStatusEffectResistances ? null : (statusEffectResistances) => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
+                        stats => buffStats += stats,
+                        statsRate => buffStatsRate += statsRate,
+                        attributes => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
+                        attributesRate => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
+                        resistances => GameDataHelpers.CombineResistances(buffResistances, resistances),
+                        armors => GameDataHelpers.CombineArmors(buffArmors, armors),
+                        armorsRate => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
+                        damages => GameDataHelpers.CombineDamages(buffDamages, damages),
+                        damagesRate => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
+                        skills => GameDataHelpers.CombineSkills(buffSkills, skills),
+                        statusEffectResistances => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
                 }
                 // From summon
                 for (i = 0; i < data.Summons.Count; ++i)
                 {
                     GetBuffs(data.Summons[i],
-                        !isCalculateStats ? null : (stats) => buffStats += stats,
-                        !isCalculateStats ? null : (statsRate) => buffStatsRate += statsRate,
-                        !isCalculateAttributes ? null : (attributes) => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
-                        !isCalculateAttributes ? null : (attributesRate) => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
-                        !isCalculateResistances ? null : (resistances) => GameDataHelpers.CombineResistances(buffResistances, resistances),
-                        !isCalculateArmors ? null : (armors) => GameDataHelpers.CombineArmors(buffArmors, armors),
-                        !isCalculateArmors ? null : (armorsRate) => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
-                        !isCalculateDamages ? null : (damages) => GameDataHelpers.CombineDamages(buffDamages, damages),
-                        !isCalculateDamages ? null : (damagesRate) => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
-                        !isCalculateSkills ? null : (skills) => GameDataHelpers.CombineSkills(buffSkills, skills),
-                        !isCalculateStatusEffectResistances ? null : (statusEffectResistances) => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
+                        stats => buffStats += stats,
+                        statsRate => buffStatsRate += statsRate,
+                        attributes => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
+                        attributesRate => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
+                        resistances => GameDataHelpers.CombineResistances(buffResistances, resistances),
+                        armors => GameDataHelpers.CombineArmors(buffArmors, armors),
+                        armorsRate => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
+                        damages => GameDataHelpers.CombineDamages(buffDamages, damages),
+                        damagesRate => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
+                        skills => GameDataHelpers.CombineSkills(buffSkills, skills),
+                        statusEffectResistances => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
                 }
                 if (data is BasePlayerCharacterEntity playerCharacterEntity)
                 {
                     // From mount
                     GetBuffs(playerCharacterEntity.PassengingVehicleEntity,
-                        !isCalculateStats ? null : (stats) => buffStats += stats,
-                        !isCalculateStats ? null : (statsRate) => buffStatsRate += statsRate,
-                        !isCalculateAttributes ? null : (attributes) => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
-                        !isCalculateAttributes ? null : (attributesRate) => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
-                        !isCalculateResistances ? null : (resistances) => GameDataHelpers.CombineResistances(buffResistances, resistances),
-                        !isCalculateArmors ? null : (armors) => GameDataHelpers.CombineArmors(buffArmors, armors),
-                        !isCalculateArmors ? null : (armorsRate) => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
-                        !isCalculateDamages ? null : (damages) => GameDataHelpers.CombineDamages(buffDamages, damages),
-                        !isCalculateDamages ? null : (damagesRate) => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
-                        !isCalculateSkills ? null : (skills) => GameDataHelpers.CombineSkills(buffSkills, skills),
-                        !isCalculateStatusEffectResistances ? null : (statusEffectResistances) => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));// Guild skills
+                        stats => buffStats += stats,
+                        statsRate => buffStatsRate += statsRate,
+                        attributes => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
+                        attributesRate => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
+                        resistances => GameDataHelpers.CombineResistances(buffResistances, resistances),
+                        armors => GameDataHelpers.CombineArmors(buffArmors, armors),
+                        armorsRate => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
+                        damages => GameDataHelpers.CombineDamages(buffDamages, damages),
+                        damagesRate => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
+                        skills => GameDataHelpers.CombineSkills(buffSkills, skills),
+                        statusEffectResistances => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));// Guild skills
                     // Guild skills
                     if (sumWithSkills)
                     {
@@ -1005,17 +969,17 @@ namespace MultiplayerARPG
                             if (!GameInstance.GuildSkills.TryGetValue(guildSkillEntry.dataId, out tempGuildSkill))
                                 continue;
                             GetBuffs(tempGuildSkill, guildSkillEntry.level,
-                                !isCalculateStats ? null : (stats) => buffStats += stats,
-                                !isCalculateStats ? null : (statsRate) => buffStatsRate += statsRate,
-                                !isCalculateAttributes ? null : (attributes) => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
-                                !isCalculateAttributes ? null : (attributesRate) => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
-                                !isCalculateResistances ? null : (resistances) => GameDataHelpers.CombineResistances(buffResistances, resistances),
-                                !isCalculateArmors ? null : (armors) => GameDataHelpers.CombineArmors(buffArmors, armors),
-                                !isCalculateArmors ? null : (armorsRate) => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
-                                !isCalculateDamages ? null : (damages) => GameDataHelpers.CombineDamages(buffDamages, damages),
-                                !isCalculateDamages ? null : (damagesRate) => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
-                                !isCalculateSkills ? null : (skills) => GameDataHelpers.CombineSkills(buffSkills, skills),
-                                !isCalculateStatusEffectResistances ? null : (statusEffectResistances) => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
+                                stats => buffStats += stats,
+                                statsRate => buffStatsRate += statsRate,
+                                attributes => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
+                                attributesRate => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
+                                resistances => GameDataHelpers.CombineResistances(buffResistances, resistances),
+                                armors => GameDataHelpers.CombineArmors(buffArmors, armors),
+                                armorsRate => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
+                                damages => GameDataHelpers.CombineDamages(buffDamages, damages),
+                                damagesRate => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
+                                skills => GameDataHelpers.CombineSkills(buffSkills, skills),
+                                statusEffectResistances => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
                         }
                     }
                 }
@@ -1029,128 +993,134 @@ namespace MultiplayerARPG
                 foreach (var skillEntry in resultSkills)
                 {
                     GetBuffs(skillEntry.Key, skillEntry.Value,
-                        !isCalculateStats ? null : (stats) => buffStats += stats,
-                        !isCalculateStats ? null : (statsRate) => buffStatsRate += statsRate,
-                        !isCalculateAttributes ? null : (attributes) => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
-                        !isCalculateAttributes ? null : (attributesRate) => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
-                        !isCalculateResistances ? null : (resistances) => GameDataHelpers.CombineResistances(buffResistances, resistances),
-                        !isCalculateArmors ? null : (armors) => GameDataHelpers.CombineArmors(buffArmors, armors),
-                        !isCalculateArmors ? null : (armorsRate) => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
-                        !isCalculateDamages ? null : (damages) => GameDataHelpers.CombineDamages(buffDamages, damages),
-                        !isCalculateDamages ? null : (damagesRate) => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
-                        !isCalculateSkills ? null : (skills) => GameDataHelpers.CombineSkills(buffSkills, skills),
-                        !isCalculateStatusEffectResistances ? null : (statusEffectResistances) => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
+                        stats => buffStats += stats,
+                        statsRate => buffStatsRate += statsRate,
+                        attributes => GameDataHelpers.CombineAttributes(buffAttributes, attributes),
+                        attributesRate => GameDataHelpers.CombineAttributes(buffAttributesRate, attributesRate),
+                        resistances => GameDataHelpers.CombineResistances(buffResistances, resistances),
+                        armors => GameDataHelpers.CombineArmors(buffArmors, armors),
+                        armorsRate => GameDataHelpers.CombineArmors(buffArmorsRate, armorsRate),
+                        damages => GameDataHelpers.CombineDamages(buffDamages, damages),
+                        damagesRate => GameDataHelpers.CombineDamages(buffDamagesRate, damagesRate),
+                        skills => GameDataHelpers.CombineSkills(buffSkills, skills),
+                        statusEffectResistances => GameDataHelpers.CombineStatusEffectResistances(buffStatusEffectResistances, statusEffectResistances));
                 }
             }
 
-            // Calculate stats by buffs
-            if (isCalculateAttributes)
+            // Attributes result
+            GameDataHelpers.CombineAttributes(resultAttributes, buffAttributes);
+            using (CollectionPool<Dictionary<Attribute, float>, KeyValuePair<Attribute, float>>.Get(out Dictionary<Attribute, float> multiplyAttributes))
             {
-                GameDataHelpers.CombineAttributes(resultAttributes, buffAttributes);
-                using (CollectionPool<Dictionary<Attribute, float>, KeyValuePair<Attribute, float>>.Get(out Dictionary<Attribute, float> multiplyAttributes))
+                GameDataHelpers.CombineAttributes(multiplyAttributes, resultAttributes);
+                GameDataHelpers.MultiplyAttributes(multiplyAttributes, buffAttributesRate);
+                GameDataHelpers.CombineAttributes(resultAttributes, multiplyAttributes);
+            }
+            using (CollectionPool<List<Attribute>, Attribute>.Get(out List<Attribute> attributeKeys))
+            {
+                resultAttributes.AddKeysToList(attributeKeys);
+                for (i = 0; i < attributeKeys.Count; ++i)
                 {
-                    GameDataHelpers.CombineAttributes(multiplyAttributes, resultAttributes);
-                    GameDataHelpers.MultiplyAttributes(multiplyAttributes, buffAttributesRate);
-                    GameDataHelpers.CombineAttributes(resultAttributes, multiplyAttributes);
-                }
-                List<Attribute> keys = new List<Attribute>(resultAttributes.Keys);
-                for (i = 0; i < keys.Count; ++i)
-                {
-                    if (keys[i].MaxAmount <= 0)
+                    Attribute key = attributeKeys[i];
+                    if (key.MaxAmount <= 0)
                         continue;
-                    if (resultAttributes[keys[i]] > keys[i].MaxAmount)
-                        resultAttributes[keys[i]] = keys[i].MaxAmount;
+                    float value = resultAttributes[key];
+                    if (value > key.MaxAmount)
+                        resultAttributes[key] = key.MaxAmount;
                 }
-                if (onGetAttributes != null)
-                    onGetAttributes.Invoke(resultAttributes);
             }
-            if (isCalculateResistances)
+            if (onGetAttributes != null)
+                onGetAttributes.Invoke(resultAttributes);
+
+            // Stats result
+            resultStats += resultAttributes.GetStats();
+            resultStats += buffStats;
+            resultStats += resultStats * buffStatsRate;
+            if (onGetStats != null)
+                onGetStats.Invoke(resultStats);
+
+            // Skills result
+            if (onGetSkills != null)
+                onGetSkills.Invoke(resultSkills);
+
+            // Resistances result
+            using (CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Get(out Dictionary<DamageElement, float> increaseResistances))
             {
-                using (CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Get(out Dictionary<DamageElement, float> increaseResistances))
-                {
-                    resultAttributes.GetIncreaseResistances(increaseResistances);
-                    GameDataHelpers.CombineResistances(resultResistances, increaseResistances);
-                }
-                GameDataHelpers.CombineResistances(resultResistances, buffResistances);
-                List<DamageElement> keys = new List<DamageElement>(resultResistances.Keys);
-                for (i = 0; i < keys.Count; ++i)
-                {
-                    if (resultResistances[keys[i]] > keys[i].MaxResistanceAmount)
-                        resultResistances[keys[i]] = keys[i].MaxResistanceAmount;
-                }
-                if (onGetResistances != null)
-                    onGetResistances.Invoke(resultResistances);
+                resultAttributes.GetIncreaseResistances(increaseResistances);
+                GameDataHelpers.CombineResistances(resultResistances, increaseResistances);
             }
-            if (isCalculateArmors)
+            GameDataHelpers.CombineResistances(resultResistances, buffResistances);
+            using (CollectionPool<List<DamageElement>, DamageElement>.Get(out List<DamageElement> resistanceKeys))
             {
-                using (CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Get(out Dictionary<DamageElement, float> increaseArmors))
+                resultResistances.AddKeysToList(resistanceKeys);
+                for (i = 0; i < resistanceKeys.Count; ++i)
                 {
-                    resultAttributes.GetIncreaseArmors(increaseArmors);
-                    GameDataHelpers.CombineArmors(resultArmors, increaseArmors);
+                    DamageElement key = resistanceKeys[i];
+                    float value = resultResistances[key];
+                    if (value > key.MaxResistanceAmount)
+                        resultResistances[key] = key.MaxResistanceAmount;
                 }
-                GameDataHelpers.CombineArmors(resultArmors, buffArmors);
-                using (CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Get(out Dictionary<DamageElement, float> multiplyArmors))
-                {
-                    GameDataHelpers.CombineArmors(multiplyArmors, resultArmors);
-                    GameDataHelpers.MultiplyArmors(multiplyArmors, buffArmorsRate);
-                    GameDataHelpers.CombineArmors(resultArmors, multiplyArmors);
-                }
-                if (onGetArmors != null)
-                    onGetArmors.Invoke(resultArmors);
             }
-            if (isCalculateRightHandWeaponDamages)
+            if (onGetResistances != null)
+                onGetResistances.Invoke(resultResistances);
+
+            // Armors result
+            using (CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Get(out Dictionary<DamageElement, float> increaseArmors))
             {
-                if (foundEquippedRightHandWeapon)
-                {
-                    GetWeaponDamages(data.EquipWeapons.rightHand, rightHandWeapon, rightHandWeaponDamageAmount, resultAttributes, buffDamages, buffDamagesRate, resultRightHandDamages);
-                    if (onGetRightHandWeaponDamage != null)
-                        onGetRightHandWeaponDamage.Invoke(rightHandWeaponDamageAmount);
-                }
-                if (onGetRightHandDamages != null)
-                    onGetRightHandDamages.Invoke(resultRightHandDamages);
+                resultAttributes.GetIncreaseArmors(increaseArmors);
+                GameDataHelpers.CombineArmors(resultArmors, increaseArmors);
             }
-            if (isCalculateLeftHandWeaponDamages)
+            GameDataHelpers.CombineArmors(resultArmors, buffArmors);
+            using (CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Get(out Dictionary<DamageElement, float> multiplyArmors))
             {
-                if (foundEquippedLeftHandWeapon)
-                {
-                    GetWeaponDamages(data.EquipWeapons.leftHand, leftHandWeapon, leftHandWeaponDamageAmount, resultAttributes, buffDamages, buffDamagesRate, resultLeftHandDamages);
-                    if (onGetLeftHandWeaponDamage != null)
-                        onGetLeftHandWeaponDamage.Invoke(leftHandWeaponDamageAmount);
-                }
-                if (onGetLeftHandDamages != null)
-                    onGetLeftHandDamages.Invoke(resultLeftHandDamages);
+                GameDataHelpers.CombineArmors(multiplyArmors, resultArmors);
+                GameDataHelpers.MultiplyArmors(multiplyArmors, buffArmorsRate);
+                GameDataHelpers.CombineArmors(resultArmors, multiplyArmors);
             }
-            if (isCalculateStats)
+            if (onGetArmors != null)
+                onGetArmors.Invoke(resultArmors);
+
+            // Right-hand damages result
+            if (foundEquippedRightHandWeapon)
             {
-                resultStats += resultAttributes.GetStats();
-                resultStats += buffStats;
-                resultStats += resultStats * buffStatsRate;
-                if (onGetStats != null)
-                    onGetStats.Invoke(resultStats);
+                GetWeaponDamages(data.EquipWeapons.rightHand, rightHandWeapon, rightHandWeaponDamageAmount, resultAttributes, buffDamages, buffDamagesRate, resultRightHandDamages);
+                if (onGetRightHandWeaponDamage != null)
+                    onGetRightHandWeaponDamage.Invoke(rightHandWeaponDamageAmount);
             }
-            if (isCalculateSkills)
+            if (onGetRightHandDamages != null)
+                onGetRightHandDamages.Invoke(resultRightHandDamages);
+
+            // Left-hand damages result
+            if (foundEquippedLeftHandWeapon)
             {
-                if (onGetSkills != null)
-                    onGetSkills.Invoke(resultSkills);
+                GetWeaponDamages(data.EquipWeapons.leftHand, leftHandWeapon, leftHandWeaponDamageAmount, resultAttributes, buffDamages, buffDamagesRate, resultLeftHandDamages);
+                if (onGetLeftHandWeaponDamage != null)
+                    onGetLeftHandWeaponDamage.Invoke(leftHandWeaponDamageAmount);
             }
-            if (isCalculateStatusEffectResistances)
+            if (onGetLeftHandDamages != null)
+                onGetLeftHandDamages.Invoke(resultLeftHandDamages);
+
+            // Status effect resistances result
+            using (CollectionPool<Dictionary<StatusEffect, float>, KeyValuePair<StatusEffect, float>>.Get(out Dictionary<StatusEffect, float> increaseStatusEffectResistances))
             {
-                using (CollectionPool<Dictionary<StatusEffect, float>, KeyValuePair<StatusEffect, float>>.Get(out Dictionary<StatusEffect, float> increaseStatusEffectResistances))
+                resultAttributes.GetIncreaseStatusEffectResistances(increaseStatusEffectResistances);
+                GameDataHelpers.CombineStatusEffectResistances(resultStatusEffectResistances, increaseStatusEffectResistances);
+            }
+            GameDataHelpers.CombineStatusEffectResistances(resultStatusEffectResistances, buffStatusEffectResistances);
+            using (CollectionPool<List<StatusEffect>, StatusEffect>.Get(out List<StatusEffect> statusEffectKeys))
+            {
+                resultStatusEffectResistances.AddKeysToList(statusEffectKeys);
+                for (i = 0; i < statusEffectKeys.Count; ++i)
                 {
-                    resultAttributes.GetIncreaseStatusEffectResistances(increaseStatusEffectResistances);
-                    GameDataHelpers.CombineStatusEffectResistances(resultStatusEffectResistances, increaseStatusEffectResistances);
-                }
-                GameDataHelpers.CombineStatusEffectResistances(resultStatusEffectResistances, buffStatusEffectResistances);
-                List<StatusEffect> keys = new List<StatusEffect>(resultStatusEffectResistances.Keys);
-                for (i = 0; i < keys.Count; ++i)
-                {
-                    if (resultStatusEffectResistances[keys[i]] > keys[i].MaxResistanceAmount)
-                        resultStatusEffectResistances[keys[i]] = keys[i].MaxResistanceAmount;
+                    StatusEffect key = statusEffectKeys[i];
+                    float value = resultStatusEffectResistances[key];
+                    if (value > key.MaxResistanceAmount)
+                        resultStatusEffectResistances[key] = key.MaxResistanceAmount;
                 }
                 if (onGetStatusEffectResistances != null)
                     onGetStatusEffectResistances.Invoke(resultStatusEffectResistances);
             }
 
+            // Equipment sets result
             if (onGetEquipmentSets != null)
                 onGetEquipmentSets.Invoke(resultEquipmentSets);
 

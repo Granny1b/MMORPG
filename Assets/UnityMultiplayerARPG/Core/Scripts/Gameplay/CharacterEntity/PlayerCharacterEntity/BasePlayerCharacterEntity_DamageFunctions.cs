@@ -91,8 +91,7 @@ namespace MultiplayerARPG
 
             base.Killed(lastAttacker);
 
-            if (IsServer)
-                GameInstance.ServerLogHandlers.LogKilled(this, lastAttacker);
+            GameInstance.ServerLogHandlers.LogKilled(this, lastAttacker);
 
 #if UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES
             if (BaseGameNetworkManager.CurrentMapInfo.AutoRespawnWhenDead)
@@ -108,8 +107,8 @@ namespace MultiplayerARPG
             // Add killer to looters
             HashSet<string> looters = new HashSet<string>();
             string killerObjectId;
-            if (lastAttacker.SummonerObjectId > 0)
-                killerObjectId = lastAttacker.SummonerId;
+            if (lastAttacker.HasSummoner)
+                killerObjectId = lastAttacker.Summoner.Id;
             else
                 killerObjectId = lastAttacker.Id;
             if (!string.IsNullOrEmpty(killerObjectId))

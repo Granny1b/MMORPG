@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using LiteNetLibManager;
+using UnityEngine.Pool;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -96,11 +98,11 @@ namespace MultiplayerARPG
                 return DamageableEntity == null ? null : DamageableEntity as IHoldActivatableEntity;
             }
         }
-        public bool IsImmune
+        public bool IsInvincible
         {
             get
             {
-                return DamageableEntity == null ? false : DamageableEntity.IsImmune;
+                return DamageableEntity == null ? false : DamageableEntity.IsInvincible;
             }
         }
         public int CurrentHp
@@ -323,31 +325,33 @@ namespace MultiplayerARPG
         {
             if (DamageableEntity.IsHitBoxesOverridedByVehicle())
                 return;
-            Dictionary<DamageElement, MinMaxFloat> multipliedDamageAmounts;
-            if (damageAmounts != null)
+            using (CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Get(out Dictionary<DamageElement, MinMaxFloat> modifiedDamageAmounts))
             {
-                multipliedDamageAmounts = new Dictionary<DamageElement, MinMaxFloat>(damageAmounts);
-                List<DamageElement> keys = new List<DamageElement>(multipliedDamageAmounts.Keys);
-                foreach (DamageElement key in keys)
+                if (damageAmounts != null)
                 {
-                    multipliedDamageAmounts[key] = multipliedDamageAmounts[key] * damageRate;
+                    modifiedDamageAmounts = new Dictionary<DamageElement, MinMaxFloat>(damageAmounts);
+                    List<DamageElement> keys = new List<DamageElement>(modifiedDamageAmounts.Keys);
+                    foreach (DamageElement key in keys)
+                    {
+                        modifiedDamageAmounts[key] = modifiedDamageAmounts[key] * damageRate;
+                    }
                 }
-            }
-            else
-            {
-                multipliedDamageAmounts = new Dictionary<DamageElement, MinMaxFloat>();
-            }
-            if (DamageableEntity is IVehicleEntity vehicleEntity)
-            {
-                for (byte i = 0; i < vehicleEntity.Seats.Count; ++i)
+                else
                 {
-                    if (!vehicleEntity.Seats[i].overridePassengerHitBoxes)
-                        continue;
-                    if (vehicleEntity.GetPassenger(i) is DamageableEntity damageablePassenger)
-                        damageablePassenger.ApplyDamage(position, fromPosition, instigator, multipliedDamageAmounts, weapon, skill, skillLevel, randomSeed);
+                    modifiedDamageAmounts = new Dictionary<DamageElement, MinMaxFloat>();
                 }
+                if (DamageableEntity is IVehicleEntity vehicleEntity)
+                {
+                    for (byte i = 0; i < vehicleEntity.Seats.Count; ++i)
+                    {
+                        if (!vehicleEntity.Seats[i].overridePassengerHitBoxes)
+                            continue;
+                        if (vehicleEntity.GetPassenger(i) is DamageableEntity damageablePassenger)
+                            damageablePassenger.ApplyDamage(position, fromPosition, instigator, modifiedDamageAmounts, weapon, skill, skillLevel, randomSeed);
+                    }
+                }
+                DamageableEntity.ApplyDamage(position, fromPosition, instigator, modifiedDamageAmounts, weapon, skill, skillLevel, randomSeed);
             }
-            DamageableEntity.ApplyDamage(position, fromPosition, instigator, multipliedDamageAmounts, weapon, skill, skillLevel, randomSeed);
         }
 
         public virtual void PrepareRelatesData()
@@ -357,7 +361,7 @@ namespace MultiplayerARPG
 
         public EntityInfo GetInfo()
         {
-            return DamageableEntity == null ? default : DamageableEntity.GetInfo();
+            return DamageableEntity == null ? EntityInfo.Empty : DamageableEntity.GetInfo();
         }
 
         public bool IsHide()

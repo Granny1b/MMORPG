@@ -1,5 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace MultiplayerARPG
 {
@@ -8,48 +9,113 @@ namespace MultiplayerARPG
     public partial struct CharacterStats
     {
         public static readonly CharacterStats Empty = new CharacterStats();
+        [CharacterStatTextGen(false)]
         public float hp;
+        [CharacterStatTextGen(false)]
         public float hpRecovery;
+        [CharacterStatTextGen(true)]
         public float hpLeechRate;
+        [CharacterStatTextGen(false)]
         public float mp;
+        [CharacterStatTextGen(false)]
         public float mpRecovery;
+        [CharacterStatTextGen(true)]
         public float mpLeechRate;
+        [CharacterStatTextGen(false)]
         public float stamina;
+        [CharacterStatTextGen(false)]
         public float staminaRecovery;
+        [CharacterStatTextGen(true)]
         public float staminaLeechRate;
+        [CharacterStatTextGen(false)]
         public float food;
+        [CharacterStatTextGen(false)]
         public float water;
+        [CharacterStatTextGen(false)]
         public float accuracy;
+        [CharacterStatTextGen(false)]
         public float evasion;
+        [CharacterStatTextGen("criticalRate", true)]
         public float criRate;
+        [CharacterStatTextGen("criticalDamageRate", true)]
         public float criDmgRate;
+        [CharacterStatTextGen(true)]
         public float blockRate;
+        [CharacterStatTextGen("blockDamageRate", true)]
         public float blockDmgRate;
+        [CharacterStatTextGen(false)]
         public float moveSpeed;
+        [CharacterStatTextGen(false)]
         public float sprintSpeed;
+        [CharacterStatTextGen("attackSpeed", false)]
         public float atkSpeed;
+        [CharacterStatTextGen("weight", false)]
         public float weightLimit;
+        [CharacterStatTextGen("slot", false)]
         public float slotLimit;
+        [CharacterStatTextGen(true)]
         public float goldRate;
+        [CharacterStatTextGen(true)]
         public float expRate;
+        [CharacterStatTextGen(true)]
         public float itemDropRate;
+        [CharacterStatTextGen(false)]
         public float jumpHeight;
+        [CharacterStatTextGen(true)]
         public float headDamageAbsorbs;
+        [CharacterStatTextGen(true)]
         public float bodyDamageAbsorbs;
+        [CharacterStatTextGen(true)]
         public float fallDamageAbsorbs;
+        [CharacterStatTextGen(true)]
         public float gravityRate;
+        [CharacterStatTextGen(false)]
         public float protectedSlotLimit;
-        public float ammoCapacity;
+        [FormerlySerializedAs("ammoCapacity")]
+        [CharacterStatTextGen(false)]
+        public float ammoCapacityModifier;
+        [CharacterStatTextGen(true)]
+        public float ammoCapacityRate;
+        [CharacterStatTextGen(false)]
         public float recoilModifier;
+        [CharacterStatTextGen(false)]
+        public float recoilYawModifier;
+        [CharacterStatTextGen(false)]
+        public float recoilRollModifier;
+        [CharacterStatTextGen(true)]
         public float recoilRate;
-        public float rateOfFire;
-        public float reloadDuration;
+        [CharacterStatTextGen(true)]
+        public float recoilYawRate;
+        [CharacterStatTextGen(true)]
+        public float recoilRollRate;
+        [CharacterStatTextGen(false)]
+        public float rateOfFireModifier;
+        [CharacterStatTextGen(true)]
+        public float rateOfFireRate;
+        [FormerlySerializedAs("reloadDuration")]
+        [CharacterStatTextGen(false)]
+        public float reloadDurationModifier;
+        [CharacterStatTextGen(true)]
+        public float reloadDurationRate;
+        [FormerlySerializedAs("fireSpreadRange")]
+        [CharacterStatTextGen(false)]
+        public float fireSpreadRangeModifier;
+        [CharacterStatTextGen(true)]
         public float fireSpreadRangeRate;
-        public float fireSpread;
+        [FormerlySerializedAs("fireSpread")]
+        [CharacterStatTextGen(false)]
+        public float fireSpreadModifier;
+        [CharacterStatTextGen(true)]
+        public float fireSpreadRate;
+        [CharacterStatTextGen(false)]
         public float decreaseFoodDecreation;
+        [CharacterStatTextGen(false)]
         public float decreaseWaterDecreation;
+        [CharacterStatTextGen(false)]
         public float decreaseStaminaDecreation;
+        [CharacterStatTextGen(true)]
         public float buyItemPriceRate;
+        [CharacterStatTextGen(true)]
         public float sellItemPriceRate;
 
         public static CharacterStats operator +(CharacterStats a, CharacterStats b)
@@ -85,13 +151,22 @@ namespace MultiplayerARPG
             a.fallDamageAbsorbs = a.fallDamageAbsorbs + b.fallDamageAbsorbs;
             a.gravityRate = a.gravityRate + b.gravityRate;
             a.protectedSlotLimit = a.protectedSlotLimit + b.protectedSlotLimit;
-            a.ammoCapacity = a.ammoCapacity + b.ammoCapacity;
+            a.ammoCapacityModifier = a.ammoCapacityModifier + b.ammoCapacityModifier;
+            a.ammoCapacityRate = a.ammoCapacityRate + b.ammoCapacityRate;
             a.recoilModifier = a.recoilModifier + b.recoilModifier;
+            a.recoilYawModifier = a.recoilYawModifier + b.recoilYawModifier;
+            a.recoilRollModifier = a.recoilRollModifier + b.recoilRollModifier;
             a.recoilRate = a.recoilRate + b.recoilRate;
-            a.rateOfFire = a.rateOfFire + b.rateOfFire;
-            a.reloadDuration = a.reloadDuration + b.reloadDuration;
+            a.recoilYawRate = a.recoilYawRate + b.recoilYawRate;
+            a.recoilRollRate = a.recoilRollRate + b.recoilRollRate;
+            a.rateOfFireModifier = a.rateOfFireModifier + b.rateOfFireModifier;
+            a.rateOfFireRate = a.rateOfFireRate + b.rateOfFireRate;
+            a.reloadDurationModifier = a.reloadDurationModifier + b.reloadDurationModifier;
+            a.reloadDurationRate = a.reloadDurationRate + b.reloadDurationRate;
+            a.fireSpreadRangeModifier = a.fireSpreadRangeModifier + b.fireSpreadRangeModifier;
             a.fireSpreadRangeRate = a.fireSpreadRangeRate + b.fireSpreadRangeRate;
-            a.fireSpread = a.fireSpread + b.fireSpread;
+            a.fireSpreadModifier = a.fireSpreadModifier + b.fireSpreadModifier;
+            a.fireSpreadRate = a.fireSpreadRate + b.fireSpreadRate;
             a.decreaseFoodDecreation = a.decreaseFoodDecreation + b.decreaseFoodDecreation;
             a.decreaseWaterDecreation = a.decreaseWaterDecreation + b.decreaseWaterDecreation;
             a.decreaseStaminaDecreation = a.decreaseStaminaDecreation + b.decreaseStaminaDecreation;
@@ -135,13 +210,22 @@ namespace MultiplayerARPG
             a.fallDamageAbsorbs = a.fallDamageAbsorbs - b.fallDamageAbsorbs;
             a.gravityRate = a.gravityRate - b.gravityRate;
             a.protectedSlotLimit = a.protectedSlotLimit - b.protectedSlotLimit;
-            a.ammoCapacity = a.ammoCapacity - b.ammoCapacity;
+            a.ammoCapacityModifier = a.ammoCapacityModifier - b.ammoCapacityModifier;
+            a.ammoCapacityRate = a.ammoCapacityRate - b.ammoCapacityRate;
             a.recoilModifier = a.recoilModifier - b.recoilModifier;
+            a.recoilYawModifier = a.recoilYawModifier - b.recoilYawModifier;
+            a.recoilRollModifier = a.recoilRollModifier - b.recoilRollModifier;
             a.recoilRate = a.recoilRate - b.recoilRate;
-            a.rateOfFire = a.rateOfFire - b.rateOfFire;
-            a.reloadDuration = a.reloadDuration - b.reloadDuration;
+            a.recoilYawRate = a.recoilYawRate - b.recoilYawRate;
+            a.recoilRollRate = a.recoilRollRate - b.recoilRollRate;
+            a.rateOfFireModifier = a.rateOfFireModifier - b.rateOfFireModifier;
+            a.rateOfFireRate = a.rateOfFireRate - b.rateOfFireRate;
+            a.reloadDurationModifier = a.reloadDurationModifier - b.reloadDurationModifier;
+            a.reloadDurationRate = a.reloadDurationRate - b.reloadDurationRate;
+            a.fireSpreadRangeModifier = a.fireSpreadRangeModifier - b.fireSpreadRangeModifier;
             a.fireSpreadRangeRate = a.fireSpreadRangeRate - b.fireSpreadRangeRate;
-            a.fireSpread = a.fireSpread - b.fireSpread;
+            a.fireSpreadModifier = a.fireSpreadModifier - b.fireSpreadModifier;
+            a.fireSpreadRate = a.fireSpreadRate - b.fireSpreadRate;
             a.decreaseFoodDecreation = a.decreaseFoodDecreation - b.decreaseFoodDecreation;
             a.decreaseWaterDecreation = a.decreaseWaterDecreation - b.decreaseWaterDecreation;
             a.decreaseStaminaDecreation = a.decreaseStaminaDecreation - b.decreaseStaminaDecreation;
@@ -185,13 +269,22 @@ namespace MultiplayerARPG
             a.fallDamageAbsorbs = a.fallDamageAbsorbs * multiplier;
             a.gravityRate = a.gravityRate * multiplier;
             a.protectedSlotLimit = a.protectedSlotLimit * multiplier;
-            a.ammoCapacity = a.ammoCapacity * multiplier;
+            a.ammoCapacityModifier = a.ammoCapacityModifier * multiplier;
+            a.ammoCapacityRate = a.ammoCapacityRate * multiplier;
             a.recoilModifier = a.recoilModifier * multiplier;
+            a.recoilYawModifier = a.recoilYawModifier * multiplier;
+            a.recoilRollModifier = a.recoilRollModifier * multiplier;
             a.recoilRate = a.recoilRate * multiplier;
-            a.rateOfFire = a.rateOfFire * multiplier;
-            a.reloadDuration = a.reloadDuration * multiplier;
+            a.recoilYawRate = a.recoilYawRate * multiplier;
+            a.recoilRollRate = a.recoilRollRate * multiplier;
+            a.rateOfFireModifier = a.rateOfFireModifier * multiplier;
+            a.rateOfFireRate = a.rateOfFireRate * multiplier;
+            a.reloadDurationModifier = a.reloadDurationModifier * multiplier;
+            a.reloadDurationRate = a.reloadDurationRate * multiplier;
+            a.fireSpreadRangeModifier = a.fireSpreadRangeModifier * multiplier;
             a.fireSpreadRangeRate = a.fireSpreadRangeRate * multiplier;
-            a.fireSpread = a.fireSpread * multiplier;
+            a.fireSpreadModifier = a.fireSpreadModifier * multiplier;
+            a.fireSpreadRate = a.fireSpreadRate * multiplier;
             a.decreaseFoodDecreation = a.decreaseFoodDecreation * multiplier;
             a.decreaseWaterDecreation = a.decreaseWaterDecreation * multiplier;
             a.decreaseStaminaDecreation = a.decreaseStaminaDecreation * multiplier;
@@ -235,13 +328,22 @@ namespace MultiplayerARPG
             a.fallDamageAbsorbs = a.fallDamageAbsorbs * b.fallDamageAbsorbs;
             a.gravityRate = a.gravityRate * b.gravityRate;
             a.protectedSlotLimit = a.protectedSlotLimit * b.protectedSlotLimit;
-            a.ammoCapacity = a.ammoCapacity * b.ammoCapacity;
+            a.ammoCapacityModifier = a.ammoCapacityModifier * b.ammoCapacityModifier;
+            a.ammoCapacityRate = a.ammoCapacityRate * b.ammoCapacityRate;
             a.recoilModifier = a.recoilModifier * b.recoilModifier;
+            a.recoilYawModifier = a.recoilYawModifier * b.recoilYawModifier;
+            a.recoilRollModifier = a.recoilRollModifier * b.recoilRollModifier;
             a.recoilRate = a.recoilRate * b.recoilRate;
-            a.rateOfFire = a.rateOfFire * b.rateOfFire;
-            a.reloadDuration = a.reloadDuration * b.reloadDuration;
+            a.recoilYawRate = a.recoilYawRate * b.recoilYawRate;
+            a.recoilRollRate = a.recoilRollRate * b.recoilRollRate;
+            a.rateOfFireModifier = a.rateOfFireModifier * b.rateOfFireModifier;
+            a.rateOfFireRate = a.rateOfFireRate * b.rateOfFireRate;
+            a.reloadDurationModifier = a.reloadDurationModifier * b.reloadDurationModifier;
+            a.reloadDurationRate = a.reloadDurationRate * b.reloadDurationRate;
+            a.fireSpreadRangeModifier = a.fireSpreadRangeModifier * b.fireSpreadRangeModifier;
             a.fireSpreadRangeRate = a.fireSpreadRangeRate * b.fireSpreadRangeRate;
-            a.fireSpread = a.fireSpread * b.fireSpread;
+            a.fireSpreadModifier = a.fireSpreadModifier * b.fireSpreadModifier;
+            a.fireSpreadRate = a.fireSpreadRate * b.fireSpreadRate;
             a.decreaseFoodDecreation = a.decreaseFoodDecreation * b.decreaseFoodDecreation;
             a.decreaseWaterDecreation = a.decreaseWaterDecreation * b.decreaseWaterDecreation;
             a.decreaseStaminaDecreation = a.decreaseStaminaDecreation * b.decreaseStaminaDecreation;
@@ -291,6 +393,19 @@ namespace MultiplayerARPG
             return result;
         }
 
+        public CharacterStats GetCharacterLevelStats(int level)
+        {
+            if (statsIncreaseEachLevelByLevels == null || statsIncreaseEachLevelByLevels.Length == 0)
+                return statsIncreaseEachLevel;
+
+            for (int i = statsIncreaseEachLevelByLevels.Length - 1; i >= 0; i--)
+            {
+                if (level - 1 >= statsIncreaseEachLevelByLevels[i].minLevel)
+                    return statsIncreaseEachLevelByLevels[i].statsIncreaseEachLevel;
+            }
+
+            return statsIncreaseEachLevel;
+        }
     }
 
     [System.Serializable]

@@ -22,12 +22,12 @@ namespace MultiplayerARPG
 
         private void OnEnable()
         {
-            UpdateManager.Register(DefaultExecutionOrders.CHARACTER_ALIGN_ON_GROUND, this);
+            UpdateManager.Register(DefaultExecutionOrders.GAME_ENTITY_MODEL_IK, this);
         }
 
         private void OnDisable()
         {
-            UpdateManager.Unregister(DefaultExecutionOrders.CHARACTER_ALIGN_ON_GROUND, this);
+            UpdateManager.Unregister(DefaultExecutionOrders.GAME_ENTITY_MODEL_IK, this);
         }
 
         public void ManagedLateUpdate()

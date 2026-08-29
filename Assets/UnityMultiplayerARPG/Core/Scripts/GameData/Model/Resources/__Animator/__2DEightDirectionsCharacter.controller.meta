@@ -1,17 +1,10 @@
 fileFormatVersion: 2
 guid: 1050260b7d87cc147a4f5aff4901ac24
 timeCreated: 1516975195
-licenseType: Store
+licenseType: Pro
 NativeFormatImporter:
   externalObjects: {}
   mainObjectFileID: 9100000
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/GameData/Model/Resources/__Animator/__2DEightDirectionsCharacter.controller
-  uploadId: 857340

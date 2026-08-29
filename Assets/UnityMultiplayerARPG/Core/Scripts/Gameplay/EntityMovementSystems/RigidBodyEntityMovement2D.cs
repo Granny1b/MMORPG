@@ -1,5 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 using Insthync.ManagedUpdating;
+using LiteNetLib;
 using LiteNetLib.Utils;
 using LiteNetLibManager;
 using System.Collections.Generic;
@@ -8,10 +9,10 @@ using UnityEngine;
 namespace MultiplayerARPG
 {
     [RequireComponent(typeof(Rigidbody2D))]
-    public class RigidBodyEntityMovement2D : BaseNetworkedGameEntityComponent<BaseGameEntity>, IEntityMovementComponent, IManagedUpdate
+    public class RigidBodyEntityMovement2D : BaseNetworkedGameEntityComponent<BaseGameEntity>, IEntityMovementComponent, IEntityMovementDataHandler, IManagedUpdate
     {
-        protected static readonly float s_minDistanceToSimulateMovement = 0.01f;
-        protected static readonly float s_timestampToUnityTimeMultiplier = 0.001f;
+        protected const float MIN_DISTANCE_TO_SIMULATE_MOVEMENT = 0.01f;
+        protected const float TIMESTAMP_TO_UNITY_TIME_MULTIPLIER = 0.001f;
 
         [Header("Movement Settings")]
         [Range(0.01f, 1f)]
@@ -108,6 +109,17 @@ namespace MultiplayerARPG
         {
             CacheRigidbody2D.constraints = RigidbodyConstraints2D.FreezeAll;
             UpdateManager.Unregister(this);
+        }
+
+        public override void OnIdentityInitialize()
+        {
+            Entity.CurrentGameManager.EntityMovementDataHandlers.TryRemove(ObjectId, out _);
+            Entity.CurrentGameManager.EntityMovementDataHandlers.TryAdd(ObjectId, this);
+        }
+
+        public override void OnNetworkDestroy(byte reasons)
+        {
+            Entity.CurrentGameManager.EntityMovementDataHandlers.TryRemove(ObjectId, out _);
         }
 
         public override void OnSetOwnerClient(bool isOwnerClient)
@@ -297,7 +309,7 @@ namespace MultiplayerARPG
                 tempTargetPosition = NavPaths.Peek();
                 _moveDirection = (tempTargetPosition - tempCurrentPosition).normalized;
                 tempTargetDistance = Vector2.Distance(tempTargetPosition, tempCurrentPosition);
-                float stoppingDistance = _simulatingKeyMovement ? s_minDistanceToSimulateMovement : StoppingDistance;
+                float stoppingDistance = _simulatingKeyMovement ? MIN_DISTANCE_TO_SIMULATE_MOVEMENT : StoppingDistance;
                 bool shouldStop = tempTargetDistance < stoppingDistance;
                 if (shouldStop)
                 {
@@ -421,7 +433,7 @@ namespace MultiplayerARPG
             // Adjust speed by rtt
             if (!IsServer && IsOwnerClient && movementSecure == MovementSecure.ServerAuthoritative)
             {
-                float rtt = s_timestampToUnityTimeMultiplier * Entity.Manager.Rtt;
+                float rtt = TIMESTAMP_TO_UNITY_TIME_MULTIPLIER * Entity.Manager.Rtt;
                 float acc = 1f / rtt * deltaTime * 0.5f;
                 if (!_lagMoveSpeedRate.HasValue)
                     _lagMoveSpeedRate = 0f;
@@ -554,6 +566,7 @@ namespace MultiplayerARPG
 
         public async void ReadServerStateAtClient(long peerTimestamp, NetDataReader reader)
         {
+            reader.ClientReadSyncTransformMessage2D(out MovementState movementState, out ExtraMovementState extraMovementState, out Vector2 position, out DirectionVector2 direction2D, out List<EntityMovementForceApplier> movementForceAppliers);
             if (IsServer)
             {
                 // Don't read and apply transform, because it was done at server
@@ -564,7 +577,6 @@ namespace MultiplayerARPG
                 // Not ready to apply transform
                 return;
             }
-            reader.ClientReadSyncTransformMessage2D(out MovementState movementState, out ExtraMovementState extraMovementState, out Vector2 position, out DirectionVector2 direction2D, out List<EntityMovementForceApplier> movementForceAppliers);
             _movementForceAppliers.Clear();
             _movementForceAppliers.AddRange(movementForceAppliers);
             if (movementState.Has(MovementState.IsTeleport))
@@ -583,7 +595,6 @@ namespace MultiplayerARPG
                     {
                         Direction2D = direction2D;
                         EntityTransform.position = position;
-                        CurrentGameManager.ShouldPhysicSyncTransforms2D = true;
                     }
                     MovementState = movementState;
                     ExtraMovementState = extraMovementState;
@@ -592,7 +603,7 @@ namespace MultiplayerARPG
                 {
                     Direction2D = direction2D;
                     _simulatingKeyMovement = true;
-                    if (Vector2.Distance(position, EntityTransform.position.GetXY()) > s_minDistanceToSimulateMovement)
+                    if (Vector2.Distance(position, EntityTransform.position.GetXY()) > MIN_DISTANCE_TO_SIMULATE_MOVEMENT)
                         SetMovePaths(position, false);
                     else
                         NavPaths = null;
@@ -642,7 +653,7 @@ namespace MultiplayerARPG
             }
             // Prepare time
             long deltaTime = _acceptedPositionTimestamp > 0 ? (peerTimestamp - _acceptedPositionTimestamp) : 0;
-            float unityDeltaTime = (float)(deltaTime * s_timestampToUnityTimeMultiplier);
+            float unityDeltaTime = (float)(deltaTime * TIMESTAMP_TO_UNITY_TIME_MULTIPLIER);
             NavPaths = null;
             _tempMovementState = entityMovementInput.MovementState;
             _tempExtraMovementState = entityMovementInput.ExtraMovementState;
@@ -693,7 +704,7 @@ namespace MultiplayerARPG
             }
             // Prepare time
             long deltaTime = _acceptedPositionTimestamp > 0 ? (peerTimestamp - _acceptedPositionTimestamp) : 0;
-            float unityDeltaTime = (float)(deltaTime * s_timestampToUnityTimeMultiplier);
+            float unityDeltaTime = (float)(deltaTime * TIMESTAMP_TO_UNITY_TIME_MULTIPLIER);
             // Prepare movement state
             Direction2D = direction2D;
             MovementState = movementState;
@@ -721,7 +732,6 @@ namespace MultiplayerARPG
                     // Allow to move to the position
                     _acceptedPosition = newPos;
                     EntityTransform.position = newPos;
-                    CurrentGameManager.ShouldPhysicSyncTransforms2D = true;
                 }
                 else
                 {
@@ -734,7 +744,7 @@ namespace MultiplayerARPG
             else
             {
                 // It's both server and client, simulate movement
-                if (Vector3.Distance(position, EntityTransform.position) > s_minDistanceToSimulateMovement)
+                if (Vector3.Distance(position, EntityTransform.position) > MIN_DISTANCE_TO_SIMULATE_MOVEMENT)
                 {
                     if (moveDiffTime < 0.1f)
                     {
@@ -770,7 +780,6 @@ namespace MultiplayerARPG
             if (!stillMoveAfterTeleport)
                 NavPaths = null;
             EntityTransform.position = position;
-            CurrentGameManager.ShouldPhysicSyncTransforms2D = true;
             if (!IsServer && IsOwnerClient)
                 _isClientConfirmingTeleport = true;
         }

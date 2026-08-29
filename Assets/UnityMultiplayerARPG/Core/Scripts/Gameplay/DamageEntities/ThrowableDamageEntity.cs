@@ -22,6 +22,8 @@ namespace MultiplayerARPG
         protected bool _isExploded;
         protected float _throwedTime;
         protected bool _destroying;
+        protected Collider2D[] _overlaps2D = new Collider2D[128];
+        protected Collider[] _overlaps3D = new Collider[128];
         protected readonly HashSet<uint> _alreadyHitObjects = new HashSet<uint>();
         protected Collider[] _colliders;
         protected Collider2D[] _colliders2D;
@@ -167,7 +169,7 @@ namespace MultiplayerARPG
             _awakenFrame = Time.frameCount;
         }
 
-        protected override void OnPushBack()
+        public override void OnPushBack()
         {
             _readyToHitWalls = true;
             SetReadyToHitWalls(false);
@@ -186,7 +188,7 @@ namespace MultiplayerARPG
 
             target = other.GetComponent<DamageableHitBox>();
 
-            if (target == null || target.IsDead() || target.IsImmune || target.IsInSafeArea)
+            if (target == null || target.IsDead() || target.IsInvincible || target.IsInSafeArea)
             {
                 target = null;
                 return false;
@@ -233,25 +235,28 @@ namespace MultiplayerARPG
             if (CurrentGameInstance.DimensionType == DimensionType.Dimension2D)
             {
                 _alreadyHitObjects.Clear();
-                Collider2D[] colliders2D = Physics2D.OverlapCircleAll(CacheTransform.position, explodeDistance);
-                foreach (Collider2D collider in colliders2D)
+                ContactFilter2D contactFilter2D = new ContactFilter2D();
+                int hitCount = Physics2D.OverlapCircle(CacheTransform.position, explodeDistance, contactFilter2D, _overlaps2D);
+                for (int i = 0; i < hitCount; ++i)
                 {
-                    FindAndApplyDamage(collider.gameObject, _alreadyHitObjects);
+                    FindAndApplyDamage(_overlaps2D[i].gameObject, _alreadyHitObjects);
                 }
             }
             else
             {
                 _alreadyHitObjects.Clear();
-                Collider[] colliders = Physics.OverlapSphere(CacheTransform.position, explodeDistance);
-                foreach (Collider collider in colliders)
+                int hitCount = Physics.OverlapSphereNonAlloc(CacheTransform.position, explodeDistance, _overlaps3D);
+                for (int i = 0; i < hitCount; ++i)
                 {
-                    FindAndApplyDamage(collider.gameObject, _alreadyHitObjects);
+                    FindAndApplyDamage(_overlaps3D[i].gameObject, _alreadyHitObjects);
                 }
             }
         }
 
         protected virtual void OnTriggerEnter(Collider other)
         {
+            if (other is CharacterController)
+                return;
             ProceedEnteringThrower(other.transform, other.isTrigger);
         }
 

@@ -20,6 +20,9 @@ namespace MultiplayerARPG
 
         public static async UniTask<GoldDropEntity> Drop(BaseGameEntity dropper, float multiplier, RewardGivenType givenType, int giverLevel, int sourceLevel, int amount, IEnumerable<string> looters, float appearDuration)
         {
+            if (amount <= 0)
+                return null;
+
             GoldDropEntity entity = null;
             GoldDropEntity loadedPrefab = await GameInstance.Singleton.GetLoadedGoldDropEntityPrefab();
             if (loadedPrefab != null)
@@ -32,7 +35,7 @@ namespace MultiplayerARPG
         protected override bool ProceedPickingUpAtServer_Implementation(BaseCharacterEntity characterEntity, out UITextKeys message)
         {
             BaseCharacterEntity rewardingCharacter = characterEntity;
-            if (characterEntity is BaseMonsterCharacterEntity monsterCharacterEntity && monsterCharacterEntity.Summoner is BasePlayerCharacterEntity summonerCharacterEntity)
+            if (characterEntity is BaseMonsterCharacterEntity monsterCharacterEntity && monsterCharacterEntity.SummonerEntity is BasePlayerCharacterEntity summonerCharacterEntity)
                 rewardingCharacter = summonerCharacterEntity;
             CurrentGameplayRule.RewardGold(rewardingCharacter, Amount, Multiplier, GivenType, GiverLevel, SourceLevel, out int rewardedGold);
             rewardingCharacter.OnRewardGold(GivenType, rewardedGold);

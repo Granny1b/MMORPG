@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using UnityEngine.Pool;
 
 namespace MultiplayerARPG
 {
@@ -38,51 +37,40 @@ namespace MultiplayerARPG
 
         public CalculatedBuff()
         {
-            _cacheIncreaseAttributes = CollectionPool<Dictionary<Attribute, float>, KeyValuePair<Attribute, float>>.Get();
-            _cacheIncreaseAttributesRate = CollectionPool<Dictionary<Attribute, float>, KeyValuePair<Attribute, float>>.Get();
-            _cacheIncreaseResistances = CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Get();
-            _cacheIncreaseArmors = CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Get();
-            _cacheIncreaseArmorsRate = CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Get();
-            _cacheIncreaseDamages = CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Get();
-            _cacheIncreaseDamagesRate = CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Get();
-            _cacheIncreaseSkills = CollectionPool<Dictionary<BaseSkill, int>, KeyValuePair<BaseSkill, int>>.Get();
-            _cacheOverrideSkills = CollectionPool<Dictionary<BaseSkill, int>, KeyValuePair<BaseSkill, int>>.Get();
-            _cacheIncreaseStatusEffectResistances = CollectionPool<Dictionary<StatusEffect, float>, KeyValuePair<StatusEffect, float>>.Get();
-            _cacheBuffRemovals = CollectionPool<Dictionary<BuffRemoval, float>, KeyValuePair<BuffRemoval, float>>.Get();
-            _cacheDamageOverTimes = CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Get();
+            _cacheIncreaseAttributes = new Dictionary<Attribute, float>();
+            _cacheIncreaseAttributesRate = new Dictionary<Attribute, float>();
+            _cacheIncreaseResistances = new Dictionary<DamageElement, float>();
+            _cacheIncreaseArmors = new Dictionary<DamageElement, float>();
+            _cacheIncreaseArmorsRate = new Dictionary<DamageElement, float>();
+            _cacheIncreaseDamages = new Dictionary<DamageElement, MinMaxFloat>();
+            _cacheIncreaseDamagesRate = new Dictionary<DamageElement, MinMaxFloat>();
+            _cacheIncreaseSkills = new Dictionary<BaseSkill, int>();
+            _cacheOverrideSkills = new Dictionary<BaseSkill, int>();
+            _cacheIncreaseStatusEffectResistances = new Dictionary<StatusEffect, float>();
+            _cacheBuffRemovals = new Dictionary<BuffRemoval, float>();
+            _cacheDamageOverTimes = new Dictionary<DamageElement, MinMaxFloat>();
         }
 
         public CalculatedBuff(Buff buff, int level)
         {
-            _cacheIncreaseAttributes = CollectionPool<Dictionary<Attribute, float>, KeyValuePair<Attribute, float>>.Get();
-            _cacheIncreaseAttributesRate = CollectionPool<Dictionary<Attribute, float>, KeyValuePair<Attribute, float>>.Get();
-            _cacheIncreaseResistances = CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Get();
-            _cacheIncreaseArmors = CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Get();
-            _cacheIncreaseArmorsRate = CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Get();
-            _cacheIncreaseDamages = CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Get();
-            _cacheIncreaseDamagesRate = CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Get();
-            _cacheIncreaseSkills = CollectionPool<Dictionary<BaseSkill, int>, KeyValuePair<BaseSkill, int>>.Get();
-            _cacheOverrideSkills = CollectionPool<Dictionary<BaseSkill, int>, KeyValuePair<BaseSkill, int>>.Get();
-            _cacheIncreaseStatusEffectResistances = CollectionPool<Dictionary<StatusEffect, float>, KeyValuePair<StatusEffect, float>>.Get();
-            _cacheBuffRemovals = CollectionPool<Dictionary<BuffRemoval, float>, KeyValuePair<BuffRemoval, float>>.Get();
-            _cacheDamageOverTimes = CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Get();
+            _cacheIncreaseAttributes = new Dictionary<Attribute, float>();
+            _cacheIncreaseAttributesRate = new Dictionary<Attribute, float>();
+            _cacheIncreaseResistances = new Dictionary<DamageElement, float>();
+            _cacheIncreaseArmors = new Dictionary<DamageElement, float>();
+            _cacheIncreaseArmorsRate = new Dictionary<DamageElement, float>();
+            _cacheIncreaseDamages = new Dictionary<DamageElement, MinMaxFloat>();
+            _cacheIncreaseDamagesRate = new Dictionary<DamageElement, MinMaxFloat>();
+            _cacheIncreaseSkills = new Dictionary<BaseSkill, int>();
+            _cacheOverrideSkills = new Dictionary<BaseSkill, int>();
+            _cacheIncreaseStatusEffectResistances = new Dictionary<StatusEffect, float>();
+            _cacheBuffRemovals = new Dictionary<BuffRemoval, float>();
+            _cacheDamageOverTimes = new Dictionary<DamageElement, MinMaxFloat>();
             Build(buff, level);
         }
 
         ~CalculatedBuff()
         {
-            CollectionPool<Dictionary<Attribute, float>, KeyValuePair<Attribute, float>>.Release(_cacheIncreaseAttributes);
-            CollectionPool<Dictionary<Attribute, float>, KeyValuePair<Attribute, float>>.Release(_cacheIncreaseAttributesRate);
-            CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Release(_cacheIncreaseResistances);
-            CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Release(_cacheIncreaseArmors);
-            CollectionPool<Dictionary<DamageElement, float>, KeyValuePair<DamageElement, float>>.Release(_cacheIncreaseArmorsRate);
-            CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Release(_cacheIncreaseDamages);
-            CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Release(_cacheIncreaseDamagesRate);
-            CollectionPool<Dictionary<BaseSkill, int>, KeyValuePair<BaseSkill, int>>.Release(_cacheIncreaseSkills);
-            CollectionPool<Dictionary<BaseSkill, int>, KeyValuePair<BaseSkill, int>>.Release(_cacheOverrideSkills);
-            CollectionPool<Dictionary<StatusEffect, float>, KeyValuePair<StatusEffect, float>>.Release(_cacheIncreaseStatusEffectResistances);
-            CollectionPool<Dictionary<BuffRemoval, float>, KeyValuePair<BuffRemoval, float>>.Release(_cacheBuffRemovals);
-            CollectionPool<Dictionary<DamageElement, MinMaxFloat>, KeyValuePair<DamageElement, MinMaxFloat>>.Release(_cacheDamageOverTimes);
+            Clear();
         }
 
         public void Clear()

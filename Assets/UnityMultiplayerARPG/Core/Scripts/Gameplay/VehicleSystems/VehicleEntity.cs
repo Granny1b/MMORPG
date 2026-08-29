@@ -74,7 +74,7 @@ namespace MultiplayerARPG
         public virtual bool HasDriver { get { return _passengers.ContainsKey(0); } }
         public Dictionary<DamageElement, float> Resistances { get; private set; }
         public Dictionary<DamageElement, float> Armors { get; private set; }
-        public override bool IsImmune { get { return base.IsImmune || !canBeAttacked; } set { base.IsImmune = value; } }
+        public override bool IsInvincible { get { return base.IsInvincible || !canBeAttacked; } set { base.IsInvincible = value; } }
         public override int MaxHp { get { return canBeAttacked ? hp.GetAmount(Level) : 1; } }
         public Vector3 SpawnPosition { get; protected set; }
         public float DestroyDelay { get { return destroyDelay; } }
@@ -82,8 +82,8 @@ namespace MultiplayerARPG
 
         protected readonly Dictionary<byte, BaseGameEntity> _passengers = new Dictionary<byte, BaseGameEntity>();
         protected readonly Dictionary<uint, UnityAction<LiteNetLibIdentity>> _spawnEvents = new Dictionary<uint, UnityAction<LiteNetLibIdentity>>();
-        protected bool _isDestroyed;
-        protected CalculatedBuff _cacheBuff = new CalculatedBuff();
+        protected bool _isDestroyed = false;
+        protected readonly CalculatedBuff _cacheBuff = new CalculatedBuff();
         protected int _dirtyLevel = int.MinValue;
 
         protected override void EntityAwake()
@@ -123,21 +123,11 @@ namespace MultiplayerARPG
             GameDataHelpers.CombineArmors(armors, Armors, Level, 1);
         }
 
-        protected override void SetupNetElements()
+        public override void OnIdentityInitialize()
         {
-            base.SetupNetElements();
-            level.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
-            isImmune.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
-            currentHp.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
-            passengerIds.forOwnerOnly = false;
-        }
-
-        public override void OnSetup()
-        {
-            base.OnSetup();
+            base.OnIdentityInitialize();
             InitStats();
             SpawnPosition = EntityTransform.position;
-            passengerIds.onOperation += OnPassengerIdsOperation;
             if (IsServer)
             {
                 // Prepare passengers data, add data at server then it wil be synced to clients
@@ -148,6 +138,16 @@ namespace MultiplayerARPG
             }
             // Vehicle must not being destroyed when owner player is disconnect to avoid vehicle exiting issues
             Identity.DoNotDestroyWhenDisconnect = true;
+        }
+
+        protected override void SetupNetElements()
+        {
+            base.SetupNetElements();
+            level.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+            isInvincible.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+            currentHp.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+            passengerIds.forOwnerOnly = false;
+            passengerIds.onOperation += OnPassengerIdsOperation;
         }
 
         protected override void EntityOnDestroy()
@@ -211,7 +211,7 @@ namespace MultiplayerARPG
             }
         }
 
-        public override float GetMoveSpeed(MovementState movementState, ExtraMovementState extraMovementState)
+        public override float GetMoveSpeed_Implementation(MovementState movementState, ExtraMovementState extraMovementState)
         {
             if (moveSpeedType == VehicleMoveSpeedType.FixedMovedSpeed)
                 return moveSpeed;

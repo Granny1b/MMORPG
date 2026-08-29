@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 6f9ddfeed927b2348accb752cd4dc6d8
 timeCreated: 1520627211
-licenseType: Store
+licenseType: Pro
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Currency/UICurrencyTextPair.cs
-  uploadId: 857340

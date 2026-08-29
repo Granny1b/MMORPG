@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: e3e27822e8338154b8e9e8974d748824
 timeCreated: 1522871775
-licenseType: Store
+licenseType: Pro
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/GameEffect/GameEffect.cs
-  uploadId: 857340

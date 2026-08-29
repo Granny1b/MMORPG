@@ -1,12 +1,12 @@
 ﻿using Cysharp.Text;
-using Cysharp.Threading.Tasks;
 using LiteNetLib.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.Events;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
+using UnityEngine.Events;
+
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -17,7 +17,7 @@ namespace LiteNetLibManager
     [DisallowMultipleComponent]
     public sealed class LiteNetLibIdentity : MonoBehaviour
     {
-        public const string TAG_NULL = "<NULL_I>";
+        public const string TAG_NULL = "I?";
 
         public static uint HighestObjectId { get; private set; }
         /// <summary>
@@ -60,19 +60,20 @@ namespace LiteNetLibManager
         private bool doNotDestroyWhenDisconnect = false;
         [SerializeField, Tooltip("If this is > 0, it will get instance from pooling system")]
         private int poolingSize = 0;
-#if !UNITY_SERVER
+#if UNITY_EDITOR || !UNITY_SERVER
         [SerializeField]
         private bool forceRenderingOffWhileHidding = true;
         [SerializeField]
         private bool muteAudioSourceWhileHidding = true;
 #endif
 
-        [Header("Events")]
         public UnityEvent onGetInstance = new UnityEvent();
-        public LiteNetLibConnectionIdEvent onSubscriberAdded = new LiteNetLibConnectionIdEvent();
-        public LiteNetLibConnectionIdEvent onSubscriberRemoved = new LiteNetLibConnectionIdEvent();
-        public UnityEvent onServerSubscribingAdded = new UnityEvent();
-        public UnityEvent onServerSubscribingRemoved = new UnityEvent();
+        public UnityEvent onPushBack = new UnityEvent();
+        public ConnectionEventDelegate onSubscriberAdded;
+        public ConnectionEventDelegate onSubscriberRemoved;
+        public System.Action onServerSubscribingAdded;
+        public System.Action onServerSubscribingRemoved;
+        public SetTransformDelegate overrideSetTransform;
 
         /// <summary>
         /// This will be true when identity was spawned by manager
@@ -97,7 +98,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// List of net functions from all behaviours (include children behaviours)
         /// </summary>
-        internal readonly Dictionary<int, LiteNetLibFunction> NetFunctions = new Dictionary<int, LiteNetLibFunction>();
+        internal readonly Dictionary<int, LiteNetLibRPC> RPCs = new Dictionary<int, LiteNetLibRPC>();
         /// <summary>
         /// List of networked objects which subscribed by this identity
         /// </summary>
@@ -106,6 +107,10 @@ namespace LiteNetLibManager
         /// List of players which subscribe this identity
         /// </summary>
         internal readonly HashSet<long> Subscribers = new HashSet<long>();
+        /// <summary>
+        /// List of objects which want this object to be hidden
+        /// </summary>
+        internal readonly HashSet<object> HideObjects = new HashSet<object>();
 
         public string AssetId
         {
@@ -171,7 +176,7 @@ namespace LiteNetLibManager
         /// <summary>
         /// If this is `TRUE` it will disallow other connections to subscribe this networked object
         /// </summary>
-        public bool IsHide { get; set; }
+        public bool IsHide { get { return HideObjects.Count > 0; } }
         /// <summary>
         /// This will be used while `IsHide` is `TRUE` to allow some connections to subscribe this networked object
         /// </summary>
@@ -184,7 +189,6 @@ namespace LiteNetLibManager
         public bool IsPooledInstance { get; internal set; } = false;
         public LiteNetLibGameManager Manager { get; internal set; }
 
-        private string _logTag;
         public string LogTag
         {
             get
@@ -202,10 +206,9 @@ namespace LiteNetLibManager
                     stringBuilder.Append('.');
                     if (this != null)
                     {
-                        stringBuilder.Append(name);
-                        stringBuilder.Append('<');
                         stringBuilder.Append('I');
-                        stringBuilder.Append('>');
+                        stringBuilder.Append('_');
+                        stringBuilder.Append(name);
                     }
                     else
                     {
@@ -329,7 +332,7 @@ namespace LiteNetLibManager
             }
         }
 
-        internal void AssignAssetID(GameObject prefab)
+        public void AssignAssetID(GameObject prefab)
         {
             if (!string.IsNullOrWhiteSpace(assetId) && !forceUseAssetGUIDAsAssetId)
                 return;
@@ -356,7 +359,7 @@ namespace LiteNetLibManager
         }
 
         [ContextMenu("Assign Asset ID")]
-        internal void AssignAssetID()
+        public void AssignAssetID()
         {
             string oldAssetId = assetId;
             GameObject prefab;
@@ -379,11 +382,13 @@ namespace LiteNetLibManager
             }
             // Do not mark dirty while playing
             if (!Application.isPlaying && !string.Equals(oldAssetId, assetId))
-                EditorUtility.SetDirty(this);
+            {
+                MarkDirty();
+            }
         }
 
         [ContextMenu("Assign Scene Object ID")]
-        internal void AssignSceneObjectID()
+        public void AssignSceneObjectID()
         {
             Scene objectScene = gameObject.scene;
             if (!objectScene.IsValid())
@@ -391,6 +396,7 @@ namespace LiteNetLibManager
                 Debug.LogWarning($"[LiteNetLibIdentity] Only object in valid scene can be assigned", gameObject);
                 return;
             }
+            string oldSceneObjectId = sceneObjectId;
             if (string.IsNullOrWhiteSpace(sceneObjectId) || sceneObjectId.Equals("0") || FoundAObjectWithSceneObjectID(objectScene, sceneObjectId, this))
             {
                 int countSuffix = 0;
@@ -401,7 +407,11 @@ namespace LiteNetLibManager
                 } while (string.IsNullOrWhiteSpace(sceneObjectId) || sceneObjectId.Equals("0") || FoundAObjectWithSceneObjectID(objectScene, sceneObjectId, this));
                 Debug.Log($"[LiteNetLibIdentity] Scene object ID assigned: {sceneObjectId}", gameObject);
             }
-            EditorUtility.SetDirty(gameObject);
+            // Do not mark dirty while playing
+            if (!Application.isPlaying && !string.Equals(oldSceneObjectId, sceneObjectId))
+            {
+                MarkDirty();
+            }
         }
 
         [ContextMenu("Assign All Scene Object IDs (If Empty Or Duplicated)")]
@@ -426,15 +436,20 @@ namespace LiteNetLibManager
                 }
                 rootObjects = null;
             }
-            EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
-        internal static string GenerateSceneObjectId(LiteNetLibIdentity identity, int countSuffix)
+        [ContextMenu("Write Selected Asset IDs To Console")]
+        public void WriteSelectedAssetIDsToConsole()
+        {
+            Debug.Log($"[LiteNetLibIdentity] Selected Asset ID: {AssetId}, Hashed: {HashAssetId}, Scene Object ID: {sceneObjectId}, Name: {name}", gameObject);
+        }
+
+        public static string GenerateSceneObjectId(LiteNetLibIdentity identity, int countSuffix)
         {
             return $"{identity.name}_{countSuffix}";
         }
 
-        internal static bool FoundAObjectWithSceneObjectID(Scene loadedScene, string id, LiteNetLibIdentity ignoreIdentity)
+        public static bool FoundAObjectWithSceneObjectID(Scene loadedScene, string id, LiteNetLibIdentity ignoreIdentity)
         {
             if (!loadedScene.isLoaded)
                 return false;
@@ -453,6 +468,29 @@ namespace LiteNetLibManager
             }
             return false;
         }
+
+        private bool _queuedDirty;
+        private void MarkDirty()
+        {
+            if (_queuedDirty)
+                return;
+            _queuedDirty = true;
+            EditorApplication.delayCall += DelayedMarkDirty;
+        }
+
+        private void DelayedMarkDirty()
+        {
+            _queuedDirty = false;
+            if (this == null)
+                return;
+            EditorApplication.delayCall -= DelayedMarkDirty;
+            EditorUtility.SetDirty(this);
+            if (gameObject.scene.IsValid())
+                EditorSceneManager.MarkSceneDirty(gameObject.scene);
+            PrefabStage prefabstage = PrefabStageUtility.GetCurrentPrefabStage();
+            if (prefabstage != null)
+                EditorSceneManager.MarkSceneDirty(prefabstage.scene);
+        }
 #endif
         #endregion
 
@@ -463,33 +501,33 @@ namespace LiteNetLibManager
         }
         #endregion
 
-        #region NetFunction Functions
-        internal LiteNetLibFunction ProcessNetFunction(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)
+        #region RPC Functions
+        internal LiteNetLibRPC ProcessRPC(LiteNetLibElementInfo info, NetDataReader reader, bool hookCallback)
         {
-            return ProcessNetFunction(GetNetFunction(info), reader, hookCallback);
+            return ProcessRPC(GetRPC(info), reader, hookCallback);
         }
 
-        internal LiteNetLibFunction ProcessNetFunction(LiteNetLibFunction netFunction, NetDataReader reader, bool hookCallback)
+        internal LiteNetLibRPC ProcessRPC(LiteNetLibRPC rpc, NetDataReader reader, bool hookCallback)
         {
-            if (netFunction == null)
+            if (rpc == null)
                 return null;
-            netFunction.DeserializeParameters(reader);
+            rpc.DeserializeParameters(reader);
             if (hookCallback)
-                netFunction.HookCallback();
-            return netFunction;
+                rpc.HookCallback();
+            return rpc;
         }
 
-        internal LiteNetLibFunction GetNetFunction(LiteNetLibElementInfo info)
+        internal LiteNetLibRPC GetRPC(LiteNetLibElementInfo info)
         {
             if (info.objectId != ObjectId)
                 return null;
-            if (!NetFunctions.TryGetValue(info.elementId, out LiteNetLibFunction netFunction))
+            if (!RPCs.TryGetValue(info.elementId, out LiteNetLibRPC rpc))
             {
                 if (Manager.LogError)
                     Logging.LogError(LogTag, $"Cannot find net function: {info.elementId}.");
                 return null;
             }
-            return netFunction;
+            return rpc;
         }
         #endregion
 
@@ -538,12 +576,12 @@ namespace LiteNetLibManager
             IsSceneObject = isSceneObject;
             AssignObjectId();
 
+            byte loopCounter;
             if (!IsSetupBehaviours)
             {
                 // Setup behaviours index, we will use this as reference for network functions
                 // NOTE: Maximum network behaviour for a identity is 255 (included children)
                 Behaviours = GetComponentsInChildren<LiteNetLibBehaviour>();
-                byte loopCounter;
                 for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
                 {
                     Behaviours[loopCounter].Setup(loopCounter);
@@ -565,15 +603,15 @@ namespace LiteNetLibManager
             Manager.InterestManager.NotifyNewObject(this);
 
             // Initialized, tell behaviours
-            for (int i = 0; i < Behaviours.Length; ++i)
+            for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
-                Behaviours[i].OnIdentityInitialize();
+                Behaviours[loopCounter].OnIdentityInitialize();
             }
         }
 
         internal void OnSetOwnerClient(bool isOwnerClient)
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnSetOwnerClient(isOwnerClient);
@@ -582,7 +620,7 @@ namespace LiteNetLibManager
 
         internal void InitTransform(Vector3 position, Quaternion rotation)
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].InitTransform(position, rotation);
@@ -591,7 +629,7 @@ namespace LiteNetLibManager
 
         internal void OnStartServer()
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnStartServer();
@@ -600,7 +638,7 @@ namespace LiteNetLibManager
 
         internal void OnStartClient()
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnStartClient();
@@ -609,7 +647,7 @@ namespace LiteNetLibManager
 
         internal void OnStartOwnerClient()
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnStartOwnerClient();
@@ -654,7 +692,7 @@ namespace LiteNetLibManager
         {
             if (Subscribers.Add(connectionId))
             {
-                onSubscriberAdded.Invoke(connectionId);
+                onSubscriberAdded?.Invoke(connectionId);
                 return true;
             }
             return false;
@@ -664,7 +702,7 @@ namespace LiteNetLibManager
         {
             if (Subscribers.Remove(connectionId))
             {
-                onSubscriberRemoved.Invoke(connectionId);
+                onSubscriberRemoved?.Invoke(connectionId);
                 return true;
             }
             return false;
@@ -683,6 +721,11 @@ namespace LiteNetLibManager
         public bool HasSubscriberOrIsOwning(long connectionId)
         {
             return connectionId == ConnectionId || HasSubscriber(connectionId);
+        }
+
+        public HashSet<long>.Enumerator GetSubscribers()
+        {
+            return Subscribers.GetEnumerator();
         }
 
         public void AddSubscribing(uint subscribing)
@@ -752,6 +795,23 @@ namespace LiteNetLibManager
             }
         }
 
+        public HashSet<uint>.Enumerator GetSubscribings()
+        {
+            return Subscribings.GetEnumerator();
+        }
+
+        public bool IsDifferSubChannelId(LiteNetLibIdentity identity)
+        {
+            if (identity == null)
+            {
+                // WTF?
+                return false;
+            }
+            if (string.IsNullOrEmpty(SubChannelId) && string.IsNullOrEmpty(identity.SubChannelId))
+                return false;
+            return !string.Equals(SubChannelId, identity.SubChannelId);
+        }
+
         public bool IsHideFrom(LiteNetLibIdentity identity)
         {
             if (identity == null)
@@ -764,12 +824,7 @@ namespace LiteNetLibManager
                 // Don't hide, player own this one
                 return false;
             }
-            if (string.IsNullOrEmpty(SubChannelId) && string.IsNullOrEmpty(identity.SubChannelId))
-            {
-                // Don't hide, because sub-channelIDs aren't different
-                return false;
-            }
-            if (!string.Equals(SubChannelId, identity.SubChannelId))
+            if (IsDifferSubChannelId(identity))
             {
                 // Hide because sub-channelIDs are different
                 return true;
@@ -804,24 +859,34 @@ namespace LiteNetLibManager
             return true;
         }
 
+        public void SetIsHide(object setter, bool isHide)
+        {
+            if (isHide)
+                HideObjects.Add(setter);
+            else
+                HideObjects.Remove(setter);
+        }
+
         public void OnServerSubscribingAdded()
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnServerSubscribingAdded();
             }
-            onServerSubscribingAdded.Invoke();
+            onServerSubscribingAdded?.Invoke();
 #if !UNITY_SERVER
             if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
                 return;
             // Reset renderers/audio sources
             foreach (Renderer renderer in _hiddingRenderers)
             {
+                if (renderer == null) continue;
                 renderer.forceRenderingOff = false;
             }
             foreach (AudioSource audioSource in _hiddingAudioSources)
             {
+                if (audioSource == null) continue;
                 audioSource.mute = false;
             }
             _hiddingRenderers.Clear();
@@ -831,22 +896,24 @@ namespace LiteNetLibManager
 
         public void OnServerSubscribingRemoved()
         {
-            int loopCounter;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnServerSubscribingRemoved();
             }
-            onServerSubscribingRemoved.Invoke();
+            onServerSubscribingRemoved?.Invoke();
 #if !UNITY_SERVER
             if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
                 return;
             // Reset renderers/audio sources
             foreach (Renderer renderer in _hiddingRenderers)
             {
+                if (renderer == null) continue;
                 renderer.forceRenderingOff = false;
             }
             foreach (AudioSource audioSource in _hiddingAudioSources)
             {
+                if (audioSource == null) continue;
                 audioSource.mute = false;
             }
             _hiddingRenderers.Clear();
@@ -888,40 +955,30 @@ namespace LiteNetLibManager
 
         public void NetworkDestroy()
         {
-            if (!IsServer)
+            if (IsDestroyed)
                 return;
-
-            DestroyFromAssets();
+            if (Manager.Assets.NetworkDestroy(this, DestroyObjectReasons.RequestedToDestroy))
+                IsDestroyed = true;
         }
 
         public void NetworkDestroy(float delay)
         {
+            if (delay < 0f)
+                return;
             if (!IsServer)
                 return;
-            InternalNetworkDestroy(delay).Forget();
-        }
-
-        private async UniTaskVoid InternalNetworkDestroy(float delay)
-        {
-            if (delay < 0)
-                return;
-            await UniTask.Delay((int)(1000 * delay));
-            DestroyFromAssets();
-        }
-
-        private void DestroyFromAssets()
-        {
-            if (!IsDestroyed && Manager.Assets.NetworkDestroy(ObjectId, DestroyObjectReasons.RequestedToDestroy))
-                IsDestroyed = true;
+            Invoke(nameof(NetworkDestroy), delay);
         }
 
         internal void OnNetworkDestroy(byte reasons)
         {
-            int loopCounter;
+            IsSpawned = false;
+            byte loopCounter;
             for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
             {
                 Behaviours[loopCounter].OnNetworkDestroy(reasons);
             }
+            ResetSyncElements();
             if (Manager.IsServer)
             {
                 // If this is server, send message to clients to destroy object
@@ -942,16 +999,20 @@ namespace LiteNetLibManager
             // Clear data
             Subscribings.Clear();
             Subscribers.Clear();
-            IsSpawned = false;
         }
 
         internal void OnGetInstance()
         {
-            ResetSyncData();
+            ResetSyncElements();
             onGetInstance.Invoke();
         }
 
-        internal void ResetSyncData()
+        internal void OnPushBack()
+        {
+            onPushBack.Invoke();
+        }
+
+        internal void ResetSyncElements()
         {
             // Clear/reset syncing data
             foreach (LiteNetLibSyncElement field in SyncElements.Values)
@@ -960,34 +1021,52 @@ namespace LiteNetLibManager
             }
         }
 
+        internal void SetTransform(Vector3 position, Quaternion rotation)
+        {
+            if (overrideSetTransform != null)
+            {
+                overrideSetTransform?.Invoke(position, rotation);
+                return;
+            }
+            transform.position = position;
+            transform.rotation = rotation;
+        }
+
         private void OnDestroy()
         {
             foreach (LiteNetLibSyncElement syncElement in SyncElements.Values)
             {
                 syncElement.UnregisterUpdating();
             }
-            onGetInstance.RemoveAllListeners();
+            onGetInstance?.RemoveAllListeners();
             onGetInstance = null;
-            onSubscriberAdded.RemoveAllListeners();
+            onPushBack?.RemoveAllListeners();
+            onPushBack = null;
             onSubscriberAdded = null;
-            onSubscriberRemoved.RemoveAllListeners();
             onSubscriberRemoved = null;
+            onServerSubscribingAdded = null;
+            onServerSubscribingRemoved = null;
+            overrideSetTransform = null;
             SyncElements.Clear();
-            NetFunctions.Clear();
+            RPCs.Clear();
             Subscribings.Clear();
             Subscribers.Clear();
             HideExceptions.Clear();
             if (Behaviours != null)
             {
                 // `Behaviours` can be null because it is not setup yet.
-                for (int i = 0; i < Behaviours.Length; ++i)
+                byte loopCounter;
+                for (loopCounter = 0; loopCounter < Behaviours.Length; ++loopCounter)
                 {
-                    Behaviours[i].OnIdentityDestroy();
+                    Behaviours[loopCounter].OnIdentityDestroy();
                 }
             }
 #if !UNITY_SERVER
             _hiddingRenderers.Clear();
             _hiddingAudioSources.Clear();
+#endif
+#if UNITY_EDITOR
+            EditorApplication.delayCall -= DelayedMarkDirty;
 #endif
         }
     }

@@ -76,7 +76,7 @@ namespace MultiplayerARPG
         }
 
         [SerializeField]
-        [Tooltip("Damange amount which will be used when attacking characters, buildings and so on")]
+        [Tooltip("Damage amount which will be used when attacking characters, buildings and so on")]
         private DamageIncremental damageAmount = default;
         public DamageIncremental DamageAmount
         {
@@ -398,10 +398,24 @@ namespace MultiplayerARPG
         }
 
         [SerializeField]
-        private float recoil = 1f;
+        private float recoil = 0f;
         public float Recoil
         {
             get { return recoil; }
+        }
+
+        [SerializeField]
+        private float recoilYaw = float.MinValue;
+        public float RecoilYaw
+        {
+            get { return recoilYaw; }
+        }
+
+        [SerializeField]
+        private float recoilRoll = float.MinValue;
+        public float RecoilRoll
+        {
+            get { return recoilRoll; }
         }
 
         [SerializeField]
@@ -412,6 +426,20 @@ namespace MultiplayerARPG
         }
 
         [SerializeField]
+        private float recoilYawWhileFpsViewMode = float.MinValue;
+        public float RecoilYawWhileFpsViewMode
+        {
+            get { return recoilYawWhileFpsViewMode; }
+        }
+
+        [SerializeField]
+        private float recoilRollWhileFpsViewMode = float.MinValue;
+        public float RecoilRollWhileFpsViewMode
+        {
+            get { return recoilRollWhileFpsViewMode; }
+        }
+
+        [SerializeField]
         private float recoilWhileShoulderViewMode = float.MinValue;
         public float RecoilWhileShoulderViewMode
         {
@@ -419,10 +447,38 @@ namespace MultiplayerARPG
         }
 
         [SerializeField]
-        private float recoilWhileAiming = 1;
+        private float recoilYawWhileShoulderViewMode = float.MinValue;
+        public float RecoilYawWhileShoulderViewMode
+        {
+            get { return recoilYawWhileShoulderViewMode; }
+        }
+
+        [SerializeField]
+        private float recoilRollWhileShoulderViewMode = float.MinValue;
+        public float RecoilRollWhileShoulderViewMode
+        {
+            get { return recoilRollWhileShoulderViewMode; }
+        }
+
+        [SerializeField]
+        private float recoilWhileAiming = float.MinValue;
         public float RecoilWhileAiming
         {
             get { return recoilWhileAiming; }
+        }
+
+        [SerializeField]
+        private float recoilYawWhileAiming = float.MinValue;
+        public float RecoilYawWhileAiming
+        {
+            get { return recoilYawWhileAiming; }
+        }
+
+        [SerializeField]
+        private float recoilRollWhileAiming = float.MinValue;
+        public float RecoilRollWhileAiming
+        {
+            get { return recoilRollWhileAiming; }
         }
 
         [SerializeField]

@@ -31,7 +31,7 @@ namespace MultiplayerARPG
 
         [Category(3, "Buff/Bonus Settings")]
         [SerializeField]
-        private EquipmentBonus socketEnhanceEffect = default;
+        private EquipmentBonus socketEnhanceEffect = new EquipmentBonus();
         public EquipmentBonus SocketEnhanceEffect
         {
             get { return socketEnhanceEffect; }

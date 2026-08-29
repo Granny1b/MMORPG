@@ -190,7 +190,7 @@ namespace MultiplayerARPG
             MovementRestrictionWhileUsingSkill = skill.movementRestrictionWhileUsingSkill;
 
             // Get play speed multiplier will use it to play animation faster or slower based on attack speed stats
-            animSpeedRate *= Entity.GetAnimSpeedRate(AnimActionType);
+            animSpeedRate = Mathf.Clamp(animSpeedRate, 0.1f, animSpeedRate);
 
             // Set doing action data
             IsCastingSkillCanBeInterrupted = skill.canBeInterruptedWhileCasting;
@@ -264,7 +264,7 @@ namespace MultiplayerARPG
                     }
                     // Wait until end of cast duration
                     OnCastSkillStart?.Invoke();
-                    await UniTask.Delay((int)(CastingSkillDuration * 1000f), true, PlayerLoopTiming.FixedUpdate, skillCancellationTokenSource.Token);
+                    await GenericUtils.FrameBasedDelay(CastingSkillDuration, skillCancellationTokenSource.Token);
                     OnCastSkillEnd?.Invoke();
                 }
 
@@ -330,7 +330,7 @@ namespace MultiplayerARPG
                     // Play special effects after trigger duration
                     float tempTriggerDuration = triggerDurations[triggerIndex] / animSpeedRate;
                     remainsDuration -= tempTriggerDuration;
-                    await UniTask.Delay((int)(tempTriggerDuration * 1000f), true, PlayerLoopTiming.FixedUpdate, skillCancellationTokenSource.Token);
+                    await GenericUtils.FrameBasedDelay(tempTriggerDuration, skillCancellationTokenSource.Token);
 
                     // Special effects will plays on clients only
                     if (IsClient && (AnimActionType == AnimActionType.AttackRightHand || AnimActionType == AnimActionType.AttackLeftHand))
@@ -397,7 +397,7 @@ namespace MultiplayerARPG
                 if (remainsDuration > 0f)
                 {
                     // Wait until animation ends to stop actions
-                    await UniTask.Delay((int)(remainsDuration * 1000f), true, PlayerLoopTiming.FixedUpdate, skillCancellationTokenSource.Token);
+                    await GenericUtils.FrameBasedDelay(remainsDuration, skillCancellationTokenSource.Token);
                 }
             }
             catch (System.OperationCanceledException)
@@ -492,8 +492,8 @@ namespace MultiplayerARPG
                     ClientGenericActions.ClientReceiveGameMessage(gameMessage);
                     return;
                 }
-                ProceedUseSkill(timestamp, skill, skillLevel, weaponHandlingState, targetObjectId, aimPosition);
                 RPC(CmdUseSkill, BaseGameEntity.ACTION_DATA_CHANNEL, DeliveryMethod.ReliableOrdered, timestamp, dataId, weaponHandlingState, targetObjectId, aimPosition);
+                ProceedUseSkill(timestamp, skill, skillLevel, weaponHandlingState, targetObjectId, aimPosition);
             }
             else if (IsOwnerClientOrOwnedByServer)
             {
@@ -511,8 +511,8 @@ namespace MultiplayerARPG
         {
             if (!Entity.ValidateSkillToUse(dataId, weaponHandlingState.Has(WeaponHandlingState.IsLeftHand), targetObjectId, out BaseSkill skill, out int skillLevel, out _))
                 return;
-            ProceedUseSkill(peerTimestamp, skill, skillLevel, weaponHandlingState, targetObjectId, aimPosition);
             RPC(RpcUseSkill, BaseGameEntity.ACTION_DATA_CHANNEL, DeliveryMethod.ReliableOrdered, peerTimestamp, dataId, skillLevel, weaponHandlingState, targetObjectId, aimPosition);
+            ProceedUseSkill(peerTimestamp, skill, skillLevel, weaponHandlingState, targetObjectId, aimPosition);
         }
 
         [AllRpc]
@@ -554,8 +554,8 @@ namespace MultiplayerARPG
                     return;
                 }
                 Entity.LastUseItemTime = Time.unscaledTime;
-                ProceedUseSkillItem(timestamp, skillItem, skill, skillLevel, weaponHandlingState, targetObjectId, aimPosition);
                 RPC(CmdUseSkillItem, BaseGameEntity.ACTION_DATA_CHANNEL, DeliveryMethod.ReliableOrdered, timestamp, itemIndex, weaponHandlingState, targetObjectId, aimPosition);
+                ProceedUseSkillItem(timestamp, skillItem, skill, skillLevel, weaponHandlingState, targetObjectId, aimPosition);
             }
             else if (IsOwnerClientOrOwnedByServer)
             {
@@ -573,8 +573,8 @@ namespace MultiplayerARPG
         {
             if (!Entity.ValidateSkillItemToUse(itemIndex, weaponHandlingState.Has(WeaponHandlingState.IsLeftHand), targetObjectId, out ISkillItem skillItem, out BaseSkill skill, out int skillLevel, out _))
                 return;
-            ProceedUseSkillItem(peerTimestamp, skillItem, skill, skillLevel, weaponHandlingState, targetObjectId, aimPosition);
             RPC(RpcUseSkillItem, BaseGameEntity.ACTION_DATA_CHANNEL, DeliveryMethod.ReliableOrdered, peerTimestamp, skillItem.DataId, weaponHandlingState, targetObjectId, aimPosition);
+            ProceedUseSkillItem(peerTimestamp, skillItem, skill, skillLevel, weaponHandlingState, targetObjectId, aimPosition);
         }
 
         [AllRpc]
@@ -615,8 +615,8 @@ namespace MultiplayerARPG
             if (IsCastingSkillCanBeInterrupted && !IsCastingSkillInterrupted)
             {
                 IsCastingSkillInterrupted = true;
-                ProceedInterruptCastingSkill();
                 RPC(RpcInterruptCastingSkill, BaseGameEntity.ACTION_DATA_CHANNEL, DeliveryMethod.ReliableOrdered);
+                ProceedInterruptCastingSkill();
             }
         }
 

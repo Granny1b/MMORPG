@@ -40,7 +40,7 @@ namespace MultiplayerARPG
         {
             get { return _items; }
         }
-        public RewardGivenType GivenType { get; protected set; }
+        public RewardGivenType GivenType { get; protected set; } = RewardGivenType.None;
         public HashSet<string> Looters { get; protected set; }
         public override string EntityTitle
         {
@@ -69,9 +69,9 @@ namespace MultiplayerARPG
         }
 
         // Private variables
-        protected bool _isDestroyed;
-        protected float _dropTime;
-        protected float _appearDuration;
+        protected bool _isDestroyed = false;
+        protected float _dropTime = 0f;
+        protected float _appearDuration = 0f;
 
         protected override void EntityAwake()
         {
@@ -80,18 +80,19 @@ namespace MultiplayerARPG
             gameObject.layer = CurrentGameInstance.itemDropLayer;
         }
 
+        public override void OnIdentityInitialize()
+        {
+            base.OnIdentityInitialize();
+            NetworkDestroy(_appearDuration);
+        }
+
         protected override void SetupNetElements()
         {
             base.SetupNetElements();
             _dropperTitle.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+            _dropperTitle.redundancyCount = 0;
             _dropperEntityId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             _items.forOwnerOnly = false;
-        }
-
-        public override void OnSetup()
-        {
-            base.OnSetup();
-            NetworkDestroy(_appearDuration);
         }
 
         public void CallRpcOnPickedUp()

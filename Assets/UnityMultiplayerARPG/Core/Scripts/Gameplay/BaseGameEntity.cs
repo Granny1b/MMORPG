@@ -3,7 +3,6 @@ using Insthync.ManagedUpdating;
 using Insthync.UnityEditorUtils;
 using LiteNetLib;
 using LiteNetLibManager;
-using LiteNetLib.Utils;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -15,8 +14,6 @@ namespace MultiplayerARPG
     {
         public const byte MOVEMENT_DATA_CHANNEL = 2;
         public const byte ACTION_DATA_CHANNEL = 3;
-        protected static readonly NetDataWriter s_EntityStateMessageWriter = new NetDataWriter();
-        protected static readonly NetDataWriter s_EntityStateDataWriter = new NetDataWriter();
         protected static readonly ProfilerMarker s_EntityUpdateProfilerMarker = new ProfilerMarker("BaseGameEntity - EntityUpdate");
         protected static readonly ProfilerMarker s_OnUpdateInvokeProfilerMarker = new ProfilerMarker("BaseGameEntity - OnUpdateInvoke");
         protected static readonly ProfilerMarker s_ComponentsChangedStateUpdateProfilerMarker = new ProfilerMarker("BaseGameEntity - ComponentsChangedStateUpdate");
@@ -30,32 +27,8 @@ namespace MultiplayerARPG
 
         public virtual int EntityId
         {
-            get
-            {
-                if (MetaDataId != 0)
-                    return MetaDataId;
-                return HashAssetId;
-            }
+            get { return HashAssetId; }
             set { }
-        }
-
-        [SerializeField]
-        protected SyncFieldInt syncMetaDataId = new SyncFieldInt();
-        private int _metaDataId;
-        public int MetaDataId
-        {
-            get
-            {
-                if (syncMetaDataId.Value != 0)
-                    return syncMetaDataId.Value;
-                return _metaDataId;
-            }
-            set
-            {
-                if (CurrentGameManager.IsServer)
-                    syncMetaDataId.Value = value;
-                _metaDataId = value;
-            }
         }
 
         public bool ForceHide { get; set; }
@@ -81,6 +54,11 @@ namespace MultiplayerARPG
             get { return entityTitles; }
         }
 
+        public virtual string EntityTitle
+        {
+            get { return Language.GetText(entityTitles, entityTitle); }
+        }
+
         [Category(100, "Sync Fields", false)]
         [SerializeField]
         protected SyncFieldString syncTitle = new SyncFieldString();
@@ -88,6 +66,7 @@ namespace MultiplayerARPG
         {
             get { return syncTitle; }
         }
+
         public string Title
         {
             get { return !string.IsNullOrEmpty(syncTitle.Value) ? syncTitle.Value : EntityTitle; }
@@ -111,11 +90,6 @@ namespace MultiplayerARPG
             get { return nonOwnerObjects; }
         }
 
-        public virtual string EntityTitle
-        {
-            get { return Language.GetText(entityTitles, entityTitle); }
-        }
-
         [Category(2, "Components")]
         [SerializeField]
         protected GameEntityModel model = null;
@@ -132,6 +106,8 @@ namespace MultiplayerARPG
         {
             get
             {
+                if (OverrideCameraTargetTransform.TryGetValue(out Transform camTransform))
+                    return camTransform;
                 if (!PassengingVehicleEntity.IsNull())
                 {
                     if (PassengingVehicleSeat.cameraTarget == VehicleSeatCameraTarget.Vehicle)
@@ -141,6 +117,8 @@ namespace MultiplayerARPG
             }
             set { cameraTargetTransform = value; }
         }
+
+        public readonly ValueOverride<Transform> OverrideCameraTargetTransform = new ValueOverride<Transform>();
 
         [Tooltip("Transform for position which camera will look at and follow while playing in FPS view mode")]
         [SerializeField]
@@ -189,7 +167,9 @@ namespace MultiplayerARPG
             get { return gameObject; }
         }
 
-        protected virtual bool IsUpdateEntityComponents
+        public readonly StateFlag MovementDisableState = new StateFlag();
+
+        public virtual bool IsUpdateEntityComponents
         {
             get
             {
@@ -199,12 +179,11 @@ namespace MultiplayerARPG
             }
         }
 
-        protected LogicUpdater _logicUpdater;
-        protected bool _isTeleporting;
-        protected bool _stillMoveAfterTeleport;
-        protected Vector3 _teleportingPosition;
-        protected Quaternion _teleportingRotation;
-        private bool? _wasUpdateEntityComponents;
+        protected bool _isTeleporting = false;
+        protected bool _stillMoveAfterTeleport = false;
+        protected Vector3 _teleportingPosition = Vector3.zero;
+        protected Quaternion _teleportingRotation = Quaternion.identity;
+        private bool? _wasUpdateEntityComponents = null;
 
         /// <summary>
         /// Override this function to initial required components
@@ -230,13 +209,14 @@ namespace MultiplayerARPG
         {
         }
 
+        protected EntityInfo _info = new EntityInfo();
         /// <summary>
         /// Override this function to set instigator when attacks other entities
         /// </summary>
         /// <returns></returns>
         public virtual EntityInfo GetInfo()
         {
-            return EntityInfo.Empty;
+            return _info;
         }
 
         private void Awake()
@@ -251,54 +231,23 @@ namespace MultiplayerARPG
         {
             EntityStart();
             if (onStart != null)
-                onStart.Invoke();
+                onStart.Invoke(this);
         }
         protected virtual void EntityStart() { }
 
         public override void OnIdentityInitialize()
         {
             if (onIdentityInitialize != null)
-                onIdentityInitialize.Invoke();
-            if (_logicUpdater == null)
-            {
-                _logicUpdater = Manager.LogicUpdater;
-                _logicUpdater.OnTick += OnTickServer;
-                _logicUpdater.OnTick += OnTickClient;
-            }
-        }
-
-        private void OnTickServer(LogicUpdater updater)
-        {
-            if (!isActiveAndEnabled)
-                return;
-            if (!IsServer)
-                return;
-            SendServerState(Manager.LocalTick);
-        }
-
-        private void OnTickClient(LogicUpdater updater)
-        {
-            if (!isActiveAndEnabled)
-                return;
-            if (IsServer)
-                return;
-            if (!IsOwnerClient)
-                return;
-            SendClientState(Manager.LocalTick);
+                onIdentityInitialize.Invoke(this);
         }
 
         private void OnDestroy()
         {
             EntityOnDestroy();
             if (onDestroy != null)
-                onDestroy.Invoke();
+                onDestroy.Invoke(this);
             this.InvokeInstanceDevExtMethods("OnDestroy");
-            Clean();
-            if (_logicUpdater != null)
-            {
-                _logicUpdater.OnTick -= OnTickServer;
-                _logicUpdater.OnTick -= OnTickClient;
-            }
+            Clean(true);
         }
         protected virtual void EntityOnDestroy()
         {
@@ -313,7 +262,7 @@ namespace MultiplayerARPG
         {
             EntityOnEnable();
             if (onEnable != null)
-                onEnable.Invoke();
+                onEnable.Invoke(this);
             UpdateManager.Register(DefaultExecutionOrders.BASE_GAME_ENTITY, this);
         }
         protected virtual void EntityOnEnable() { }
@@ -322,7 +271,7 @@ namespace MultiplayerARPG
         {
             EntityOnDisable();
             if (onDisable != null)
-                onDisable.Invoke();
+                onDisable.Invoke(this);
             UpdateManager.Unregister(DefaultExecutionOrders.BASE_GAME_ENTITY, this);
         }
         protected virtual void EntityOnDisable() { }
@@ -335,27 +284,31 @@ namespace MultiplayerARPG
         protected virtual void OnDrawGizmosSelected()
         {
         }
+
+        protected virtual void OnValidate()
+        {
+        }
 #endif
 
-        public override void OnSetOwnerClient(bool isOwnerClient)
-        {
-            EntityOnSetOwnerClient();
-            if (onSetOwnerClient != null)
-                onSetOwnerClient.Invoke();
-        }
-
-        protected virtual void EntityOnSetOwnerClient()
+        public override sealed void OnSetOwnerClient(bool isOwnerClient)
         {
             foreach (GameObject ownerObject in ownerObjects)
             {
                 if (ownerObject == null) continue;
-                ownerObject.SetActive(IsOwnerClient);
+                ownerObject.SetActive(isOwnerClient);
             }
             foreach (GameObject nonOwnerObject in nonOwnerObjects)
             {
                 if (nonOwnerObject == null) continue;
-                nonOwnerObject.SetActive(!IsOwnerClient);
+                nonOwnerObject.SetActive(!isOwnerClient);
             }
+            EntityOnSetOwnerClient(isOwnerClient);
+            if (onSetOwnerClient != null)
+                onSetOwnerClient.Invoke(this);
+        }
+
+        protected virtual void EntityOnSetOwnerClient(bool isOwnerClient)
+        {
         }
 
         public void ManagedUpdate()
@@ -374,24 +327,14 @@ namespace MultiplayerARPG
             using (s_OnUpdateInvokeProfilerMarker.Auto())
             {
                 if (onUpdate != null)
-                    onUpdate.Invoke();
+                    onUpdate.Invoke(this);
             }
         }
 
         protected virtual void EntityUpdate()
         {
-            if (!Movement.IsNull())
-            {
-                bool tempEnableMovement = PassengingVehicleEntity.IsNull();
-                // Enable movement or not
-                if (Movement.enabled != tempEnableMovement)
-                {
-                    if (!tempEnableMovement)
-                        Movement.StopMove();
-                    // Enable movement while not passenging any vehicle
-                    Movement.enabled = tempEnableMovement;
-                }
-            }
+            UpdateMovementEnabling();
+            UpdateOverrideInput();
 
             if (Model != null && (IsClient || GameInstance.Singleton.updateAnimationAtServer))
             {
@@ -406,6 +349,41 @@ namespace MultiplayerARPG
             }
         }
 
+        protected virtual void UpdateMovementEnabling()
+        {
+            if (!Movement.IsNull())
+            {
+                bool tempEnableMovement = PassengingVehicleEntity.IsNull() && !MovementDisableState.IsActive;
+                // Enable movement or not
+                if (Movement.enabled != tempEnableMovement)
+                {
+                    if (!tempEnableMovement)
+                        Movement.StopMove();
+                    // Enable movement while not passenging any vehicle
+                    Movement.enabled = tempEnableMovement;
+                }
+            }
+        }
+
+        protected virtual void UpdateOverrideInput()
+        {
+            if (!ActiveMovement.IsNull() && OverrideInput.IsEnabled)
+            {
+                if (OverrideInput.IsStopped)
+                    ActiveMovement.StopMove();
+                if (OverrideInput.IsPointClick)
+                    ActiveMovement.PointClickMovement(OverrideInput.Position);
+                if (OverrideInput.IsKeyMovement)
+                    ActiveMovement.KeyMovement(OverrideInput.MoveDirection, OverrideInput.MovementState);
+                if (OverrideInput.IsSetExtraMovementState)
+                    ActiveMovement.SetExtraMovementState(OverrideInput.ExtraMovementState);
+                if (OverrideInput.IsSetLookRotation)
+                    ActiveMovement.SetLookRotation(OverrideInput.LookRotation, OverrideInput.TurnImmediately);
+                if (OverrideInput.IsSetSmoothTurnSpeed)
+                    ActiveMovement.SetSmoothTurnSpeed(OverrideInput.SmoothTurnSpeed);
+            }
+        }
+
         public void ManagedLateUpdate()
         {
             bool isUpdateEntityComponents = IsUpdateEntityComponents;
@@ -415,7 +393,7 @@ namespace MultiplayerARPG
                 {
                     _wasUpdateEntityComponents = isUpdateEntityComponents;
                     if (onIsUpdateEntityComponentsChanged != null)
-                        onIsUpdateEntityComponentsChanged.Invoke(isUpdateEntityComponents);
+                        onIsUpdateEntityComponentsChanged.Invoke(this, isUpdateEntityComponents);
                 }
             }
             using (s_EntityLateUpdateProfilerMarker.Auto())
@@ -432,7 +410,7 @@ namespace MultiplayerARPG
             using (s_OnLateUpdateInvokeProfilerMarker.Auto())
             {
                 if (onLateUpdate != null)
-                    onLateUpdate.Invoke();
+                    onLateUpdate.Invoke(this);
             }
         }
 
@@ -460,82 +438,39 @@ namespace MultiplayerARPG
             }
         }
 
-        public virtual void SendClientState(long writeTimestamp)
+        public override sealed void OnSetup()
         {
-            if (Movement != null && Movement.enabled)
-            {
-                bool shouldSendReliably;
-                s_EntityStateDataWriter.Reset();
-                if (Movement.WriteClientState(writeTimestamp, s_EntityStateDataWriter, out shouldSendReliably))
-                {
-                    TransportHandler.WritePacket(s_EntityStateMessageWriter, GameNetworkingConsts.EntityState);
-                    s_EntityStateMessageWriter.PutPackedUInt(ObjectId);
-                    s_EntityStateMessageWriter.PutPackedLong(writeTimestamp);
-                    s_EntityStateMessageWriter.Put(s_EntityStateDataWriter.Data, 0, s_EntityStateDataWriter.Length);
-                    ClientSendMessage(MOVEMENT_DATA_CHANNEL, shouldSendReliably ? DeliveryMethod.ReliableOrdered : DeliveryMethod.Sequenced, s_EntityStateMessageWriter);
-                }
-            }
-        }
-
-        public virtual void SendServerState(long writeTimestamp)
-        {
-            if (Movement != null && Movement.enabled)
-            {
-                bool shouldSendReliably;
-                s_EntityStateDataWriter.Reset();
-                if (Movement.WriteServerState(writeTimestamp, s_EntityStateDataWriter, out shouldSendReliably))
-                {
-                    TransportHandler.WritePacket(s_EntityStateMessageWriter, GameNetworkingConsts.EntityState);
-                    s_EntityStateMessageWriter.PutPackedUInt(ObjectId);
-                    s_EntityStateMessageWriter.PutPackedLong(writeTimestamp);
-                    s_EntityStateMessageWriter.Put(s_EntityStateDataWriter.Data, 0, s_EntityStateDataWriter.Length);
-                    ServerSendMessageToSubscribers(MOVEMENT_DATA_CHANNEL, shouldSendReliably ? DeliveryMethod.ReliableOrdered : DeliveryMethod.Sequenced, s_EntityStateMessageWriter);
-                }
-            }
-        }
-
-        public virtual void ReadClientStateAtServer(long peerTimestamp, NetDataReader reader)
-        {
-            if (Movement != null)
-                Movement.ReadClientStateAtServer(peerTimestamp, reader);
-        }
-
-        public virtual void ReadServerStateAtClient(long peerTimestamp, NetDataReader reader)
-        {
-            if (Movement != null)
-                Movement.ReadServerStateAtClient(peerTimestamp, reader);
-        }
-
-        protected virtual void OnValidate()
-        {
-#if UNITY_EDITOR
-            SetupNetElements();
-#endif
-        }
-
-        public override void OnSetup()
-        {
-            base.OnSetup();
-
             if (onSetup != null)
-                onSetup.Invoke();
-
+                onSetup.Invoke(this);
             SetupNetElements();
+            if (onSetupNetElements != null)
+                onSetupNetElements.Invoke(this);
         }
 
         protected virtual void SetupNetElements()
         {
-            if (onSetupNetElements != null)
-                onSetupNetElements.Invoke();
-            syncMetaDataId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             syncTitle.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+            syncTitle.redundancyCount = 0;
+            syncOverrideInput.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
+            syncOverrideMoveSpeed.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+            syncOverrideJumpHeight.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+            syncOverrideGravityRate.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+        }
+
+        public override void OnStartServer()
+        {
+            OverrideInput = new OverrideEntityMovementInput();
+            OverrideMoveSpeed = -1f;
+            OverrideJumpHeight = -1f;
+            OverrideGravityRate = -1f;
         }
 
         public override void OnNetworkDestroy(byte reasons)
         {
             base.OnNetworkDestroy(reasons);
             if (onNetworkDestroy != null)
-                onNetworkDestroy.Invoke(reasons);
+                onNetworkDestroy.Invoke(this, reasons);
+            Clean(false);
         }
 
         public virtual bool IsHide()
@@ -561,6 +496,25 @@ namespace MultiplayerARPG
         public virtual bool NotBeingSelectedOnClick()
         {
             return false;
+        }
+
+        public void SetNextActionDelay(ref float lastActionTime, float delay)
+        {
+            lastActionTime = Time.unscaledTime + delay;
+        }
+
+        public bool UpdateLastActionTime(ref float lastActionTime, float delay)
+        {
+            float time = Time.unscaledTime;
+            if (time - lastActionTime < delay)
+                return false;
+            lastActionTime = time;
+            return true;
+        }
+
+        public bool CanDoNextAction(ref float lastActionTime, float delay)
+        {
+            return Time.unscaledTime - lastActionTime >= delay;
         }
 
         public virtual void CallCmdPerformHitRegValidation(HitRegisterData hitData)

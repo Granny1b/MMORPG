@@ -100,13 +100,17 @@ namespace MultiplayerARPG
             UpdateManager.Unregister(this);
         }
 
-        protected override void PushBack()
+        public override void PushBack()
         {
-            OnPushBack();
             if (ObjectPrefab != null)
+            {
                 PoolSystem.PushBack(this);
+            }
             else if (gameObject.activeSelf)
+            {
+                OnPushBack();
                 gameObject.SetActive(false);
+            }
         }
 
         public virtual void ManagedUpdate()

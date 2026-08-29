@@ -152,7 +152,7 @@ namespace MultiplayerARPG
             base.OnGetInstance();
         }
 
-        protected override void OnPushBack()
+        public override void OnPushBack()
         {
             StopFx();
             base.OnPushBack();

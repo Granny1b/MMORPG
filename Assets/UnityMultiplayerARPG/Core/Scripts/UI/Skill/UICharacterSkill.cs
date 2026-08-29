@@ -23,9 +23,9 @@ namespace MultiplayerARPG
         [Tooltip("Format => {0} = {List Of Weapon Type}")]
         public UILocaleKeySetting formatKeyAvailableWeapons = new UILocaleKeySetting(UIFormatKeys.UI_FORMAT_AVAILABLE_WEAPONS);
         [Tooltip("Format => {0} = {List Of Armor Type}")]
-        public UILocaleKeySetting formatKeyAvailableArmors = new UILocaleKeySetting(UIFormatKeys.UI_FORMAT_AVAILABLE_WEAPONS);
+        public UILocaleKeySetting formatKeyAvailableArmors = new UILocaleKeySetting(UIFormatKeys.UI_FORMAT_AVAILABLE_ARMORS);
         [Tooltip("Format => {0} = {List Of Vehicle Type}")]
-        public UILocaleKeySetting formatKeyAvailableVehicles = new UILocaleKeySetting(UIFormatKeys.UI_FORMAT_AVAILABLE_WEAPONS);
+        public UILocaleKeySetting formatKeyAvailableVehicles = new UILocaleKeySetting(UIFormatKeys.UI_FORMAT_AVAILABLE_VEHICLES);
         [Tooltip("Format => {0} = {Consume Hp Amount}")]
         public UILocaleKeySetting formatKeyConsumeHp = new UILocaleKeySetting(UIFormatKeys.UI_FORMAT_CONSUME_HP);
         [Tooltip("Format => {0} = {Consume Mp Amount}")]
@@ -95,6 +95,8 @@ namespace MultiplayerARPG
         public bool changeObjectNameByData = true;
 
         protected float _coolDownRemainsDuration;
+        private int _lastDisplayedCoolDown = -1;
+        private int _lastDisplayedCoolDownRemains = -1;
         protected bool _dirtyIsCountDown;
         protected bool _dirtyAbleToLevelUp;
         protected bool _dirtyAbleToUse;
@@ -166,6 +168,8 @@ namespace MultiplayerARPG
         {
             base.OnDisable();
             _coolDownRemainsDuration = 0f;
+            _lastDisplayedCoolDown = -1;
+            _lastDisplayedCoolDownRemains = -1;
         }
 
         public override void ManagedUpdate()
@@ -192,18 +196,30 @@ namespace MultiplayerARPG
 
             if (uiTextCoolDownDuration != null)
             {
-                uiTextCoolDownDuration.SetGameObjectActive(isSkillActive && coolDownDuration > 0f);
-                uiTextCoolDownDuration.text = ZString.Format(
-                    LanguageManager.GetText(formatKeyCoolDownDuration),
-                    coolDownDuration.ToString("N0"));
+                bool coolDownActive = isSkillActive && coolDownDuration > 0f;
+                uiTextCoolDownDuration.SetGameObjectActive(coolDownActive);
+                int displayedCoolDown = Mathf.RoundToInt(coolDownDuration);
+                if (displayedCoolDown != _lastDisplayedCoolDown)
+                {
+                    _lastDisplayedCoolDown = displayedCoolDown;
+                    uiTextCoolDownDuration.text = ZString.Format(
+                        LanguageManager.GetText(formatKeyCoolDownDuration),
+                        displayedCoolDown.ToString("N0"));
+                }
             }
 
             if (uiTextCoolDownRemainsDuration != null)
             {
-                uiTextCoolDownRemainsDuration.SetGameObjectActive(isSkillActive && _coolDownRemainsDuration > 0);
-                uiTextCoolDownRemainsDuration.text = ZString.Format(
-                    LanguageManager.GetText(formatKeyCoolDownRemainsDuration),
-                    _coolDownRemainsDuration.ToString("N0"));
+                bool remainsActive = isSkillActive && _coolDownRemainsDuration > 0;
+                uiTextCoolDownRemainsDuration.SetGameObjectActive(remainsActive);
+                int displayedRemains = Mathf.RoundToInt(_coolDownRemainsDuration);
+                if (displayedRemains != _lastDisplayedCoolDownRemains)
+                {
+                    _lastDisplayedCoolDownRemains = displayedRemains;
+                    uiTextCoolDownRemainsDuration.text = ZString.Format(
+                        LanguageManager.GetText(formatKeyCoolDownRemainsDuration),
+                        displayedRemains.ToString("N0"));
+                }
             }
 
             if (imageCoolDownGage != null)
@@ -250,12 +266,11 @@ namespace MultiplayerARPG
         protected override void UpdateUI()
         {
             UpdateCoolDownRemainsDuration(0f);
+        }
 
-            IPlayerCharacterData targetPlayer = Character as IPlayerCharacterData;
-            if (targetPlayer == null)
-                targetPlayer = GameInstance.PlayingCharacter;
-
-            bool ableToLevelUp = targetPlayer != null && Skill != null && Skill.CanLevelUp(targetPlayer, Level, out _);
+        protected void UpdateAbleToLevelUp()
+        {
+            bool ableToLevelUp = GameInstance.PlayingCharacter != null && Skill != null && Skill.CanLevelUp(GameInstance.PlayingCharacter, Level, out _);
             if (_forceUpdateUi || _dirtyAbleToLevelUp != ableToLevelUp)
             {
                 _dirtyAbleToLevelUp = ableToLevelUp;
@@ -264,8 +279,11 @@ namespace MultiplayerARPG
                 else
                     onUnableToLevelUp.Invoke();
             }
+        }
 
-            bool ableToUse = targetPlayer != null && Skill != null && Skill.IsActive && Level > 0;
+        protected void UpdateAbleToUse()
+        {
+            bool ableToUse = GameInstance.PlayingCharacter != null && Skill != null && Skill.IsActive && Level > 0;
             if (_forceUpdateUi || _dirtyAbleToUse != ableToUse)
             {
                 _dirtyAbleToUse = ableToUse;
@@ -274,7 +292,10 @@ namespace MultiplayerARPG
                 else
                     onUnableToUse.Invoke();
             }
+        }
 
+        protected void UpdateMaxedLevel()
+        {
             bool maxedLevel = Skill != null && Skill.maxLevel <= Level;
             if (_forceUpdateUi || _dirtyMaxedLevel != maxedLevel)
             {
@@ -292,6 +313,9 @@ namespace MultiplayerARPG
                 name = $"(UICharacterSkill){(Skill == null ? string.Empty : Skill.Id)}";
 
             UpdateCoolDownRemainsDuration(1f);
+            UpdateAbleToLevelUp();
+            UpdateAbleToUse();
+            UpdateMaxedLevel();
 
             if (Level <= 0)
             {

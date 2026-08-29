@@ -10,12 +10,12 @@ namespace MultiplayerARPG
             if (members.Count <= 0)
                 return;
             int i = 0;
-            sortedMembers[i++] = members[leaderId];
+            if (members.TryGetValue(leaderId, out SocialCharacterData tempMember))
+                sortedMembers[i++] = tempMember;
             List<SocialCharacterData> offlineMembers = new List<SocialCharacterData>();
-            SocialCharacterData tempMember;
             foreach (string memberId in members.Keys)
             {
-                if (memberId.Equals(leaderId))
+                if (string.Equals(memberId, leaderId))
                     continue;
                 tempMember = members[memberId];
                 if (!GameInstance.ClientOnlineCharacterHandlers.IsCharacterOnline(memberId))

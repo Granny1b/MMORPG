@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: e20b3424597ebdd4cade1535655a6310
 timeCreated: 1507924240
-licenseType: Store
+licenseType: Pro
 MonoImporter:
   serializedVersion: 2
   defaultReferences: []
@@ -10,10 +10,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/Utils/WeightedRandomizer.cs
-  uploadId: 857340

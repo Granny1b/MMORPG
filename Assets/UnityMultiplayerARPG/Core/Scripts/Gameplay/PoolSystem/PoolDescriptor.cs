@@ -26,7 +26,7 @@ namespace MultiplayerARPG
             onGetInstance.Invoke();
         }
 
-        protected void PushBack(float delay)
+        public void PushBack(float delay)
         {
             PushBackRoutine(delay).Forget();
         }
@@ -37,13 +37,12 @@ namespace MultiplayerARPG
             PushBack();
         }
 
-        protected virtual void PushBack()
+        public virtual void PushBack()
         {
-            OnPushBack();
             PoolSystem.PushBack(this);
         }
 
-        protected virtual void OnPushBack()
+        public virtual void OnPushBack()
         {
             onPushBack.Invoke();
         }

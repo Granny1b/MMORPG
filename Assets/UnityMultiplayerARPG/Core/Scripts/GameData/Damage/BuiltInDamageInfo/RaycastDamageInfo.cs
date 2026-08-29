@@ -8,9 +8,10 @@ namespace MultiplayerARPG
 {
     public class RaycastDamageInfo : BaseCustomDamageInfo
     {
-        public float missileDistance;
-        public float missileSpeed;
-        public bool isHeadshotInstantDeath;
+        public float missileDistance = 10f;
+        public float missileSpeed = 10f;
+        public bool isHeadshotInstantDeath = false;
+        public float insideColliderOverlappingRadius = 0.05f;
 #if UNITY_EDITOR || !EXCLUDE_PREFAB_REFS || DISABLE_ADDRESSABLES
 #if !DISABLE_ADDRESSABLES
         [AddressableAssetConversion(nameof(addressableProjectEffect))]
@@ -35,7 +36,7 @@ namespace MultiplayerARPG
             get => addressableProjectEffect;
         }
 #endif
-        public byte pierceThroughEntities;
+        public byte pierceThroughEntities = 0;
         public ImpactEffects impactEffects;
 
         public override void PrepareRelatesData()
@@ -45,6 +46,11 @@ namespace MultiplayerARPG
         }
 
         public override Transform GetDamageTransform(BaseCharacterEntity attacker, bool isLeftHand)
+        {
+            return attacker.MissileDamageTransform;
+        }
+
+        public virtual Transform GetDamageEffectTransform(BaseCharacterEntity attacker, bool isLeftHand)
         {
             Transform transform = null;
             if (attacker.ModelManager.IsFps)
@@ -180,99 +186,150 @@ namespace MultiplayerARPG
             bool isPlayImpactEffects = isClient && impactEffects != null;
             List<ImpactEffectPlayingData> impactEffectsData = new List<ImpactEffectPlayingData>();
 #endif
+
+            projectileDistance = float.MinValue;
+            HashSet<uint> hitObjects = new HashSet<uint>();
+            byte pierceThroughEntities = this.pierceThroughEntities;
+            float tempHitDistance;
+            Vector3 tempHitPoint;
+            Vector3 tempHitNormal;
+            GameObject tempGameObject;
+            Dictionary<DamageElement, MinMaxFloat> damage = damageAmounts[triggerIndex];
+
             int layerMask = GameInstance.Singleton.GetDamageEntityHitLayerMask();
-            int tempHitCount = attacker.AttackPhysicFunctions.Raycast(damagePosition, damageDirection, missileDistance, layerMask, QueryTriggerInteraction.Collide, true);
+            int tempLoopCounter = 0;
+            int tempHitCount;
+            tempHitCount = attacker.AttackPhysicFunctions.OverlapObjects(damagePosition, insideColliderOverlappingRadius, layerMask, true, QueryTriggerInteraction.Collide, true);
+            if (tempHitCount > 0)
+            {
+                for (tempLoopCounter = 0; tempLoopCounter < tempHitCount; ++tempLoopCounter)
+                {
+
+                    tempGameObject = attacker.AttackPhysicFunctions.GetOverlapObject(tempLoopCounter);
+                    tempHitPoint = attacker.AttackPhysicFunctions.GetOverlapColliderClosestPoint(tempLoopCounter, damagePosition);
+                    tempHitNormal = -damageDirection;
+                    tempHitDistance = (tempHitPoint - damagePosition).magnitude;
+
+                    if (ProceedHitting(isServer
+                        , isOwnerClient
+                        , willProceedHitRegByClient
+                        , attacker
+                        , instigator
+                        , weapon
+                        , simulateSeed
+                        , damage
+                        , skill
+                        , skillLevel
+                        , ref hitRegData
+                        , hitObjects
+                        , ref projectileDistance
+                        , tempGameObject
+                        , tempHitDistance
+                        , ref pierceThroughEntities
+                        , tempHitPoint
+#if !UNITY_SERVER
+                        , tempHitNormal
+                        , isPlayImpactEffects
+                        , impactEffectsData
+#endif
+                        ))
+                        break;
+                }
+            }
+
+            tempHitCount = attacker.AttackPhysicFunctions.Raycast(damagePosition, damageDirection, missileDistance, layerMask, QueryTriggerInteraction.Collide, true);
             if (tempHitCount <= 0)
             {
 #if !UNITY_SERVER
                 // Spawn projectile effect, it will move to target but it won't apply damage because it is just effect
                 if (isClient)
-                    PlayProjectileEffect(damagePosition, damageRotation, projectileDistance, impactEffectsData);
+                    PlayProjectileEffectAtEffectTransform(attacker, isLeftHand, damagePosition, damageDirection, damageRotation, projectileDistance, impactEffectsData);
 #endif
                 return default;
             }
 
-            HashSet<uint> hitObjects = new HashSet<uint>();
-            projectileDistance = float.MinValue;
-            byte pierceThroughEntities = this.pierceThroughEntities;
-            Vector3 tempHitPoint;
-            Vector3 tempHitNormal;
-            float tempHitDistance;
-            GameObject tempGameObject;
-            DamageableHitBox tempDamageableHitBox;
             // Find characters that receiving damages
-            for (int tempLoopCounter = 0; tempLoopCounter < tempHitCount; ++tempLoopCounter)
+            for (tempLoopCounter = 0; tempLoopCounter < tempHitCount; ++tempLoopCounter)
             {
                 tempHitPoint = attacker.AttackPhysicFunctions.GetRaycastPoint(tempLoopCounter);
                 tempHitNormal = attacker.AttackPhysicFunctions.GetRaycastNormal(tempLoopCounter);
                 tempHitDistance = attacker.AttackPhysicFunctions.GetRaycastDistance(tempLoopCounter);
                 tempGameObject = attacker.AttackPhysicFunctions.GetRaycastObject(tempLoopCounter);
 
-                if (!tempGameObject.GetComponent<IUnHittable>().IsNull())
-                    continue;
-
-                if (!tempGameObject.TryGetComponent(out tempDamageableHitBox) || !tempDamageableHitBox.Entity)
-                {
-                    if (GameInstance.Singleton.IsDamageableLayer(tempGameObject.layer))
-                    {
-                        // Hit something which is part of damageable entities
-                        continue;
-                    }
-
+                if (ProceedHitting(isServer
+                    , isOwnerClient
+                    , willProceedHitRegByClient
+                    , attacker
+                    , instigator
+                    , weapon
+                    , simulateSeed
+                    , damage
+                    , skill
+                    , skillLevel
+                    , ref hitRegData
+                    , hitObjects
+                    , ref projectileDistance
+                    , tempGameObject
+                    , tempHitDistance
+                    , ref pierceThroughEntities
+                    , tempHitPoint
 #if !UNITY_SERVER
-                    // Hit wall... so play impact effects and update piercing
-                    // Prepare data to instantiate impact effects
-                    if (isPlayImpactEffects)
-                    {
-                        impactEffectsData.Add(new ImpactEffectPlayingData()
-                        {
-                            tag = GetImpactEffectTag(tempGameObject),
-                            point = tempHitPoint,
-                            normal = tempHitNormal,
-                        });
-                    }
+                    , tempHitNormal
+                    , isPlayImpactEffects
+                    , impactEffectsData
 #endif
+                    ))
+                    break;
+            }
+            if (projectileDistance <= 0f)
+                projectileDistance = missileDistance;
+#if !UNITY_SERVER
+            // Spawn projectile effect, it will move to target but it won't apply damage because it is just effect
+            if (isClient)
+                PlayProjectileEffectAtEffectTransform(attacker, isLeftHand, damagePosition, damageDirection, damageRotation, projectileDistance, impactEffectsData);
+#endif
+            return default;
+        }
 
-                    // Update pierce trough entities count
-                    if (pierceThroughEntities <= 0)
-                    {
-                        if (tempHitDistance > projectileDistance)
-                            projectileDistance = tempHitDistance;
-                        break;
-                    }
-                    --pierceThroughEntities;
-                    continue;
-                }
+        private bool ProceedHitting(bool isServer
+            , bool isOwnerClient
+            , bool willProceedHitRegByClient
+            , BaseCharacterEntity attacker
+            , EntityInfo instigator
+            , CharacterItem weapon
+            , int simulateSeed
+            , Dictionary<DamageElement, MinMaxFloat> damage
+            , BaseSkill skill
+            , int skillLevel
+            , ref HitRegisterData hitRegData
+            , HashSet<uint> hitObjects
+            , ref float projectileDistance
+            , GameObject tempGameObject
+            , float tempHitDistance
+            , ref byte pierceThroughEntities
+            , Vector3 tempHitPoint
+#if !UNITY_SERVER
+            , Vector3 tempHitNormal
+            , bool isPlayImpactEffects
+            , List<ImpactEffectPlayingData> impactEffectsData
+#endif
+            )
+        {
+            DamageableHitBox tempDamageableHitBox;
 
-                if (tempDamageableHitBox.GetObjectId() == attacker.ObjectId)
-                    continue;
+            if (!tempGameObject.GetComponent<IUnHittable>().IsNull())
+                return false;
 
-                if (hitObjects.Contains(tempDamageableHitBox.GetObjectId()))
-                    continue;
-
-                // Add entity to table, if it found entity in the table next time it will skip. 
-                // So it won't applies damage to entity repeatly.
-                hitObjects.Add(tempDamageableHitBox.GetObjectId());
-
-                // Target won't receive damage if dead or can't receive damage from this character
-                if (tempDamageableHitBox.IsDead() || !tempDamageableHitBox.CanReceiveDamageFrom(instigator))
-                    continue;
-
-                // Target receives damages
-                if (isServer && !willProceedHitRegByClient)
-                    tempDamageableHitBox.ReceiveDamage(attacker.EntityTransform.position, instigator, damageAmounts[triggerIndex], weapon, skill, skillLevel, simulateSeed);
-
-                // Prepare hit reg because it is hitting
-                if (isOwnerClient && willProceedHitRegByClient)
+            if (!tempGameObject.TryGetComponent(out tempDamageableHitBox) || !tempDamageableHitBox.Entity)
+            {
+                if (GameInstance.Singleton.IsDamageableLayer(tempGameObject.layer))
                 {
-                    hitRegData.HitTimestamp = BaseGameNetworkManager.Singleton.ServerTimestamp;
-                    hitRegData.HitObjectId = tempDamageableHitBox.GetObjectId();
-                    hitRegData.HitBoxIndex = tempDamageableHitBox.Index;
-                    hitRegData.HitOrigin = tempHitPoint;
-                    attacker.CallCmdPerformHitRegValidation(hitRegData);
+                    // Hit something which is part of damageable entities
+                    return false;
                 }
 
 #if !UNITY_SERVER
+                // Hit wall... so play impact effects and update piercing
                 // Prepare data to instantiate impact effects
                 if (isPlayImpactEffects)
                 {
@@ -290,17 +347,77 @@ namespace MultiplayerARPG
                 {
                     if (tempHitDistance > projectileDistance)
                         projectileDistance = tempHitDistance;
-                    break;
+                    return true;
                 }
                 --pierceThroughEntities;
+                return false;
             }
+
+            if (tempDamageableHitBox.GetObjectId() == attacker.ObjectId)
+                return false;
+
+            if (hitObjects.Contains(tempDamageableHitBox.GetObjectId()))
+                return false;
+
+            // Add entity to table, if it found entity in the table next time it will skip. 
+            // So it won't applies damage to entity repeatly.
+            hitObjects.Add(tempDamageableHitBox.GetObjectId());
+
+            // Target won't receive damage if dead or can't receive damage from this character
+            if (tempDamageableHitBox.IsDead() || !tempDamageableHitBox.CanReceiveDamageFrom(instigator))
+                return false;
+
+            // Target receives damages
+            if (isServer && !willProceedHitRegByClient)
+                tempDamageableHitBox.ReceiveDamage(attacker.EntityTransform.position, instigator, damage, weapon, skill, skillLevel, simulateSeed);
+
+            // Prepare hit reg because it is hitting
+            if (isOwnerClient && willProceedHitRegByClient)
+            {
+                hitRegData.HitTimestamp = BaseGameNetworkManager.Singleton.ServerTimestamp;
+                hitRegData.HitObjectId = tempDamageableHitBox.GetObjectId();
+                hitRegData.HitBoxIndex = tempDamageableHitBox.Index;
+                hitRegData.HitOrigin = tempHitPoint;
+                attacker.CallCmdPerformHitRegValidation(hitRegData);
+            }
+
 #if !UNITY_SERVER
-            // Spawn projectile effect, it will move to target but it won't apply damage because it is just effect
-            if (isClient)
-                PlayProjectileEffect(damagePosition, damageRotation, projectileDistance, impactEffectsData);
+            // Prepare data to instantiate impact effects
+            if (isPlayImpactEffects)
+            {
+                impactEffectsData.Add(new ImpactEffectPlayingData()
+                {
+                    tag = GetImpactEffectTag(tempGameObject),
+                    point = tempHitPoint,
+                    normal = tempHitNormal,
+                });
+            }
 #endif
-            return default;
+
+            // Update pierce trough entities count
+            if (pierceThroughEntities <= 0)
+            {
+                if (tempHitDistance > projectileDistance)
+                    projectileDistance = tempHitDistance;
+                return true;
+            }
+            --pierceThroughEntities;
+            return false;
         }
+
+#if !UNITY_SERVER
+        private void PlayProjectileEffectAtEffectTransform(BaseCharacterEntity attacker, bool isLeftHand, Vector3 damagePosition, Vector3 damageDirection, Quaternion damageRotation, float projectileDistance, List<ImpactEffectPlayingData> impactEffectsData)
+        {
+            if (GameInstance.Singleton.DimensionType == DimensionType.Dimension3D)
+            {
+                Vector3 targetPosition = damagePosition + (damageDirection * projectileDistance);
+                Transform effectTransform = GetDamageEffectTransform(attacker, isLeftHand);
+                damagePosition = effectTransform.position;
+                damageRotation = Quaternion.Euler(Quaternion.LookRotation(targetPosition - damagePosition).eulerAngles);
+            }
+            PlayProjectileEffect(damagePosition, damageRotation, projectileDistance, impactEffectsData);
+        }
+#endif
 
 #if !UNITY_SERVER
         private async void PlayProjectileEffect(Vector3 damagePosition, Quaternion damageRotation, float projectileDistance, List<ImpactEffectPlayingData> impactEffectsData)

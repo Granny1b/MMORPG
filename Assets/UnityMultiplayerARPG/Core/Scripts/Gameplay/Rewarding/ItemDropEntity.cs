@@ -7,6 +7,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Serialization;
+
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -57,25 +58,25 @@ namespace MultiplayerARPG
         protected ItemDropTable itemDropTable;
         #endregion
 
-        public bool PutOnPlaceholder { get; protected set; }
+        public bool PutOnPlaceholder { get; protected set; } = false;
 
-        public RewardGivenType GivenType { get; protected set; }
+        public RewardGivenType GivenType { get; protected set; } = RewardGivenType.None;
 
         public List<CharacterItem> DropItems { get; protected set; } = new List<CharacterItem>();
 
         public HashSet<string> Looters { get; protected set; } = new HashSet<string>();
 
-        public GameSpawnArea<ItemDropEntity> SpawnArea { get; protected set; }
+        public GameSpawnArea<ItemDropEntity> SpawnArea { get; protected set; } = null;
 
-        public ItemDropEntity SpawnPrefab { get; protected set; }
+        public ItemDropEntity SpawnPrefab { get; protected set; } = null;
 
 #if !DISABLE_ADDRESSABLES
-        public GameSpawnArea<ItemDropEntity>.AddressablePrefab SpawnAddressablePrefab { get; protected set; }
+        public GameSpawnArea<ItemDropEntity>.AddressablePrefab SpawnAddressablePrefab { get; protected set; } = null;
 #endif
 
-        public int SpawnLevel { get; protected set; }
+        public int SpawnLevel { get; protected set; } = 0;
 
-        public Vector3 SpawnPosition { get; protected set; }
+        public Vector3 SpawnPosition { get; protected set; } = Vector3.zero;
 
         public float DestroyDelay
         {
@@ -89,7 +90,7 @@ namespace MultiplayerARPG
             set { destroyRespawnDelay = value; }
         }
 
-        private GameObject _dropModel;
+        private GameObject _dropModel = null;
 
         public override string EntityTitle
         {
@@ -132,8 +133,8 @@ namespace MultiplayerARPG
         }
 
         // Private variables
-        protected bool _isPickedUp;
-        protected float _dropTime;
+        protected bool _isPickedUp = false;
+        protected float _dropTime = 0f;
 
         public override void PrepareRelatesData()
         {
@@ -221,10 +222,9 @@ namespace MultiplayerARPG
             };
         }
 
-        public override void OnSetup()
+        public override void OnIdentityInitialize()
         {
-            base.OnSetup();
-            itemDropData.onChange += OnItemDropDataChange;
+            base.OnIdentityInitialize();
             if (IsServer && IsSceneObject)
             {
                 // Init just once when started, if this entity is scene object
@@ -236,6 +236,13 @@ namespace MultiplayerARPG
         {
             base.SetupNetElements();
             itemDropData.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+            itemDropData.onChange += OnItemDropDataChange;
+        }
+
+        protected override void EntityOnDestroy()
+        {
+            base.EntityOnDestroy();
+            itemDropData.onChange -= OnItemDropDataChange;
         }
 
         public virtual void SetSpawnArea(GameSpawnArea<ItemDropEntity> spawnArea, ItemDropEntity spawnPrefab, int spawnLevel, Vector3 spawnPosition)
@@ -282,12 +289,6 @@ namespace MultiplayerARPG
         {
             if (onPickedUp != null)
                 onPickedUp.Invoke();
-        }
-
-        protected override void EntityOnDestroy()
-        {
-            base.EntityOnDestroy();
-            itemDropData.onChange -= OnItemDropDataChange;
         }
 
         protected virtual async void OnItemDropDataChange(bool isInitial, ItemDropData oldItemDropData, ItemDropData itemDropData)
@@ -381,6 +382,9 @@ namespace MultiplayerARPG
 
         public static async UniTask<ItemDropEntity> Drop(BaseGameEntity dropper, RewardGivenType givenType, CharacterItem dropData, IEnumerable<string> looters, float appearDuration)
         {
+            if (dropData.amount <= 0)
+                return null;
+
             ItemDropEntity entity = null;
             ItemDropEntity loadedPrefab = await GameInstance.Singleton.GetLoadedItemDropEntityPrefab();
             if (loadedPrefab != null)
@@ -392,6 +396,12 @@ namespace MultiplayerARPG
 
         public static ItemDropEntity Drop(ItemDropEntity prefab, BaseGameEntity dropper, RewardGivenType givenType, CharacterItem dropData, IEnumerable<string> looters, float appearDuration)
         {
+            if (prefab == null)
+                return null;
+
+            if (dropData.amount <= 0)
+                return null;
+
             Vector3 dropPosition = dropper.EntityTransform.position;
             Quaternion dropRotation = Quaternion.identity;
             switch (GameInstance.Singleton.DimensionType)
@@ -416,9 +426,12 @@ namespace MultiplayerARPG
             return entity;
         }
 
-        public static ItemDropEntity Drop(ItemDropEntity prefab, Vector3 dropPosition, Quaternion dropRotation, RewardGivenType givenType, CharacterItem dropItem, IEnumerable<string> looters, float appearDuration)
+        public static ItemDropEntity Drop(ItemDropEntity prefab, Vector3 dropPosition, Quaternion dropRotation, RewardGivenType givenType, CharacterItem dropData, IEnumerable<string> looters, float appearDuration)
         {
             if (prefab == null)
+                return null;
+
+            if (dropData.amount <= 0)
                 return null;
 
             LiteNetLibIdentity spawnObj = BaseGameNetworkManager.Singleton.Assets.GetObjectInstance(
@@ -427,7 +440,7 @@ namespace MultiplayerARPG
             ItemDropEntity entity = spawnObj.GetComponent<ItemDropEntity>();
             entity.GivenType = givenType;
             entity.PutOnPlaceholder = true;
-            entity.DropItems = new List<CharacterItem> { dropItem };
+            entity.DropItems = new List<CharacterItem> { dropData };
             entity.Looters = new HashSet<string>(looters);
             entity.Init();
             BaseGameNetworkManager.Singleton.Assets.NetworkSpawn(spawnObj);

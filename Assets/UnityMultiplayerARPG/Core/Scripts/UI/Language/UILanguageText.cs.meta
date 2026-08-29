@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: a72995c3226dd1346a3d0cbedb9a28ce
 timeCreated: 1505331161
-licenseType: Store
+licenseType: Pro
 MonoImporter:
   serializedVersion: 2
   defaultReferences: []
@@ -10,10 +10,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Language/UILanguageText.cs
-  uploadId: 857340

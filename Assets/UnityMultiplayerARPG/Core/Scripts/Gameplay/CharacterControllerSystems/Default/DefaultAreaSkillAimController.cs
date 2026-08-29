@@ -62,7 +62,7 @@ namespace MultiplayerARPG
         public AimPosition UpdateAimControls_PC(Vector3 cursorPosition, BaseAreaSkill skill, int skillLevel)
         {
             float castDistance = skill.castDistance.GetAmount(skillLevel);
-            Vector3 position = GameplayUtils.CursorWorldPosition(Camera.main, cursorPosition, 100f, skill.TargetDetectionLayerMask);
+            Vector3 position = GameplayUtils.CursorWorldPosition(BasePlayerCharacterController.Singleton.MainCamera, cursorPosition, 100f, skill.TargetDetectionLayerMask);
             position = GameplayUtils.ClampPosition(EntityTransform.position, position, castDistance);
             position = PhysicUtils.FindGroundedPosition(position, findGroundRaycastHits, GROUND_DETECTION_DISTANCE, skill.GroundDetectionLayerMask);
             if (_targetObject != null)
@@ -73,7 +73,7 @@ namespace MultiplayerARPG
         public AimPosition UpdateAimControls_Mobile(Vector2 aimAxes, BaseAreaSkill skill, int skillLevel)
         {
             float castDistance = skill.castDistance.GetAmount(skillLevel);
-            Vector3 position = EntityTransform.position + (GameplayUtils.GetDirectionByAxes(Camera.main.transform, aimAxes.x, aimAxes.y) * castDistance);
+            Vector3 position = EntityTransform.position + (GameplayUtils.GetDirectionByAxes(BasePlayerCharacterController.Singleton.MainCameraTransform, aimAxes.x, aimAxes.y) * castDistance);
             position = PhysicUtils.FindGroundedPosition(position, findGroundRaycastHits, GROUND_DETECTION_DISTANCE, skill.GroundDetectionLayerMask);
             if (_targetObject != null)
                 _targetObject.transform.position = position;

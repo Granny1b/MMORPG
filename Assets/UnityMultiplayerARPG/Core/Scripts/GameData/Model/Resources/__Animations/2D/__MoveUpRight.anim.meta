@@ -6,10 +6,3 @@ NativeFormatImporter:
   userData: 
   assetBundleName: animation
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/GameData/Model/Resources/__Animations/2D/__MoveUpRight.anim
-  uploadId: 857340

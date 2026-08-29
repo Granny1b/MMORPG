@@ -23,10 +23,8 @@ namespace MultiplayerARPG
             UseSkill,
             HoldClickActivate,
             ActionRequested,
+            ActionRequestedWithoutAnimationAwaiting,
         }
-
-        public const float DETECT_MOUSE_DRAG_DISTANCE_SQUARED = 100f;
-        public const float DETECT_MOUSE_HOLD_DURATION = 1f;
 
         [Header("Camera Controls Prefabs")]
         [SerializeField]
@@ -92,6 +90,15 @@ namespace MultiplayerARPG
         protected bool uiNotBlockForMobile = true;
         [SerializeField]
         protected bool uiNotBlockForConsole = false;
+        [SerializeField]
+        protected string[] mobileInputAxisNames = new string[]
+        {
+            "Horizontal",
+            "Vertical",
+            "Mouse X",
+            "Mouse Y",
+            "Mouse ScrollWheel",
+        };
 
         #region Events
         /// <summary>
@@ -118,6 +125,15 @@ namespace MultiplayerARPG
         public NearbyEntityDetector EnemyEntityDetector { get; protected set; }
         public IGameplayCameraController CacheGameplayCameraController { get; protected set; }
         public IMinimapCameraController CacheMinimapCameraController { get; protected set; }
+        public override Camera MainCamera => CacheGameplayCameraController.Camera;
+        public override Transform MainCameraTransform => CacheGameplayCameraController.CameraTransform;
+        public override Vector3 AssignedCameraTargetOffset { get; set; }
+        public override float AssignedCameraZoomDistance { get; set; }
+        public override float AssignedCameraFov { get; set; }
+        public override float AssignedCameraNearClipPlane { get; set; }
+        public override float AssignedCameraFarClipPlane { get; set; }
+        public override float AssignedCameraRotationSpeedScale { get; set; }
+        public override bool AssignedEnableWallHitSpring { get; set; }
         public GameObject CacheTargetObject { get; protected set; }
 
         // Input & control states variables
@@ -150,14 +166,14 @@ namespace MultiplayerARPG
                 DefaultGameplayCameraController castedObj = obj as DefaultGameplayCameraController;
                 castedObj.SetData(gameplayCameraPrefab);
             });
-            CacheGameplayCameraController.Init();
+            CacheGameplayCameraController.Init(this);
             // Initial minimap camera controller
             CacheMinimapCameraController = gameObject.GetOrAddComponent<IMinimapCameraController, DefaultMinimapCameraController>((obj) =>
             {
                 DefaultMinimapCameraController castedObj = obj as DefaultMinimapCameraController;
                 castedObj.SetData(minimapCameraPrefab);
             });
-            CacheMinimapCameraController.Init();
+            CacheMinimapCameraController.Init(this);
             // Initial build aim controller
             BuildAimController = gameObject.GetOrAddComponent<IBuildAimController, DefaultBuildAimController>((obj) =>
             {
@@ -242,10 +258,6 @@ namespace MultiplayerARPG
         {
             if (PlayingCharacterEntity == null || !PlayingCharacterEntity.IsOwnerClient)
                 return;
-
-            CacheGameplayCameraController.FollowingEntityTransform = CameraTargetTransform;
-            CacheMinimapCameraController.FollowingEntityTransform = CameraTargetTransform;
-            CacheMinimapCameraController.FollowingGameplayCameraTransform = CacheGameplayCameraController.CameraTransform;
 
             if (CacheTargetObject != null)
                 CacheTargetObject.gameObject.SetActive(_destination.HasValue);

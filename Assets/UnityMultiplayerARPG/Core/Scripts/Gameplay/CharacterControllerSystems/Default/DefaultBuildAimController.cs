@@ -31,6 +31,7 @@ namespace MultiplayerARPG
         protected IGameplayCameraController _gameplayCameraController;
         protected IPhysicFunctions _physicFunctions;
         protected float _buildYRotate;
+        protected RaycastHit[] _findGroundHits = new RaycastHit[16];
 
         public virtual void Init()
         {
@@ -177,12 +178,12 @@ namespace MultiplayerARPG
                     // Find ground position from upper position
                     bool hitAimmingObject = false;
                     Vector3 raycastOrigin = tempRaycastPoint + Vector3.up * BUILDING_CONSTRUCTING_GROUND_FINDING_DISTANCE * 0.5f;
-                    RaycastHit[] groundHits = Physics.RaycastAll(raycastOrigin, Vector3.down, BUILDING_CONSTRUCTING_GROUND_FINDING_DISTANCE, CurrentGameInstance.GetBuildLayerMask());
-                    for (int j = 0; j < groundHits.Length; ++j)
+                    int hitCount = Physics.RaycastNonAlloc(raycastOrigin, Vector3.down, _findGroundHits, BUILDING_CONSTRUCTING_GROUND_FINDING_DISTANCE, CurrentGameInstance.GetBuildLayerMask());
+                    for (int j = 0; j < hitCount; ++j)
                     {
-                        if (groundHits[j].transform == tempTransform)
+                        if (_findGroundHits[j].transform == tempTransform)
                         {
-                            tempRaycastPoint = groundHits[j].point;
+                            tempRaycastPoint = _findGroundHits[j].point;
                             snappedPosition = GetBuildingPlacePosition(tempRaycastPoint);
                             ConstructingBuildingEntity.Position = snappedPosition;
                             hitAimmingObject = true;

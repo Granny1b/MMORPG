@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 2b635a9dc2988bc43a0eeb265b337bf9
 timeCreated: 1522776594
-licenseType: Store
+licenseType: Pro
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/UI/Hotkey/UICharacterHotkeySelectionManager.cs
-  uploadId: 857340

@@ -1,16 +1,9 @@
 fileFormatVersion: 2
 guid: 8165767f64da7d94e925f61a38da668c
 timeCreated: 1519049802
-licenseType: Store
+licenseType: Free
 TextScriptImporter:
   externalObjects: {}
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/xNode/Scripts/Editor/Resources/ScriptTemplates/xNode_NodeGraphTemplate.cs.txt
-  uploadId: 857340

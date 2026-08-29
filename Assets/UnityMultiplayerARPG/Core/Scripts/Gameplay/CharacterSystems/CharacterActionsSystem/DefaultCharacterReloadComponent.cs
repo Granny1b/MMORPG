@@ -103,7 +103,7 @@ namespace MultiplayerARPG
             float overrideDuration = 0f;
             if (weaponItem.ReloadDuration > 0f)
                 totalDuration = overrideDuration = weaponItem.ReloadDuration;
-            float changedDuration = Entity.CachedData.ReloadDuration;
+            float changedDuration = Entity.CachedData.ReloadDurationModifier + (Entity.CachedData.ReloadDurationRate * totalDuration);
 
             // Calculate move speed rate while doing action at clients and server
             MoveSpeedRateWhileReloading = Entity.GetMoveSpeedRateWhileReloading(weaponItem);
@@ -175,7 +175,7 @@ namespace MultiplayerARPG
                     // Wait until triggger before reload ammo
                     float tempTriggerDuration = triggerDurations[triggerIndex] / animSpeedRate;
                     remainsDuration -= tempTriggerDuration;
-                    await UniTask.Delay((int)(tempTriggerDuration * 1000f), true, PlayerLoopTiming.FixedUpdate, reloadCancellationTokenSource.Token);
+                    await GenericUtils.FrameBasedDelay(tempTriggerDuration, reloadCancellationTokenSource.Token);
 
                     // Special effects will plays on clients only
                     if (IsClient)
@@ -207,7 +207,7 @@ namespace MultiplayerARPG
                 if (remainsDuration > 0f)
                 {
                     // Wait until animation ends to stop actions
-                    await UniTask.Delay((int)(remainsDuration * 1000f), true, PlayerLoopTiming.FixedUpdate, reloadCancellationTokenSource.Token);
+                    await GenericUtils.FrameBasedDelay(remainsDuration, reloadCancellationTokenSource.Token);
                 }
             }
             catch (System.OperationCanceledException)
@@ -354,16 +354,7 @@ namespace MultiplayerARPG
                 return;
             }
 
-            int ammoCapacity = reloadingWeaponItem.AmmoCapacity;
-            if (!reloadingWeaponItem.NoAmmoCapacityOverriding &&
-                GameInstance.Items.TryGetValue(reloadingAmmoDataId, out BaseItem ammoItem) &&
-                ammoItem.OverrideAmmoCapacity > 0)
-            {
-                // Override capacity by the item
-                ammoCapacity = ammoItem.OverrideAmmoCapacity;
-            }
-            ammoCapacity += Mathf.CeilToInt(Entity.CachedData.AmmoCapacity);
-
+            int ammoCapacity = reloadingWeaponItem.GetAmmoCapacity(Entity, reloadingAmmoDataId);
             int reloadingAmmoAmount = 0;
             if (!reloadingWeaponItem.NoAmmoDataIdChange && reloadingWeapon.ammoDataId != reloadingAmmoDataId)
             {
@@ -394,8 +385,8 @@ namespace MultiplayerARPG
                 return;
             }
 
-            ReloadRoutine(isLeftHand, reloadingAmmoDataId, reloadingAmmoAmount).Forget();
             RPC(RpcReload, BaseGameEntity.ACTION_DATA_CHANNEL, DeliveryMethod.ReliableOrdered, isLeftHand, reloadingAmmoDataId, reloadingAmmoAmount);
+            ReloadRoutine(isLeftHand, reloadingAmmoDataId, reloadingAmmoAmount).Forget();
 #endif
         }
 

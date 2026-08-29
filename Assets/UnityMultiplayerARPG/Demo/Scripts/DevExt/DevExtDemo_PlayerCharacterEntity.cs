@@ -42,60 +42,60 @@ namespace MultiplayerARPG
             onRemoveBuff -= DevExtRemoveBuff;
         }
 
-        protected void DevExtStartDemo()
+        protected void DevExtStartDemo(BaseGameEntity target)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] PlayerCharacterEntity.Start()");
         }
 
-        protected void DevExtOnEnableDemo()
+        protected void DevExtOnEnableDemo(BaseGameEntity target)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] PlayerCharacterEntity.OnEnable()");
         }
 
-        protected void DevExtOnDisableDemo()
+        protected void DevExtOnDisableDemo(BaseGameEntity target)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] PlayerCharacterEntity.OnDisable()");
         }
 
-        protected void DevExtUpdateDemo()
+        protected void DevExtUpdateDemo(BaseGameEntity target)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] PlayerCharacterEntity.Update()");
         }
 
-        protected void DevExtOnSetupDemo()
+        protected void DevExtOnSetupDemo(BaseGameEntity target)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] PlayerCharacterEntity.OnSetup()");
         }
 
-        protected void DevExtSetupNetElementsDemo()
+        protected void DevExtSetupNetElementsDemo(BaseGameEntity target)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] PlayerCharacterEntity.SetupNetElements()");
         }
 
-        protected void DevExtOnNetworkDestroyDemo(byte reasons)
+        protected void DevExtOnNetworkDestroyDemo(BaseGameEntity target, byte reasons)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] PlayerCharacterEntity.OnNetworkDestroy(" + reasons + ")");
         }
 
-        protected void DevExtReceiveDamageDemo(HitBoxPosition position, Vector3 fromPosition, IGameEntity attacker, Dictionary<DamageElement, MinMaxFloat> allDamageAmounts, CharacterItem weapon, BaseSkill skill, int skillLevel)
+        protected void DevExtReceiveDamageDemo(DamageableEntity target, HitBoxPosition position, Vector3 fromPosition, EntityInfo attacker, Dictionary<DamageElement, MinMaxFloat> allDamageAmounts, CharacterItem weapon, BaseSkill skill, int skillLevel)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] PlayerCharacterEntity.ReceiveDamage("
-                + attacker.GetGameObject().name + ", " + weapon + ", " + allDamageAmounts.Count + ", " + (skill != null ? skill.Title : "No Debuff") + ")");
+                + (attacker.Entity != null ? attacker.Entity.GetGameObject().name : attacker.Id) + ", " + weapon + ", " + allDamageAmounts.Count + ", " + (skill != null ? skill.Title : "No Debuff") + ")");
         }
 
-        protected void DevExtReceivedDamageDemo(HitBoxPosition position, Vector3 fromPosition, IGameEntity attacker, CombatAmountType combatAmountType, int damage, CharacterItem weapon, BaseSkill skill, int skillLevel, CharacterBuff buff, bool isDamageOverTime)
+        protected void DevExtReceivedDamageDemo(DamageableEntity target, HitBoxPosition position, Vector3 fromPosition, EntityInfo attacker, CombatAmountType combatAmountType, int damage, CharacterItem weapon, BaseSkill skill, int skillLevel, CharacterBuff buff, bool isDamageOverTime)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] PlayerCharacterEntity.ReceivedDamage("
-                + attacker.GetGameObject().name + ", " + combatAmountType + ", " + damage + ")");
+                + (attacker.Entity != null ? attacker.Entity.GetGameObject().name : attacker.Id) + ", " + combatAmountType + ", " + damage + ")");
         }
 
-        protected void DevExtApplyBuff(CharacterBuff buff)
+        protected void DevExtApplyBuff(BaseCharacterEntity target, CharacterBuff buff)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] PlayerCharacterEntity.ApplyBuff("
                 + buff.id + ", " + buff.type + ", " + buff.dataId + ", " + buff.level + ")");
         }
 
-        protected void DevExtRemoveBuff(CharacterBuff buff, BuffRemoveReasons reason)
+        protected void DevExtRemoveBuff(BaseCharacterEntity target, CharacterBuff buff, BuffRemoveReasons reason)
         {
             if (writeAddonLog) Debug.Log("[" + name + "] PlayerCharacterEntity.RemoveBuff("
                 + buff.id + ", " + buff.type + ", " + buff.dataId + ", " + buff.level + ", " + reason + ")");

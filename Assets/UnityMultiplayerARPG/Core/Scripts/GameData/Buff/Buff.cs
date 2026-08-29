@@ -117,12 +117,16 @@ namespace MultiplayerARPG
         [Tooltip("Mute character movement sound while applied. This won't be applied to monster's summoner.")]
         public bool muteFootstepSound = false;
         [Tooltip("Status effects that can be applied to the attacker when attacking.")]
+        [ArrayElementTitle("statusEffect")]
         public StatusEffectApplying[] selfStatusEffectsWhenAttacking = new StatusEffectApplying[0];
         [Tooltip("Status effects that can be applied to the enemy when attacking.")]
+        [ArrayElementTitle("statusEffect")]
         public StatusEffectApplying[] enemyStatusEffectsWhenAttacking = new StatusEffectApplying[0];
         [Tooltip("Status effects that can be applied to the attacker when attacked.")]
+        [ArrayElementTitle("statusEffect")]
         public StatusEffectApplying[] selfStatusEffectsWhenAttacked = new StatusEffectApplying[0];
         [Tooltip("Status effects that can be applied to the enemy when attacked.")]
+        [ArrayElementTitle("statusEffect")]
         public StatusEffectApplying[] enemyStatusEffectsWhenAttacked = new StatusEffectApplying[0];
         [Tooltip("If this is `TRUE` it will not be removed when the character dies")]
         public bool doNotRemoveOnDead = false;
@@ -182,6 +186,7 @@ namespace MultiplayerARPG
             GameInstance.AddDamageElements(increaseResistances);
             GameInstance.AddDamageElements(increaseArmors);
             GameInstance.AddDamageElements(increaseDamages);
+            GameInstance.AddDamageElements(increaseDamagesRate);
             GameInstance.AddSkills(increaseSkills);
             GameInstance.AddSkills(overrideSkills);
             GameInstance.AddStatusEffects(selfStatusEffectsWhenAttacking);

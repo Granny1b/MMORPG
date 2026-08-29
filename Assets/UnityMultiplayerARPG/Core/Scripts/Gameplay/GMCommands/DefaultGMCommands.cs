@@ -50,6 +50,10 @@ namespace MultiplayerARPG
         /// </summary>
         public const string ExpRate = "/exp_rate";
         /// <summary>
+        /// Set item drop rate (0.1 = 1%, 1 = 100%)
+        /// </summary>
+        public const string ItemDropRate = "/item_drop_rate";
+        /// <summary>
         /// Warp to specific map
         /// </summary>
         public const string Warp = "/warp";
@@ -118,11 +122,12 @@ namespace MultiplayerARPG
             "/statpoint {amount} = Set character's stat point to {amount} value.\n" +
             "/skillpoint {amount} = Set character's skill point to {amount} value.\n" +
             "/gold {amount} = Set character's gold to {amount} value.\n" +
-            "/add_item {item_id} {amount} = Add item which its ID is {item_id} (if item ID have spaces, use _ for spaces) x {amount}.\n" +
+            "/add_item {item_id} {amount} {level} = Add item which its ID is {item_id} (if item ID have spaces, use _ for spaces) x {amount}.\n" +
             "/give_gold {name} {amount} = Increase {amount} of gold to character which its name is {name}.\n" +
             "/give_item {name} {item_id} {amount} = Add item which its ID is {item_id} (if item ID have spaces, use _ for spaces) x {amount} to character which its name is {name}.\n" +
             "/gold_rate {rate} = Set server's gold drop rate to {rate}.\n" +
             "/exp_rate {rate} = Set server's exp rewarding rate to {rate}.\n" +
+            "/item_drop_rate {rate} = Set server's item drop rate to {rate}.\n" +
             "/warp {map_id} = Warp to specific map (if map ID have spaces, use _ for spaces).\n" +
             "/warp_character {name} {map_id} {x} {y} {z} = Warp to specific character to specific map and position (if map ID have spaces, use _ for spaces).\n" +
             "/warp_to_character {name} = Warp to character which its name is {name}.\n" +
@@ -156,7 +161,7 @@ namespace MultiplayerARPG
                 return true;
             if (string.Equals(command, Gold, StringComparison.OrdinalIgnoreCase) && dataLength == 2)
                 return true;
-            if (string.Equals(command, AddItem, StringComparison.OrdinalIgnoreCase) && dataLength == 3)
+            if (string.Equals(command, AddItem, StringComparison.OrdinalIgnoreCase) && dataLength >= 2)
                 return true;
             if (string.Equals(command, GiveGold, StringComparison.OrdinalIgnoreCase) && dataLength == 3)
                 return true;
@@ -165,6 +170,8 @@ namespace MultiplayerARPG
             if (string.Equals(command, GoldRate, StringComparison.OrdinalIgnoreCase) && dataLength == 2)
                 return true;
             if (string.Equals(command, ExpRate, StringComparison.OrdinalIgnoreCase) && dataLength == 2)
+                return true;
+            if (string.Equals(command, ItemDropRate, StringComparison.OrdinalIgnoreCase) && dataLength == 2)
                 return true;
             if (string.Equals(command, Warp, StringComparison.OrdinalIgnoreCase) && dataLength == 2)
                 return true;
@@ -220,6 +227,7 @@ namespace MultiplayerARPG
                 string.Equals(command, GiveItem, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(command, GoldRate, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(command, ExpRate, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(command, ItemDropRate, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(command, Warp, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(command, WarpCharacter, StringComparison.OrdinalIgnoreCase) ||
                 string.Equals(command, WarpToCharacter, StringComparison.OrdinalIgnoreCase) ||
@@ -332,12 +340,33 @@ namespace MultiplayerARPG
                             break;
                         }
                     }
-                    int amount;
-                    if (!int.TryParse(data[2], out amount) || amount <= 0)
+                    int amount = 1;
+                    if (data.Length >= 3)
                     {
-                        response = "Wrong input data";
+                        if (!int.TryParse(data[2], out amount) || amount <= 0)
+                        {
+                            if (targetItem != null)
+                                amount = targetItem.MaxStack;
+                            else
+                                amount = 1;
+                        }
                     }
-                    else if (targetItem == null)
+                    else
+                    {
+                        if (targetItem != null)
+                            amount = targetItem.MaxStack;
+                        else
+                            amount = 1;
+                    }
+                    int level = 1;
+                    if (data.Length >= 4)
+                    {
+                        if (!int.TryParse(data[3], out level) || level <= 0)
+                        {
+                            level = 1;
+                        }
+                    }
+                    if (targetItem == null)
                     {
                         response = "Cannot find the item";
                     }
@@ -349,7 +378,7 @@ namespace MultiplayerARPG
                         }
                         else
                         {
-                            senderCharacter.IncreaseItems(CharacterItem.Create(targetItem, 1, amount));
+                            senderCharacter.IncreaseItems(CharacterItem.Create(targetItem, level, amount));
                             GameInstance.ServerGameMessageHandlers.NotifyRewardItem(senderCharacter.ConnectionId, RewardGivenType.GM, targetItem.DataId, amount);
                             response = $"Add item {targetItem.Title}x{amount} to character's inventory";
                         }
@@ -432,6 +461,19 @@ namespace MultiplayerARPG
                     {
                         GameInstance.Singleton.GameplayRule.ExpRate = amount;
                         response = $"Set exp rate to {amount}";
+                    }
+                }
+                if (string.Equals(commandKey, ItemDropRate, StringComparison.OrdinalIgnoreCase))
+                {
+                    float amount;
+                    if (!float.TryParse(data[1], out amount) || amount < 0f)
+                    {
+                        response = "Wrong input data";
+                    }
+                    else
+                    {
+                        GameInstance.Singleton.GameplayRule.ItemDropRate = amount;
+                        response = $"Set item drop rate to {amount}";
                     }
                 }
                 if (string.Equals(commandKey, Warp, StringComparison.OrdinalIgnoreCase))
@@ -652,8 +694,9 @@ namespace MultiplayerARPG
                 if (string.Equals(commandKey, CloseServers, StringComparison.OrdinalIgnoreCase))
                 {
                     var players = BaseGameNetworkManager.Singleton.GetPlayers();
-                    foreach (var player in players)
+                    while (players.MoveNext())
                     {
+                        LiteNetLibPlayer player = players.Current.Value;
                         BaseGameNetworkManager.Singleton.KickClient(player.ConnectionId, UITextKeys.UI_ERROR_SERVER_CLOSE);
                     }
                     BaseGameNetworkManager.Singleton.IsTemporarilyClose = true;
@@ -664,8 +707,9 @@ namespace MultiplayerARPG
                     if (string.Equals(data[1], BaseGameNetworkManager.Singleton.ChannelId, StringComparison.OrdinalIgnoreCase))
                     {
                         var players = BaseGameNetworkManager.Singleton.GetPlayers();
-                        foreach (var player in players)
+                        while (players.MoveNext())
                         {
+                            LiteNetLibPlayer player = players.Current.Value;
                             BaseGameNetworkManager.Singleton.KickClient(player.ConnectionId, UITextKeys.UI_ERROR_SERVER_CLOSE);
                         }
                         BaseGameNetworkManager.Singleton.IsTemporarilyClose = true;
@@ -674,7 +718,7 @@ namespace MultiplayerARPG
                 }
             }
 #endif
-                    return response;
+            return response;
         }
     }
 }

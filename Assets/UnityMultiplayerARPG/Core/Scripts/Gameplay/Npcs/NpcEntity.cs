@@ -91,6 +91,9 @@ namespace MultiplayerARPG
             }
         }
 
+        public readonly List<GameObject> InstantiatedObjects = new List<GameObject>();
+        protected bool _isObjectsInstantiated = false;
+
         public override void PrepareRelatesData()
         {
             base.PrepareRelatesData();
@@ -107,43 +110,48 @@ namespace MultiplayerARPG
             gameObject.layer = CurrentGameInstance.npcLayer;
         }
 
-        protected override void EntityStart()
+        public override void OnIdentityInitialize()
         {
-            base.EntityStart();
+            base.OnIdentityInitialize();
             if (startDialog != null)
                 GameInstance.AddNpcDialogs(startDialog);
             if (graph != null)
                 GameInstance.AddNpcDialogs(graph.GetDialogs());
         }
 
-        public override void OnSetup()
+        public override void OnStartClient()
         {
-            base.OnSetup();
+            base.OnStartClient();
             InstantiateNpcObjects();
         }
 
         private async void InstantiateNpcObjects()
         {
+            InstantiatedObjects.DestroyAndNullify();
+            InstantiatedObjects.Clear();
             if (!IsClient)
                 return;
+            if (_isObjectsInstantiated)
+                return;
+            _isObjectsInstantiated = true;
 #if !DISABLE_ADDRESSABLES
             // Instantiates npc objects
-            await CurrentGameInstance.AddressableNpcObjects.InstantiateObjectsOrUsePrefabs(CurrentGameInstance.NpcObjects, EntityTransform);
+            await CurrentGameInstance.AddressableNpcObjects.InstantiateObjectsOrUsePrefabs(CurrentGameInstance.NpcObjects, EntityTransform, InstantiatedObjects);
 #else
             foreach (var prefab in CurrentGameInstance.NpcObjects)
             {
                 if (prefab == null) continue;
-                Instantiate(prefab, EntityTransform.position, EntityTransform.rotation, EntityTransform);
+                InstantiatedObjects.Add(Instantiate(prefab, EntityTransform.position, EntityTransform.rotation, EntityTransform));
             }
 #endif
 #if !DISABLE_ADDRESSABLES
             // Instantiates npc minimap objects
-            await CurrentGameInstance.AddressableNpcMiniMapObjects.InstantiateObjectsOrUsePrefabs(CurrentGameInstance.NpcMiniMapObjects, EntityTransform);
+            await CurrentGameInstance.AddressableNpcMiniMapObjects.InstantiateObjectsOrUsePrefabs(CurrentGameInstance.NpcMiniMapObjects, EntityTransform, InstantiatedObjects);
 #else
             foreach (var prefab in CurrentGameInstance.NpcMiniMapObjects)
             {
                 if (prefab == null) continue;
-                Instantiate(prefab, EntityTransform.position, EntityTransform.rotation, EntityTransform);
+                InstantiatedObjects.Add(Instantiate(prefab, EntityTransform.position, EntityTransform.rotation, EntityTransform));
             }
 #endif
             // Instantiates npc UI

@@ -33,6 +33,20 @@ namespace MultiplayerARPG
         {
             base.Awake();
             Identity.onGetInstance.AddListener(OnGetInstance);
+            Identity.onPushBack.AddListener(OnPushBack);
+        }
+
+        protected override void OnDestroy()
+        {
+            base.OnDestroy();
+            if (Identity != null && Identity.onGetInstance != null)
+                Identity.onGetInstance.RemoveListener(OnGetInstance);
+            if (Identity != null && Identity.onPushBack != null)
+                Identity.onPushBack.RemoveListener(OnPushBack);
+            _identity = null;
+            _receivingDamageHitBoxes?.Clear();
+            onDestroy?.RemoveAllListeners();
+            onDestroy = null;
         }
 
         protected override void OnEnable()
@@ -44,17 +58,6 @@ namespace MultiplayerARPG
         protected virtual void OnDisable()
         {
             UpdateManager.Unregister(this);
-        }
-
-        protected override void OnDestroy()
-        {
-            base.OnDestroy();
-            if (Identity != null && Identity.onGetInstance != null)
-                Identity.onGetInstance.RemoveListener(OnGetInstance);
-            _identity = null;
-            _receivingDamageHitBoxes?.Clear();
-            onDestroy?.RemoveAllListeners();
-            onDestroy = null;
         }
 
         /// <summary>
@@ -110,7 +113,7 @@ namespace MultiplayerARPG
 
         public override void ApplyDamageTo(DamageableHitBox target)
         {
-            if (target == null || target.IsDead() || target.IsImmune || target.IsInSafeArea)
+            if (target == null || target.IsDead() || target.IsInvincible || target.IsInSafeArea)
                 return;
 
             if (target.GetObjectId() == _instigator.ObjectId)
@@ -130,7 +133,7 @@ namespace MultiplayerARPG
             target.ReceiveDamageWithoutConditionCheck(CacheTransform.position, _instigator, _damageAmounts, _weapon, _skill, _skillLevel, Random.Range(0, 255));
         }
 
-        protected override void OnPushBack()
+        public override void OnPushBack()
         {
             _receivingDamageHitBoxes.Clear();
             if (onDestroy != null)
@@ -139,6 +142,8 @@ namespace MultiplayerARPG
 
         protected virtual void OnTriggerEnter(Collider other)
         {
+            if (other is CharacterController)
+                return;
             TriggerEnter(other.gameObject);
         }
 
@@ -199,9 +204,8 @@ namespace MultiplayerARPG
             Identity.PoolingSize = PoolSize;
         }
 
-        protected override void PushBack()
+        public override void PushBack()
         {
-            OnPushBack();
             Identity.NetworkDestroy();
         }
     }

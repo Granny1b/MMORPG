@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: f5658d97be32c9c458de38e7c0a7e641
 timeCreated: 1524488638
-licenseType: Store
+licenseType: Free
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/UnityEditorUtils/Editor/BoolShowConditionalPropertyDrawer.cs
-  uploadId: 857340

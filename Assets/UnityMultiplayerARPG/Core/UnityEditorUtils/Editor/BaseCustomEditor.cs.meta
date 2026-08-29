@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: b7c744c774f1a454fa5dc5e1f319d330
 timeCreated: 1524461410
-licenseType: Store
+licenseType: Free
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/UnityEditorUtils/Editor/BaseCustomEditor.cs
-  uploadId: 857340

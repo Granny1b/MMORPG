@@ -8,13 +8,11 @@ namespace MultiplayerARPG
         public const int BASE_GAME_ENTITY = 0;
         public const int CHARACTER_MODEL_MANAGER = 100;
         public const int GAME_ENTITY_MODEL = 101;
+        public const int GAME_ENTITY_MODEL_IK = 102;
+        public const int GAME_ENTITY_MODEL_POST_IK = 103;
 
         // Controller
         public const int PLAYER_CHARACTER_CONTROLLER = -1;
-
-        // IK
-        public const int CHARACTER_ALIGN_ON_GROUND = -105;
-        public const int PITCH_IK = -104;
 
         // UIs
         public const int UI_CRAFTING_QUEUE_ITEMS = 100;

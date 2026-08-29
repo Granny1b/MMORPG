@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace MultiplayerARPG
 {
@@ -23,6 +24,16 @@ namespace MultiplayerARPG
         }
         public static event System.Action<IMapMarker> OnAdded;
         public static event System.Action<IMapMarker> OnRemoved;
+
+        [RuntimeInitializeOnLoadMethod]
+        public static void Initialize()
+        {
+            s_allMarkers.Clear();
+            s_markersUpdated = false;
+            s_markerValues.Clear();
+            OnAdded = null;
+            OnRemoved = null;
+        }
 
         public static void AddMarker(IMapMarker mapMarker)
         {

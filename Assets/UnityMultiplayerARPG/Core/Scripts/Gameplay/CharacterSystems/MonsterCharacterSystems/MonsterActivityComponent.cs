@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Unity.Profiling;
 using UnityEngine;
+using UnityEngine.Pool;
 using UnityEngine.Serialization;
 
 namespace MultiplayerARPG
@@ -85,31 +86,45 @@ namespace MultiplayerARPG
             base.OnDestroy();
         }
 
-        private void Entity_onNotifyEnemySpotted(BaseCharacterEntity enemy)
+        private void Entity_onNotifyEnemySpotted(BaseCharacterEntity target, BaseCharacterEntity enemy)
         {
             if (Entity.Characteristic != MonsterCharacteristic.Assist)
                 return;
             // Warn that this character received damage to nearby characters
-            List<BaseCharacterEntity> foundCharacters = Entity.FindAliveEntities<BaseCharacterEntity>(CharacterDatabase.VisualRange, true, false, false, CurrentGameInstance.playerLayer.Mask | CurrentGameInstance.playingLayer.Mask | CurrentGameInstance.monsterLayer.Mask);
-            if (foundCharacters == null || foundCharacters.Count == 0) return;
-            foreach (BaseCharacterEntity foundCharacter in foundCharacters)
+            using (CollectionPool<List<BaseCharacterEntity>, BaseCharacterEntity>.Get(out List<BaseCharacterEntity> foundCharacters))
             {
-                foundCharacter.NotifyEnemySpottedByAlly(Entity, enemy);
+                Entity.FindAliveEntities(foundCharacters, CharacterDatabase.VisualRange, true, false, false, CurrentGameInstance.playerLayer.Mask | CurrentGameInstance.playingLayer.Mask | CurrentGameInstance.monsterLayer.Mask);
+                if (foundCharacters == null || foundCharacters.Count == 0) return;
+                foreach (BaseCharacterEntity foundCharacter in foundCharacters)
+                {
+                    foundCharacter.NotifyEnemySpottedByAlly(Entity, enemy);
+                }
             }
         }
 
-        private void Entity_onNotifyEnemySpottedByAlly(BaseCharacterEntity ally, BaseCharacterEntity enemy)
+        private void Entity_onNotifyEnemySpottedByAlly(BaseCharacterEntity target, BaseCharacterEntity ally, BaseCharacterEntity enemy)
         {
-            if ((Entity.Summoner != null && Entity.Summoner == ally) ||
+            if ((Entity.SummonerEntity != null && Entity.SummonerEntity == ally) ||
                 Entity.Characteristic == MonsterCharacteristic.Assist)
                 Entity.SetAttackTarget(enemy);
         }
 
-        private void Entity_onReceivedDamage(HitBoxPosition position, Vector3 fromPosition, IGameEntity attacker, CombatAmountType combatAmountType, int totalDamage, CharacterItem weapon, BaseSkill skill, int skillLevel, CharacterBuff buff, bool isDamageOverTime)
+        private void Entity_onReceivedDamage(
+            DamageableEntity target,
+            HitBoxPosition position,
+            Vector3 fromPosition,
+            EntityInfo instigator,
+            CombatAmountType combatAmountType,
+            int totalDamage,
+            CharacterItem weapon,
+            BaseSkill skill,
+            int skillLevel,
+            CharacterBuff buff,
+            bool isDamageOverTime)
         {
-            BaseCharacterEntity attackerCharacter = attacker as BaseCharacterEntity;
-            if (attackerCharacter == null)
+            if (!instigator.TryGetEntity(out BaseCharacterEntity attackerCharacter))
                 return;
+
             // If character is not dead, try to attack
             if (!Entity.IsDead())
             {
@@ -155,13 +170,13 @@ namespace MultiplayerARPG
                 Entity.SetSmoothTurnSpeed(turnSmoothSpeed);
 
                 Vector3 currentPosition = Entity.MovementTransform.position;
-                if (Entity.Summoner != null)
+                if (Entity.SummonerEntity != null)
                 {
                     if (!UpdateAttackEnemy(deltaTime, currentPosition))
                     {
                         UpdateEnemyFindingActivity(deltaTime);
 
-                        if (Vector3.Distance(currentPosition, Entity.Summoner.EntityTransform.position) > CurrentGameInstance.minFollowSummonerDistance)
+                        if (Vector3.Distance(currentPosition, Entity.SummonerEntity.EntityTransform.position) > CurrentGameInstance.minFollowSummonerDistance)
                             FollowSummoner();
                         else
                             UpdateWanderDestinationRandomingActivity(deltaTime);
@@ -299,7 +314,7 @@ namespace MultiplayerARPG
                 // Reset follow time, because it is not following
                 _followEnemyElasped = 0f;
                 // Stop movement
-                SetWanderDestination(CacheTransform.position);
+                SetWanderDestination(EntityTransform.position);
                 // Lookat target then do something when it's in range
                 Vector3 lookAtDirection = (targetPosition - currentPosition).normalized;
                 bool turnedToEnemy = false;
@@ -396,10 +411,10 @@ namespace MultiplayerARPG
             _randomedWanderDelay = Random.Range(randomWanderDelayMin, randomWanderDelayMax);
             Vector3 randomPosition;
             // Random position around summoner or around spawn point
-            if (Entity.Summoner != null)
+            if (Entity.SummonerEntity != null)
             {
                 // Random position around summoner
-                randomPosition = CurrentGameplayRule.GetSummonPosition(Entity.Summoner);
+                randomPosition = CurrentGameplayRule.GetSummonPosition(Entity.SummonerEntity);
             }
             else
             {
@@ -422,10 +437,10 @@ namespace MultiplayerARPG
         {
             Vector3 randomPosition;
             // Random position around summoner or around spawn point
-            if (Entity.Summoner != null)
+            if (Entity.SummonerEntity != null)
             {
                 // Random position around summoner
-                randomPosition = CurrentGameplayRule.GetSummonPosition(Entity.Summoner);
+                randomPosition = CurrentGameplayRule.GetSummonPosition(Entity.SummonerEntity);
             }
             else
             {
@@ -453,7 +468,7 @@ namespace MultiplayerARPG
 
             // Aggressive monster or summoned monster will find target to attack
             bool isAggressive = Entity.Characteristic == MonsterCharacteristic.Aggressive;
-            if (!isAggressive && Entity.Summoner == null)
+            if (!isAggressive && Entity.SummonerEntity == null)
                 return false;
 
             if (!Entity.TryGetTargetEntity(out IDamageableEntity targetEntity) ||
@@ -478,22 +493,24 @@ namespace MultiplayerARPG
                 {
                     isAggressive = isAggressive || aggressiveWhileSummoned;
                     // Find enemy around summoner
-                    _enemies.AddRange(Entity.FindAliveEntities<DamageableEntity>(
-                        Entity.Summoner.EntityTransform.position,
+                    Entity.FindAliveEntities(
+                        _enemies,
+                        Entity.SummonerEntity.EntityTransform.position,
                         CharacterDatabase.SummonedVisualRange,
                         false, /* Don't find an allies */
                         isAggressive,  /* Find an enemies */
                         isAggressive,  /* Find an neutral */
-                        overlapMask));
+                        overlapMask);
                 }
                 else
                 {
-                    _enemies.AddRange(Entity.FindAliveEntities<DamageableEntity>(
+                    Entity.FindAliveEntities(
+                        _enemies,
                         CharacterDatabase.VisualRange,
                         false, /* Don't find an allies */
                         true,  /* Find an enemies */
                         false, /* Don't find an neutral */
-                        overlapMask));
+                        overlapMask);
                 }
                 // Find one enemy from a found list
                 if (FindOneEnemyFromList(isSummonedAndSummonerExisted, out enemy))
@@ -521,7 +538,7 @@ namespace MultiplayerARPG
                     continue;
                 }
                 tempBuildingEntity = tempEntity as BuildingEntity;
-                if (isAttackBuilding && isSummonedAndSummonerExisted && tempBuildingEntity != null && Entity.Summoner.Id == tempBuildingEntity.CreatorId)
+                if (isAttackBuilding && isSummonedAndSummonerExisted && tempBuildingEntity != null && Entity.SummonerEntity.Id == tempBuildingEntity.CreatorId)
                 {
                     // If building was built by summoner, skip it
                     continue;

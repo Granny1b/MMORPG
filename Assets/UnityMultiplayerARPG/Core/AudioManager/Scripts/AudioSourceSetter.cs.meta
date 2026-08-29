@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 3acb64576e6b37641b3c5af4a683b644
 timeCreated: 1511612362
-licenseType: Store
+licenseType: Pro
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/AudioManager/Scripts/AudioSourceSetter.cs
-  uploadId: 857340

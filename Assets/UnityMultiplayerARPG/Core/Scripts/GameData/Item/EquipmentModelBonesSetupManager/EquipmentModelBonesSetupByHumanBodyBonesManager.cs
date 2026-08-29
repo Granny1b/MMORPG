@@ -24,18 +24,8 @@ namespace MultiplayerARPG
         {
             if (instantiatedObject == null)
                 return;
-
-            if (!(characterModel is IModelWithAnimator animatorSrc))
-            {
-                Debug.LogWarning($"[{nameof(EquipmentModelBonesSetupByBoneNamesManager)}] Cannot setup bones for \"{instantiatedObject}\", character model \"{characterModel}\" is not a model with animator");
-                return;
-            }
-
             EquipmentModelBonesSetupByHumanBodyBonesUpdater updater = instantiatedObject.GetOrAddComponent<EquipmentModelBonesSetupByHumanBodyBonesUpdater>();
-            if (equipmentContainer.defaultModel != null)
-                updater.PrepareTransforms(equipmentContainer.defaultModel.GetComponentInChildren<Animator>(), instantiatedObject.GetComponentInChildren<Animator>());
-            else
-                updater.PrepareTransforms(animatorSrc.Animator, instantiatedObject.GetComponentInChildren<Animator>());
+            updater.SetupForObject(characterModel, instantiatedObject, equipmentContainer);
         }
     }
 }

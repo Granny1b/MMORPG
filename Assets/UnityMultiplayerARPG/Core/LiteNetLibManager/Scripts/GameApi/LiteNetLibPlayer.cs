@@ -13,6 +13,7 @@ namespace LiteNetLibManager
         internal readonly HashSet<uint> Subscribings = new HashSet<uint>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
         internal readonly LiteNetLibSyncingStates SyncingStates = new LiteNetLibSyncingStates();
+        internal readonly LiteNetLibSyncingDeltaStates SyncingDeltaStates = new LiteNetLibSyncingDeltaStates();
 
         public LiteNetLibPlayer(LiteNetLibGameManager manager, long connectionId)
         {
@@ -21,14 +22,19 @@ namespace LiteNetLibManager
             RttCalculator = new RttCalculator();
         }
 
-        internal bool IsSubscribing(uint objectId)
+        public bool IsSubscribing(uint objectId)
         {
             return Subscribings.Contains(objectId);
         }
 
-        internal int CountSubscribing()
+        public HashSet<uint>.Enumerator GetSubscribingObjectIds()
         {
-            return Subscribings.Count;
+            return Subscribings.GetEnumerator();
+        }
+
+        public int SubscribingsCount
+        {
+            get { return Subscribings.Count; }
         }
 
         internal void Subscribe(uint objectId)
@@ -81,7 +87,7 @@ namespace LiteNetLibManager
             {
                 if (SpawnedObjects[objectId].DoNotDestroyWhenDisconnect)
                 {
-                    SpawnedObjects[objectId].ConnectionId = -1;
+                    SpawnedObjects[objectId].SetOwnerClient(-1);
                     continue;
                 }
                 Manager.Assets.NetworkDestroy(objectId, DestroyObjectReasons.RequestedToDestroy);
@@ -104,14 +110,9 @@ namespace LiteNetLibManager
             return SpawnedObjects[objectId];
         }
 
-        public IEnumerable<LiteNetLibIdentity> GetSpawnedObjects()
+        public Dictionary<uint, LiteNetLibIdentity>.Enumerator GetSpawnedObjects()
         {
-            return SpawnedObjects.Values;
-        }
-
-        public IEnumerable<uint> GetSubscribingObjectIds()
-        {
-            return Subscribings;
+            return SpawnedObjects.GetEnumerator();
         }
 
         public int SpawnedObjectsCount

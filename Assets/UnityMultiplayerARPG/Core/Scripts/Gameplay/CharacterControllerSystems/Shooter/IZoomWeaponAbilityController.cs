@@ -7,5 +7,6 @@ namespace MultiplayerARPG
         void InitialZoomCrosshair();
         void SetZoomCrosshairSprite(Sprite sprite);
         bool ShowZoomCrosshair { get; set; }
+        float AssignedCameraFov { get; }
     }
 }

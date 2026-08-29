@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 75a1fe0b102226a418486ed823c9a7fb
 timeCreated: 1506110357
-licenseType: Store
+licenseType: Free
 TextureImporter:
   fileIDToRecycleName: {}
   serializedVersion: 4
@@ -96,10 +96,3 @@ TextureImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/xNode/Scripts/Editor/Resources/xnode_dot.png
-  uploadId: 857340

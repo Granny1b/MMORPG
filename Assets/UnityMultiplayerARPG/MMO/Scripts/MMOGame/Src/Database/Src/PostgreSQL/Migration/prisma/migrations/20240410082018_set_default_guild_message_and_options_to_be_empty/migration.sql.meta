@@ -5,10 +5,3 @@ DefaultImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/MMO/Scripts/MMOGame/Src/Database/Src/PostgreSQL/Migration/prisma/migrations/20240410082018_set_default_guild_message_and_options_to_be_empty/migration.sql
-  uploadId: 857340

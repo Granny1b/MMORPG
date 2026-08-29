@@ -1,16 +1,18 @@
 ﻿using Cysharp.Text;
 using Cysharp.Threading.Tasks;
 using Insthync.AddressableAssetTools;
+using LiteNetLib.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 namespace LiteNetLibManager
 {
     public class LiteNetLibAssets : MonoBehaviour
     {
-        public const string TAG_NULL = "<NULL_A>";
+        public const string TAG_NULL = "A?";
         private static int s_spawnPositionCounter = 0;
 
         public bool playerSpawnRandomly;
@@ -35,11 +37,13 @@ namespace LiteNetLibManager
         public AssetReferenceScene addressableOnlineScene;
         #endregion
 #endif
-
-        public UnityEvent onInitialize = new UnityEvent();
+        [FormerlySerializedAs("onInitialize")]
+        public UnityEvent onInitializeStart = new UnityEvent();
+        public UnityEvent onInitializeFinish = new UnityEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneStart = new LiteNetLibLoadSceneEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneProgress = new LiteNetLibLoadSceneEvent();
         public LiteNetLibLoadSceneEvent onLoadSceneFinish = new LiteNetLibLoadSceneEvent();
+        public UnityEvent onLoadSceneFail = new UnityEvent();
         public UnityEvent onSceneFileSizeRetrieving = new UnityEvent();
         public AddressableAssetFileSizeEvent onSceneFileSizeRetrieved = new AddressableAssetFileSizeEvent();
         public UnityEvent onSceneDepsDownloading = new UnityEvent();
@@ -51,14 +55,18 @@ namespace LiteNetLibManager
         public LiteNetLibIdentityEvent onObjectSpawn = new LiteNetLibIdentityEvent();
         public LiteNetLibIdentityEvent onObjectDestroy = new LiteNetLibIdentityEvent();
         public bool disablePooling = false;
+        public bool limitByPoolingSize = true;
+        public bool manuallyApplyOwnerChanges = false;
 
         internal readonly List<LiteNetLibSpawnPoint> SpawnPoints = new List<LiteNetLibSpawnPoint>();
         internal readonly Dictionary<int, LiteNetLibIdentity> GuidToPrefabs = new Dictionary<int, LiteNetLibIdentity>();
         internal readonly Dictionary<int, Queue<LiteNetLibIdentity>> PooledObjects = new Dictionary<int, Queue<LiteNetLibIdentity>>();
         internal readonly Dictionary<int, LiteNetLibIdentity> SceneObjects = new Dictionary<int, LiteNetLibIdentity>();
         internal readonly Dictionary<uint, LiteNetLibIdentity> SpawnedObjects = new Dictionary<uint, LiteNetLibIdentity>();
+        internal readonly Dictionary<uint, long> ChangingOwnerObjects = new Dictionary<uint, long>();
 
         public LiteNetLibGameManager Manager { get; private set; }
+        public bool IsInitialized { get; private set; } = false;
 
         public string LogTag
         {
@@ -77,9 +85,7 @@ namespace LiteNetLibManager
                     stringBuilder.Append('.');
                     if (this != null)
                     {
-                        stringBuilder.Append('<');
                         stringBuilder.Append('A');
-                        stringBuilder.Append('>');
                     }
                     else
                     {
@@ -97,20 +103,26 @@ namespace LiteNetLibManager
 
         public async UniTask Initialize()
         {
-            if (onInitialize != null)
-                onInitialize.Invoke();
+            IsInitialized = false;
+            if (onInitializeStart != null)
+                onInitializeStart.Invoke();
             await RegisterPrefabs();
             RegisterSpawnPoints();
             RegisterSceneObjects();
+            IsInitialized = true;
+            if (onInitializeFinish != null)
+                onInitializeFinish.Invoke();
         }
 
         public void Clear(bool doNotResetObjectId = false)
         {
+            IsInitialized = false;
             ClearSpawnedObjects();
             ClearPooledObjects();
             SpawnPoints.Clear();
             SceneObjects.Clear();
             GuidToPrefabs.Clear();
+            ChangingOwnerObjects.Clear();
             ResetSpawnPositionCounter();
             if (!doNotResetObjectId)
                 LiteNetLibIdentity.ResetObjectId();
@@ -165,7 +177,7 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterPrefab - prefab is null.");
                 return null;
             }
-            if (Manager.LogDev) Logging.Log(LogTag, $"RegisterPrefab [{prefab.HashAssetId}] name [{prefab.name}]");
+            if (Manager.LogDev) Logging.Log(LogTag, $"RegisterPrefab: {prefab.AssetId}, hash: {prefab.HashAssetId}, name: {prefab.name}");
             GuidToPrefabs[prefab.HashAssetId] = prefab;
             return prefab;
         }
@@ -177,7 +189,7 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "UnregisterPrefab - prefab is null.");
                 return false;
             }
-            if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterPrefab [{prefab.HashAssetId}] name [{prefab.name}]");
+            if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterPrefab: {prefab.HashAssetId}");
             return GuidToPrefabs.Remove(prefab.HashAssetId);
         }
 
@@ -189,9 +201,19 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterAddressablePrefab - prefab is null.");
                 return null;
             }
-            if (Manager.LogDev) Logging.Log(LogTag, $"RegisterAddressablePrefab [{addressablePrefab.HashAssetId}]");
             LiteNetLibIdentity prefab = await addressablePrefab.GetOrLoadAssetAsync<LiteNetLibIdentity>();
-            GuidToPrefabs[addressablePrefab.HashAssetId] = prefab;
+            if (prefab == null)
+            {
+                if (Manager.LogWarn) Logging.LogWarning(LogTag, "RegisterAddressablePrefab - loaded prefab is null.");
+                return null;
+            }
+            if (Manager.LogDev) Logging.Log(LogTag, $"RegisterAddressablePrefab: {prefab.AssetId}, hash: {prefab.HashAssetId}, name: {prefab.name}");
+            if (addressablePrefab.HashAssetId != prefab.HashAssetId)
+            {
+                Logging.LogError(LogTag, "Invalid addressable prefab hash asset ID: {0}, must be: {1}, name: {2}", addressablePrefab.HashAssetId, prefab.HashAssetId, prefab.name);
+                addressablePrefab.HashAssetId = prefab.HashAssetId;
+            }
+            GuidToPrefabs[prefab.HashAssetId] = prefab;
             return prefab;
         }
 #endif
@@ -204,7 +226,7 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "UnregisterAddressablePrefab - prefab is null.");
                 return false;
             }
-            if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterAddressablePrefab [{addressablePrefab.HashAssetId}]");
+            if (Manager.LogDev) Logging.Log(LogTag, $"UnregisterAddressablePrefab: {addressablePrefab.HashAssetId}");
             return GuidToPrefabs.Remove(addressablePrefab.HashAssetId);
         }
 #endif
@@ -247,7 +269,7 @@ namespace LiteNetLibManager
             PooledObjects.Clear();
         }
 
-        public void InitPoolingObjects()
+        public void InitPoolingQueues()
         {
             // No pooling
             if (disablePooling)
@@ -255,32 +277,27 @@ namespace LiteNetLibManager
 
             foreach (int hashAssetId in GuidToPrefabs.Keys)
             {
-                InitPoolingObject(hashAssetId);
+                GetOrInitPoolingQueue(hashAssetId);
             }
         }
 
-        public void InitPoolingObject(int hashAssetId)
+        public Queue<LiteNetLibIdentity> GetOrInitPoolingQueue(int hashAssetId)
         {
             // No pooling
             if (disablePooling)
-                return;
-
-            if (!GuidToPrefabs.ContainsKey(hashAssetId))
-            {
-                Debug.LogWarning($"Cannot init prefab: {hashAssetId}, can't find the registered prefab.");
-                return;
-            }
+                return null;
 
             // Already init pool for the prefab
-            if (PooledObjects.ContainsKey(hashAssetId))
-                return;
+            if (PooledObjects.TryGetValue(hashAssetId, out Queue<LiteNetLibIdentity> queue))
+                return queue;
 
-            LiteNetLibIdentity prefab = GuidToPrefabs[hashAssetId];
-            // Don't create an instance for this prefab, if pooling size < 0
-            if (prefab.PoolingSize <= 0)
-                return;
+            if (!GuidToPrefabs.TryGetValue(hashAssetId, out LiteNetLibIdentity prefab))
+            {
+                Debug.LogWarning($"Cannot init prefab: {hashAssetId}, can't find the registered prefab.");
+                return null;
+            }
 
-            Queue<LiteNetLibIdentity> queue = new Queue<LiteNetLibIdentity>();
+            queue = new Queue<LiteNetLibIdentity>();
             LiteNetLibIdentity tempInstance;
             for (int i = 0; i < prefab.PoolingSize; ++i)
             {
@@ -290,6 +307,7 @@ namespace LiteNetLibManager
                 queue.Enqueue(tempInstance);
             }
             PooledObjects[hashAssetId] = queue;
+            return queue;
         }
 
         public LiteNetLibIdentity GetObjectInstance(int hashAssetId)
@@ -299,20 +317,20 @@ namespace LiteNetLibManager
 
         public LiteNetLibIdentity GetObjectInstance(int hashAssetId, Vector3 position, Quaternion rotation)
         {
-            if (PooledObjects.ContainsKey(hashAssetId) && PooledObjects[hashAssetId].Count > 0)
+            if (PooledObjects.TryGetValue(hashAssetId, out Queue<LiteNetLibIdentity> pool) && pool.Count > 0)
             {
                 // Get pooled instance
-                LiteNetLibIdentity instance = PooledObjects[hashAssetId].Dequeue();
+                LiteNetLibIdentity instance = pool.Dequeue();
                 instance.OnGetInstance();
-                instance.transform.position = position;
-                instance.transform.rotation = rotation;
+                instance.SetTransform(position, rotation);
                 return instance;
             }
 
-            if (GuidToPrefabs.ContainsKey(hashAssetId))
+            if (GuidToPrefabs.TryGetValue(hashAssetId, out LiteNetLibIdentity prefab))
             {
                 // Create a new instance
-                LiteNetLibIdentity instance = Instantiate(GuidToPrefabs[hashAssetId], position, rotation);
+                LiteNetLibIdentity instance = Instantiate(prefab, position, rotation);
+                instance.IsPooledInstance = true;
                 instance.gameObject.SetActive(false);
                 return instance;
             }
@@ -332,18 +350,14 @@ namespace LiteNetLibManager
                 Debug.LogWarning($"[PoolSystem] Cannot push back ({instance.gameObject}). The instance is not pooled instance.");
                 return;
             }
-            Queue<LiteNetLibIdentity> queue;
-            if (!PooledObjects.TryGetValue(instance.HashAssetId, out queue))
-            {
-                Debug.LogWarning($"[PoolSystem] Cannot push back ({instance.gameObject}). The instance's prefab does not initailized yet.");
-                return;
-            }
-            if (queue.Count >= instance.PoolingSize)
+            Queue<LiteNetLibIdentity> queue = GetOrInitPoolingQueue(instance.HashAssetId);
+            if (queue == null || (limitByPoolingSize && queue.Count >= instance.PoolingSize))
             {
                 Destroy(instance.gameObject);
             }
             else
             {
+                instance.OnPushBack();
                 instance.gameObject.SetActive(false);
                 queue.Enqueue(instance);
             }
@@ -385,7 +399,7 @@ namespace LiteNetLibManager
             }
         }
 
-        public LiteNetLibIdentity NetworkSpawnScene(uint objectId, int sceneObjectId, Vector3 position, Quaternion rotation, long connectionId = -1)
+        public LiteNetLibIdentity NetworkSpawnScene(uint objectId, int sceneObjectId, Vector3 position, Quaternion rotation, long connectionId = -1, NetDataReader initialReader = null, uint initialTick = 0)
         {
             if (!Manager.IsNetworkActive)
             {
@@ -403,6 +417,8 @@ namespace LiteNetLibManager
             identity.gameObject.SetActive(true);
             identity.Initial(Manager, true, objectId, connectionId);
             identity.InitTransform(position, rotation);
+            if (initialReader != null)
+                Manager.ReadSyncElements(initialReader, identity, initialTick, true);
             identity.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
             if (Manager.IsServer)
                 identity.OnStartServer();
@@ -416,17 +432,28 @@ namespace LiteNetLibManager
             return identity;
         }
 
-        public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, uint objectId = 0, long connectionId = -1)
+        public LiteNetLibIdentity NetworkSpawn(GameObject gameObject, uint objectId = 0, long connectionId = -1, NetDataReader initialReader = null, uint initialTick = 0)
         {
             if (gameObject == null)
             {
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "NetworkSpawn - gameObject is null.");
                 return null;
             }
-            return NetworkSpawn(gameObject.GetComponent<LiteNetLibIdentity>(), objectId, connectionId);
+            return NetworkSpawn(gameObject.GetComponent<LiteNetLibIdentity>(), objectId, connectionId, initialReader, initialTick);
         }
 
-        public LiteNetLibIdentity NetworkSpawn(LiteNetLibIdentity identity, uint objectId = 0, long connectionId = -1)
+        public LiteNetLibIdentity NetworkSpawn(int hashAssetId, Vector3 position, Quaternion rotation, uint objectId = 0, long connectionId = -1, NetDataReader initialReader = null, uint initialTick = 0)
+        {
+            if (!GuidToPrefabs.ContainsKey(hashAssetId))
+            {
+                if (Manager.LogWarn)
+                    Logging.LogWarning(LogTag, $"NetworkSpawn - Asset Id: {hashAssetId} is not registered.");
+                return null;
+            }
+            return NetworkSpawn(GetObjectInstance(hashAssetId, position, rotation), objectId, connectionId, initialReader, initialTick);
+        }
+
+        public LiteNetLibIdentity NetworkSpawn(LiteNetLibIdentity identity, uint objectId = 0, long connectionId = -1, NetDataReader initialReader = null, uint initialTick = 0)
         {
             if (identity == null)
             {
@@ -437,6 +464,8 @@ namespace LiteNetLibManager
             identity.gameObject.SetActive(true);
             identity.Initial(Manager, false, objectId, connectionId);
             identity.InitTransform(identity.transform.position, identity.transform.rotation);
+            if (initialReader != null)
+                Manager.ReadSyncElements(initialReader, identity, initialTick, true);
             identity.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
             if (Manager.IsServer)
                 identity.OnStartServer();
@@ -450,17 +479,6 @@ namespace LiteNetLibManager
             return identity;
         }
 
-        public LiteNetLibIdentity NetworkSpawn(int hashAssetId, Vector3 position, Quaternion rotation, uint objectId = 0, long connectionId = -1)
-        {
-            if (!GuidToPrefabs.ContainsKey(hashAssetId))
-            {
-                if (Manager.LogWarn)
-                    Logging.LogWarning(LogTag, $"NetworkSpawn - Asset Id: {hashAssetId} is not registered.");
-                return null;
-            }
-            return NetworkSpawn(GetObjectInstance(hashAssetId, position, rotation), objectId, connectionId);
-        }
-
         public bool NetworkDestroy(GameObject gameObject, byte reasons)
         {
             if (gameObject == null)
@@ -468,13 +486,7 @@ namespace LiteNetLibManager
                 if (Manager.LogWarn) Logging.LogWarning(LogTag, "NetworkDestroy - gameObject is null.");
                 return false;
             }
-            LiteNetLibIdentity identity = gameObject.GetComponent<LiteNetLibIdentity>();
-            if (identity == null)
-            {
-                if (Manager.LogWarn) Logging.LogWarning(LogTag, "NetworkSpawn - identity is null.");
-                return false;
-            }
-            return NetworkDestroy(identity.ObjectId, reasons);
+            return NetworkDestroy(gameObject.GetComponent<LiteNetLibIdentity>(), reasons);
         }
 
         public bool NetworkDestroy(uint objectId, byte reasons)
@@ -488,26 +500,36 @@ namespace LiteNetLibManager
             LiteNetLibIdentity spawnedObject;
             if (SpawnedObjects.TryGetValue(objectId, out spawnedObject))
             {
-                // Call this function to tell behaviour that the identity is being destroyed
-                spawnedObject.OnNetworkDestroy(reasons);
-                if (onObjectDestroy != null)
-                    onObjectDestroy.Invoke(spawnedObject);
-                // If the object is scene object, don't destroy just hide it, otherwise destroy
-                if (spawnedObject.IsSceneObject)
-                {
-                    spawnedObject.gameObject.SetActive(false);
-                }
-                else
-                {
-                    DestroyObjectInstance(spawnedObject);
-                }
-                return true;
+                return NetworkDestroy(spawnedObject, reasons);
             }
             else if (Manager.LogWarn)
             {
                 Logging.LogWarning(LogTag, $"NetworkDestroy - Object Id: {objectId} is not spawned.");
             }
             return false;
+        }
+
+        public bool NetworkDestroy(LiteNetLibIdentity spawnedObject, byte reasons)
+        {
+            if (spawnedObject == null)
+            {
+                if (Manager.LogWarn) Logging.LogWarning(LogTag, "NetworkSpawn - identity is null.");
+                return false;
+            }
+            // Call this function to tell behaviour that the identity is being destroyed
+            spawnedObject.OnNetworkDestroy(reasons);
+            if (onObjectDestroy != null)
+                onObjectDestroy.Invoke(spawnedObject);
+            // If the object is scene object, don't destroy just hide it, otherwise destroy
+            if (spawnedObject.IsSceneObject)
+            {
+                spawnedObject.gameObject.SetActive(false);
+            }
+            else
+            {
+                DestroyObjectInstance(spawnedObject);
+            }
+            return true;
         }
 
         public void DestroyObjectInstance(LiteNetLibIdentity instance)
@@ -521,18 +543,38 @@ namespace LiteNetLibManager
                 Destroy(instance.gameObject);
         }
 
-        public bool SetObjectOwner(uint objectId, long connectionId)
+        public void SetObjectOwner(uint objectId, long connectionId)
+        {
+            if (manuallyApplyOwnerChanges)
+            {
+                ChangingOwnerObjects[objectId] = connectionId;
+            }
+            else
+            {
+                SetObjectOwnerImmediately(objectId, connectionId);
+            }
+        }
+
+        public void ApplyOwnerChanges()
+        {
+            foreach (KeyValuePair<uint, long> kvp in ChangingOwnerObjects)
+            {
+                SetObjectOwnerImmediately(kvp.Key, kvp.Value);
+            }
+            ChangingOwnerObjects.Clear();
+        }
+
+        public void SetObjectOwnerImmediately(uint objectId, long connectionId)
         {
             if (!Manager.IsNetworkActive)
             {
                 Logging.LogWarning(LogTag, "SetObjectOwner - Network is not active cannot set object owner");
-                return false;
+                return;
             }
-            LiteNetLibIdentity spawnedObject;
-            if (SpawnedObjects.TryGetValue(objectId, out spawnedObject))
+            if (SpawnedObjects.TryGetValue(objectId, out LiteNetLibIdentity spawnedObject))
             {
                 if (spawnedObject.ConnectionId == connectionId)
-                    return false;
+                    return;
 
                 // If this is server, send message to clients to set object owner
                 if (Manager.IsServer)
@@ -556,12 +598,12 @@ namespace LiteNetLibManager
                 spawnedObject.ConnectionId = connectionId;
                 // Call set owner client event
                 spawnedObject.OnSetOwnerClient(connectionId >= 0 && connectionId == Manager.ClientConnectionId);
-                return true;
+                return;
             }
             else if (Manager.LogWarn)
+            {
                 Logging.LogWarning(LogTag, $"SetObjectOwner - Object Id: {objectId} is not spawned.");
-
-            return false;
+            }
         }
 
         public Vector3 GetPlayerSpawnPosition()
@@ -600,9 +642,9 @@ namespace LiteNetLibManager
             return false;
         }
 
-        public IEnumerable<LiteNetLibIdentity> GetSceneObjects()
+        public Dictionary<int, LiteNetLibIdentity>.Enumerator GetSceneObjects()
         {
-            return SceneObjects.Values;
+            return SceneObjects.GetEnumerator();
         }
 
         public bool ContainsSpawnedObject(uint objectId)
@@ -627,9 +669,9 @@ namespace LiteNetLibManager
             return false;
         }
 
-        public IEnumerable<LiteNetLibIdentity> GetSpawnedObjects()
+        public Dictionary<uint, LiteNetLibIdentity>.Enumerator GetSpawnedObjects()
         {
-            return SpawnedObjects.Values;
+            return SpawnedObjects.GetEnumerator();
         }
 
         public static void ResetSpawnPositionCounter()

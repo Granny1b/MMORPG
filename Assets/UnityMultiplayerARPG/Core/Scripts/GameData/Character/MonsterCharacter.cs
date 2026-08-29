@@ -661,11 +661,18 @@ namespace MultiplayerARPG
                 Debug.LogWarning($"Invalid protectedSlotLimit stats's increase each level setting for {this} adjusted to {adjustedValue}");
             }
             // ammoCapacity
-            if (AdjustFloatValue(baseAmount.ammoCapacity, amountIncreaseEachLevel.ammoCapacity, out adjustedValue, 0f))
+            if (AdjustFloatValue(baseAmount.ammoCapacityModifier, amountIncreaseEachLevel.ammoCapacityModifier, out adjustedValue, 0f))
             {
                 hasChanges = true;
-                amountIncreaseEachLevel.ammoCapacity = adjustedValue;
+                amountIncreaseEachLevel.ammoCapacityModifier = adjustedValue;
                 Debug.LogWarning($"Invalid ammoCapacity stats's increase each level setting for {this} adjusted to {adjustedValue}");
+            }
+            // ammoCapacityRate
+            if (AdjustFloatValue(baseAmount.ammoCapacityRate, amountIncreaseEachLevel.ammoCapacityRate, out adjustedValue, 0f))
+            {
+                hasChanges = true;
+                amountIncreaseEachLevel.ammoCapacityRate = adjustedValue;
+                Debug.LogWarning($"Invalid ammoCapacityRate stats's increase each level setting for {this} adjusted to {adjustedValue}");
             }
             // recoilModifier
             if (AdjustFloatValue(baseAmount.recoilModifier, amountIncreaseEachLevel.recoilModifier, out adjustedValue, 0f))
@@ -674,6 +681,20 @@ namespace MultiplayerARPG
                 amountIncreaseEachLevel.recoilModifier = adjustedValue;
                 Debug.LogWarning($"Invalid recoilModifier stats's increase each level setting for {this} adjusted to {adjustedValue}");
             }
+            // recoilYawModifier
+            if (AdjustFloatValue(baseAmount.recoilYawModifier, amountIncreaseEachLevel.recoilYawModifier, out adjustedValue, 0f))
+            {
+                hasChanges = true;
+                amountIncreaseEachLevel.recoilYawModifier = adjustedValue;
+                Debug.LogWarning($"Invalid recoilYawModifier stats's increase each level setting for {this} adjusted to {adjustedValue}");
+            }
+            // recoilRollModifier
+            if (AdjustFloatValue(baseAmount.recoilRollModifier, amountIncreaseEachLevel.recoilRollModifier, out adjustedValue, 0f))
+            {
+                hasChanges = true;
+                amountIncreaseEachLevel.recoilRollModifier = adjustedValue;
+                Debug.LogWarning($"Invalid recoilRollModifier stats's increase each level setting for {this} adjusted to {adjustedValue}");
+            }
             // recoilRate
             if (AdjustFloatValue(baseAmount.recoilRate, amountIncreaseEachLevel.recoilRate, out adjustedValue, 0f))
             {
@@ -681,19 +702,54 @@ namespace MultiplayerARPG
                 amountIncreaseEachLevel.recoilRate = adjustedValue;
                 Debug.LogWarning($"Invalid recoilRate stats's increase each level setting for {this} adjusted to {adjustedValue}");
             }
-            // rateOfFire
-            if (AdjustFloatValue(baseAmount.rateOfFire, amountIncreaseEachLevel.rateOfFire, out adjustedValue, 0f))
+            // recoilYawRate
+            if (AdjustFloatValue(baseAmount.recoilYawRate, amountIncreaseEachLevel.recoilYawRate, out adjustedValue, 0f))
             {
                 hasChanges = true;
-                amountIncreaseEachLevel.rateOfFire = adjustedValue;
+                amountIncreaseEachLevel.recoilYawRate = adjustedValue;
+                Debug.LogWarning($"Invalid recoilYawRate stats's increase each level setting for {this} adjusted to {adjustedValue}");
+            }
+            // recoilRollRate
+            if (AdjustFloatValue(baseAmount.recoilRollRate, amountIncreaseEachLevel.recoilRollRate, out adjustedValue, 0f))
+            {
+                hasChanges = true;
+                amountIncreaseEachLevel.recoilRollRate = adjustedValue;
+                Debug.LogWarning($"Invalid recoilRollRate stats's increase each level setting for {this} adjusted to {adjustedValue}");
+            }
+            // rateOfFire
+            if (AdjustFloatValue(baseAmount.rateOfFireModifier, amountIncreaseEachLevel.rateOfFireModifier, out adjustedValue, 0f))
+            {
+                hasChanges = true;
+                amountIncreaseEachLevel.rateOfFireModifier = adjustedValue;
                 Debug.LogWarning($"Invalid rateOfFire stats's increase each level setting for {this} adjusted to {adjustedValue}");
             }
-            // reloadDuration
-            if (AdjustFloatValue(baseAmount.reloadDuration, amountIncreaseEachLevel.reloadDuration, out adjustedValue, 0f))
+            // rateOfFireRate
+            if (AdjustFloatValue(baseAmount.rateOfFireRate, amountIncreaseEachLevel.rateOfFireRate, out adjustedValue, 0f))
             {
                 hasChanges = true;
-                amountIncreaseEachLevel.reloadDuration = adjustedValue;
+                amountIncreaseEachLevel.rateOfFireRate = adjustedValue;
+                Debug.LogWarning($"Invalid rateOfFireRate stats's increase each level setting for {this} adjusted to {adjustedValue}");
+            }
+            // reloadDuration
+            if (AdjustFloatValue(baseAmount.reloadDurationModifier, amountIncreaseEachLevel.reloadDurationModifier, out adjustedValue, 0f))
+            {
+                hasChanges = true;
+                amountIncreaseEachLevel.reloadDurationModifier = adjustedValue;
                 Debug.LogWarning($"Invalid reloadDuration stats's increase each level setting for {this} adjusted to {adjustedValue}");
+            }
+            // reloadDurationRate
+            if (AdjustFloatValue(baseAmount.reloadDurationRate, amountIncreaseEachLevel.reloadDurationRate, out adjustedValue, 0f))
+            {
+                hasChanges = true;
+                amountIncreaseEachLevel.reloadDurationRate = adjustedValue;
+                Debug.LogWarning($"Invalid reloadDurationRate stats's increase each level setting for {this} adjusted to {adjustedValue}");
+            }
+            // fireSpreadRange
+            if (AdjustFloatValue(baseAmount.fireSpreadRangeModifier, amountIncreaseEachLevel.fireSpreadRangeModifier, out adjustedValue, 0f))
+            {
+                hasChanges = true;
+                amountIncreaseEachLevel.fireSpreadRangeModifier = adjustedValue;
+                Debug.LogWarning($"Invalid fireSpreadRange stats's increase each level setting for {this} adjusted to {adjustedValue}");
             }
             // fireSpreadRangeRate
             if (AdjustFloatValue(baseAmount.fireSpreadRangeRate, amountIncreaseEachLevel.fireSpreadRangeRate, out adjustedValue, 0f))
@@ -703,11 +759,18 @@ namespace MultiplayerARPG
                 Debug.LogWarning($"Invalid fireSpreadRangeRate stats's increase each level setting for {this} adjusted to {adjustedValue}");
             }
             // fireSpread
-            if (AdjustFloatValue(baseAmount.fireSpread, amountIncreaseEachLevel.fireSpread, out adjustedValue, 0f))
+            if (AdjustFloatValue(baseAmount.fireSpreadModifier, amountIncreaseEachLevel.fireSpreadModifier, out adjustedValue, 0f))
             {
                 hasChanges = true;
-                amountIncreaseEachLevel.fireSpread = adjustedValue;
+                amountIncreaseEachLevel.fireSpreadModifier = adjustedValue;
                 Debug.LogWarning($"Invalid fireSpread stats's increase each level setting for {this} adjusted to {adjustedValue}");
+            }
+            // fireSpreadRate
+            if (AdjustFloatValue(baseAmount.fireSpreadRate, amountIncreaseEachLevel.fireSpreadRate, out adjustedValue, 0f))
+            {
+                hasChanges = true;
+                amountIncreaseEachLevel.fireSpreadRate = adjustedValue;
+                Debug.LogWarning($"Invalid fireSpreadRate stats's increase each level setting for {this} adjusted to {adjustedValue}");
             }
             // decreaseFoodDecreation
             if (AdjustFloatValue(baseAmount.decreaseFoodDecreation, amountIncreaseEachLevel.decreaseFoodDecreation, out adjustedValue, 0f))

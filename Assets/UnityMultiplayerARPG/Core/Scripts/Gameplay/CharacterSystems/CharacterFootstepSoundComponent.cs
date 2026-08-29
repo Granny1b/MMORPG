@@ -76,7 +76,7 @@ namespace MultiplayerARPG
             if (audioSource == null)
             {
                 GameObject audioSourceObject = new GameObject("_FootstepAudioSource");
-                audioSourceObject.transform.parent = CacheTransform;
+                audioSourceObject.transform.parent = EntityTransform;
                 audioSourceObject.transform.localPosition = Vector3.zero;
                 audioSourceObject.transform.localRotation = Quaternion.identity;
                 audioSourceObject.transform.localScale = Vector3.one;

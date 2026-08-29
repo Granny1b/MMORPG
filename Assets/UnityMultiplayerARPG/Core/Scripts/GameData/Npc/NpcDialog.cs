@@ -25,7 +25,7 @@ namespace MultiplayerARPG
         [Output(dynamicPortList = true, connectionType = ConnectionType.Override)]
         public NpcDialogMenu[] menus;
         [Tooltip("Requirement for `SaveRespawnPoint` and `Warp` dialog confirmation")]
-        public NpcDialogConfirmRequirement confirmRequirement;
+        public NpcDialogConfirmRequirement confirmRequirement = new NpcDialogConfirmRequirement();
 
         // Quest
         public Quest quest;
@@ -193,6 +193,9 @@ namespace MultiplayerARPG
             if (uiNpcDialog.onSwitchToNormalDialog != null)
                 uiNpcDialog.onSwitchToNormalDialog.Invoke();
 
+            if (uiNpcDialog.uiDialogRoot != null)
+                uiNpcDialog.uiDialogRoot.SetActive(true);
+
             for (int i = 0; i < menus.Length; ++i)
             {
                 NpcDialogMenu menu = menus[i];
@@ -200,7 +203,9 @@ namespace MultiplayerARPG
                 {
                     UINpcDialogMenuAction menuAction = new UINpcDialogMenuAction();
                     menuAction.title = menu.Title;
-                    menuAction.icon = menu.icon;
+#if UNITY_EDITOR || !UNITY_SERVER
+                    menuAction.icon = await menu.GetIcon();
+#endif
                     menuAction.menuIndex = i;
                     menuActions.Add(menuAction);
                 }
@@ -211,6 +216,9 @@ namespace MultiplayerARPG
         {
             if (uiNpcDialog.onSwitchToQuestDialog != null)
                 uiNpcDialog.onSwitchToQuestDialog.Invoke();
+
+            if (uiNpcDialog.uiDialogRoot != null)
+                uiNpcDialog.uiDialogRoot.SetActive(true);
 
             if (uiNpcDialog.uiCharacterQuest != null)
             {
@@ -272,8 +280,10 @@ namespace MultiplayerARPG
         {
             if (uiNpcDialog.onSwitchToSellItemDialog != null)
                 uiNpcDialog.onSwitchToSellItemDialog.Invoke();
+
             if (uiNpcDialog.uiSellItemRoot != null)
                 uiNpcDialog.uiSellItemRoot.SetActive(true);
+
             UINpcSellItem tempUiNpcSellItem;
             uiNpcDialog.CacheSellItemList.Generate(sellItems, (index, sellItem, ui) =>
             {
@@ -288,6 +298,10 @@ namespace MultiplayerARPG
         {
             if (uiNpcDialog.onSwitchToCraftItemDialog != null)
                 uiNpcDialog.onSwitchToCraftItemDialog.Invoke();
+
+            if (uiNpcDialog.uiDialogRoot != null)
+                uiNpcDialog.uiDialogRoot.SetActive(true);
+
             if (uiNpcDialog.uiCraftItem != null)
             {
                 BaseItem craftingItem = itemCraft.CraftingItem;
@@ -317,13 +331,16 @@ namespace MultiplayerARPG
             if (uiNpcDialog.onSwitchToSaveRespawnPointDialog != null)
                 uiNpcDialog.onSwitchToSaveRespawnPointDialog.Invoke();
 
+            if (uiNpcDialog.uiDialogRoot != null)
+                uiNpcDialog.uiDialogRoot.SetActive(true);
+
             if (uiNpcDialog.uiConfirmRequirement != null && confirmRequirement.HasConfirmConditions())
             {
                 uiNpcDialog.uiConfirmRequirement.Data = confirmRequirement;
                 uiNpcDialog.uiConfirmRequirement.Show();
             }
 
-            if (uiNpcDialog.uiMenuPrefab == null)
+            if (!uiNpcDialog.enableSaveRespawnPointConfirmation || uiNpcDialog.uiMenuPrefab == null)
             {
                 GameInstance.PlayingCharacterEntity.NpcActionComponent.CallCmdSelectNpcDialogMenu(CONFIRM_MENU_INDEX);
                 return;
@@ -349,13 +366,16 @@ namespace MultiplayerARPG
             if (uiNpcDialog.onSwitchToWarpDialog != null)
                 uiNpcDialog.onSwitchToWarpDialog.Invoke();
 
+            if (uiNpcDialog.uiDialogRoot != null)
+                uiNpcDialog.uiDialogRoot.SetActive(true);
+
             if (uiNpcDialog.uiConfirmRequirement != null && confirmRequirement.HasConfirmConditions())
             {
                 uiNpcDialog.uiConfirmRequirement.Data = confirmRequirement;
                 uiNpcDialog.uiConfirmRequirement.Show();
             }
 
-            if (uiNpcDialog.uiMenuPrefab == null)
+            if (!uiNpcDialog.enableWarpConfirmation || uiNpcDialog.uiMenuPrefab == null)
             {
                 GameInstance.PlayingCharacterEntity.NpcActionComponent.CallCmdSelectNpcDialogMenu(CONFIRM_MENU_INDEX);
                 return;
@@ -381,7 +401,10 @@ namespace MultiplayerARPG
             if (uiNpcDialog.onSwitchToRefineItemDialog != null)
                 uiNpcDialog.onSwitchToRefineItemDialog.Invoke();
 
-            if (uiNpcDialog.uiMenuPrefab == null)
+            if (uiNpcDialog.uiDialogRoot != null)
+                uiNpcDialog.uiDialogRoot.SetActive(true);
+
+            if (!uiNpcDialog.enableRefineItemConfirmation || uiNpcDialog.uiMenuPrefab == null)
             {
                 GameInstance.PlayingCharacterEntity.NpcActionComponent.CallCmdSelectNpcDialogMenu(CONFIRM_MENU_INDEX);
                 return;
@@ -407,7 +430,10 @@ namespace MultiplayerARPG
             if (uiNpcDialog.onSwitchToPlayerStorageDialog != null)
                 uiNpcDialog.onSwitchToPlayerStorageDialog.Invoke();
 
-            if (uiNpcDialog.uiMenuPrefab == null)
+            if (uiNpcDialog.uiDialogRoot != null)
+                uiNpcDialog.uiDialogRoot.SetActive(true);
+
+            if (!uiNpcDialog.enablePlayerStorageConfirmation || uiNpcDialog.uiMenuPrefab == null)
             {
                 GameInstance.PlayingCharacterEntity.NpcActionComponent.CallCmdSelectNpcDialogMenu(CONFIRM_MENU_INDEX);
                 return;
@@ -433,7 +459,10 @@ namespace MultiplayerARPG
             if (uiNpcDialog.onSwitchToGuildStorageDialog != null)
                 uiNpcDialog.onSwitchToGuildStorageDialog.Invoke();
 
-            if (uiNpcDialog.uiMenuPrefab == null)
+            if (uiNpcDialog.uiDialogRoot != null)
+                uiNpcDialog.uiDialogRoot.SetActive(true);
+
+            if (!uiNpcDialog.enableGuildStorageConfirmation || uiNpcDialog.uiMenuPrefab == null)
             {
                 GameInstance.PlayingCharacterEntity.NpcActionComponent.CallCmdSelectNpcDialogMenu(CONFIRM_MENU_INDEX);
                 return;
@@ -459,7 +488,10 @@ namespace MultiplayerARPG
             if (uiNpcDialog.onSwitchToDismantleItemDialog != null)
                 uiNpcDialog.onSwitchToDismantleItemDialog.Invoke();
 
-            if (uiNpcDialog.uiMenuPrefab == null)
+            if (uiNpcDialog.uiDialogRoot != null)
+                uiNpcDialog.uiDialogRoot.SetActive(true);
+
+            if (!uiNpcDialog.enableDismantleItemConfirmation || uiNpcDialog.uiMenuPrefab == null)
             {
                 GameInstance.PlayingCharacterEntity.NpcActionComponent.CallCmdSelectNpcDialogMenu(CONFIRM_MENU_INDEX);
                 return;
@@ -485,7 +517,10 @@ namespace MultiplayerARPG
             if (uiNpcDialog.onSwitchToRepairItemDialog != null)
                 uiNpcDialog.onSwitchToRepairItemDialog.Invoke();
 
-            if (uiNpcDialog.uiMenuPrefab == null)
+            if (uiNpcDialog.uiDialogRoot != null)
+                uiNpcDialog.uiDialogRoot.SetActive(true);
+
+            if (!uiNpcDialog.enableRepairItemConfirmation || uiNpcDialog.uiMenuPrefab == null)
             {
                 GameInstance.PlayingCharacterEntity.NpcActionComponent.CallCmdSelectNpcDialogMenu(CONFIRM_MENU_INDEX);
                 return;
@@ -513,8 +548,10 @@ namespace MultiplayerARPG
                 // No menus
                 return;
             }
+
             if (uiNpcDialog.uiMenuRoot != null)
                 uiNpcDialog.uiMenuRoot.SetActive(menuActions.Count > 0);
+
             UINpcDialogMenu tempUiNpcDialogMenu;
             uiNpcDialog.CacheMenuList.Generate(menuActions, (index, menuAction, ui) =>
             {
@@ -528,6 +565,9 @@ namespace MultiplayerARPG
         public override async UniTask RenderUI(UINpcDialog uiNpcDialog)
         {
             BasePlayerCharacterEntity characterEntity = GameInstance.PlayingCharacterEntity;
+
+            if (type != NpcDialogType.Normal && uiNpcDialog.uiDialogRoot != null)
+                uiNpcDialog.uiDialogRoot.SetActive(false);
 
             if (type != NpcDialogType.Shop && uiNpcDialog.uiSellItemRoot != null)
                 uiNpcDialog.uiSellItemRoot.SetActive(false);

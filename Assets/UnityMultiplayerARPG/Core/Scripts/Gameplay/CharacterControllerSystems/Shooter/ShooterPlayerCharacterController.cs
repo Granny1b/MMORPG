@@ -36,6 +36,10 @@ namespace MultiplayerARPG
         protected FollowCameraControls gameplayCameraPrefab;
         [SerializeField]
         protected FollowCameraControls minimapCameraPrefab;
+        [SerializeField]
+        protected Transform fpsModelContainer;
+        [SerializeField]
+        protected bool updateFpsModelContainerActivating = true;
 
         [Header("Controller Settings")]
         [SerializeField]
@@ -46,6 +50,10 @@ namespace MultiplayerARPG
         protected bool canSwitchViewMode;
         [SerializeField]
         protected ShooterControllerViewMode viewMode;
+        [SerializeField]
+        protected GameObject[] tpsObjects = new GameObject[0];
+        [SerializeField]
+        protected GameObject[] fpsObjects = new GameObject[0];
         [SerializeField]
         protected ExtraMoveActiveMode sprintActiveMode;
         [SerializeField]
@@ -71,15 +79,19 @@ namespace MultiplayerARPG
         [SerializeField]
         protected RectTransform crosshairRect;
         [SerializeField]
+        protected bool hideCrosshair = false;
+        [SerializeField]
+        protected bool disableAttackInSafeArea = false;
+        [SerializeField]
+        protected bool enableWallHitSpring = true;
+        [SerializeField]
         protected string thirdPersonCameraRotationSpeedScaleSaveKey = "3RD_PERSON_CAMERA_SCALE";
         [SerializeField]
         protected string firstPersonCameraRotationSpeedScaleSaveKey = "1ST_PERSON_CAMERA_SCALE";
         [SerializeField]
         protected float sprintDelayAfterActions = 1f;
         [SerializeField]
-        protected float walkDelayAfterActions = 1f;
-        [SerializeField]
-        protected bool disableAttackInSafeArea = false;
+        protected bool forceTpsWhenUnderWater = true;
 
         [Header("TPS Settings")]
         [SerializeField]
@@ -227,15 +239,59 @@ namespace MultiplayerARPG
         public byte HotkeyEquipWeaponSet { get; set; }
         public IShooterGameplayCameraController CacheGameplayCameraController { get; protected set; }
         public IMinimapCameraController CacheMinimapCameraController { get; protected set; }
+        public override Camera MainCamera => CacheGameplayCameraController.Camera;
+        public override Transform MainCameraTransform => CacheGameplayCameraController.CameraTransform;
+        public override Transform CameraTargetTransform
+        {
+            get { return ActiveViewMode == ShooterControllerViewMode.Fps ? PlayingCharacterEntity.FpsCameraTargetTransform : PlayingCharacterEntity.CameraTargetTransform; }
+        }
         public BaseCharacterModel CacheFpsModel { get; protected set; }
-        public RectTransform CrosshairRect => crosshairRect;
-        public bool HideCrosshair { get; set; }
+        public RectTransform CrosshairRect { get => crosshairRect; }
+        public ValueOverride<bool> OverrideHideCrosshair { get; } = new ValueOverride<bool>();
+        public bool HideCrosshair
+        {
+            get
+            {
+                if (OverrideHideCrosshair.TryGetValue(out bool result))
+                    return result;
+                return hideCrosshair;
+            }
+        }
+        public ValueOverride<bool> OverrideDisableAttackInSafeArea { get; } = new ValueOverride<bool>();
+        public bool DisableAttackInSafeArea
+        {
+            get
+            {
+                if (OverrideDisableAttackInSafeArea.TryGetValue(out bool result))
+                    return result;
+                return disableAttackInSafeArea;
+            }
+        }
+        public bool IsForceTpsViewMode
+        {
+            get
+            {
+                if (TpsViewState.IsActive)
+                {
+                    return true;
+                }
+                if (forceTpsWhenUnderWater && PlayingCharacterEntity != null && PlayingCharacterEntity.MovementState.Has(MovementState.IsUnderWater))
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
         public bool IsForceFpsViewMode
         {
             get
             {
-                if (WeaponAbility is ZoomWeaponAbility zoomWeaponAbility && zoomWeaponAbility != null &&
-                    (WeaponAbilityState == WeaponAbilityState.Activating || WeaponAbilityState == WeaponAbilityState.Activated))
+                if (FpsViewState.IsActive)
+                {
+                    return true;
+                }
+                if (WeaponAbilityState.IsActivate() &&
+                    WeaponAbility is ZoomWeaponAbility)
                 {
                     return true;
                 }
@@ -249,7 +305,7 @@ namespace MultiplayerARPG
         public BaseWeaponAbility WeaponAbility { get; protected set; }
         public WeaponAbilityState WeaponAbilityState { get; set; }
 
-        public ControllerMode? ForceControllerMode { get; set; }
+        public ValueOverride<ControllerMode> OverrideControllerMode { get; private set; } = new ValueOverride<ControllerMode>();
         public ControllerMode Mode
         {
             get
@@ -259,8 +315,8 @@ namespace MultiplayerARPG
                     // If view mode is fps, controls type must be combat
                     return ControllerMode.Combat;
                 }
-                if (ForceControllerMode.HasValue)
-                    return ForceControllerMode.Value;
+                if (OverrideControllerMode.TryGetValue(out ControllerMode overrideMode))
+                    return overrideMode;
                 return mode;
             }
         }
@@ -275,47 +331,15 @@ namespace MultiplayerARPG
         {
             get
             {
+                if (IsForceTpsViewMode)
+                    return ShooterControllerViewMode.Tps;
                 if (IsForceFpsViewMode)
                     return ShooterControllerViewMode.Fps;
-                return viewMode;
+                return ViewMode;
             }
         }
 
-        public float CameraZoomDistance
-        {
-            get
-            {
-                switch (ActiveViewMode)
-                {
-                    case ShooterControllerViewMode.Shoulder:
-                        return shoulderZoomDistance;
-                    case ShooterControllerViewMode.Fps:
-                        return fpsZoomDistance;
-                    default:
-                        return tpsZoomDistance;
-                }
-            }
-        }
-
-        public float CurrentCameraZoomDistance
-        {
-            get { return CacheGameplayCameraController.CurrentZoomDistance; }
-            set { CacheGameplayCameraController.CurrentZoomDistance = value; }
-        }
-
-        public float CurrentCameraMinZoomDistance
-        {
-            get { return CacheGameplayCameraController.MinZoomDistance; }
-            set { CacheGameplayCameraController.MinZoomDistance = value; }
-        }
-
-        public float CurrentCameraMaxZoomDistance
-        {
-            get { return CacheGameplayCameraController.MaxZoomDistance; }
-            set { CacheGameplayCameraController.MaxZoomDistance = value; }
-        }
-
-        public Vector3 CameraTargetOffset
+        public override Vector3 AssignedCameraTargetOffset
         {
             get
             {
@@ -325,10 +349,16 @@ namespace MultiplayerARPG
                         switch (PlayingCharacterEntity.ExtraMovementState)
                         {
                             case ExtraMovementState.IsCrouching:
+                                fpsTargetOffsetWhileCrouching.x = 0f;
+                                fpsTargetOffsetWhileCrouching.z = 0f;
                                 return fpsTargetOffsetWhileCrouching;
                             case ExtraMovementState.IsCrawling:
+                                fpsTargetOffsetWhileCrawling.x = 0f;
+                                fpsTargetOffsetWhileCrawling.z = 0f;
                                 return fpsTargetOffsetWhileCrawling;
                             default:
+                                fpsTargetOffset.x = 0f;
+                                fpsTargetOffset.z = 0f;
                                 return fpsTargetOffset;
                         }
                     case ShooterControllerViewMode.Shoulder:
@@ -361,9 +391,27 @@ namespace MultiplayerARPG
                         }
                 }
             }
+            set { }
         }
 
-        public float CameraFov
+        public override float AssignedCameraZoomDistance
+        {
+            get
+            {
+                switch (ActiveViewMode)
+                {
+                    case ShooterControllerViewMode.Shoulder:
+                        return shoulderZoomDistance;
+                    case ShooterControllerViewMode.Fps:
+                        return fpsZoomDistance;
+                    default:
+                        return tpsZoomDistance;
+                }
+            }
+            set { }
+        }
+
+        public override float AssignedCameraFov
         {
             get
             {
@@ -377,9 +425,10 @@ namespace MultiplayerARPG
                         return tpsFov;
                 }
             }
+            set { }
         }
 
-        public float CameraNearClipPlane
+        public override float AssignedCameraNearClipPlane
         {
             get
             {
@@ -393,9 +442,10 @@ namespace MultiplayerARPG
                         return tpsNearClipPlane;
                 }
             }
+            set { }
         }
 
-        public float CameraFarClipPlane
+        public override float AssignedCameraFarClipPlane
         {
             get
             {
@@ -409,24 +459,7 @@ namespace MultiplayerARPG
                         return tpsFarClipPlane;
                 }
             }
-        }
-
-        public float CurrentCameraFov
-        {
-            get { return CacheGameplayCameraController.CameraFov; }
-            set { CacheGameplayCameraController.CameraFov = value; }
-        }
-
-        public float CurrentCameraNearClipPlane
-        {
-            get { return CacheGameplayCameraController.CameraNearClipPlane; }
-            set { CacheGameplayCameraController.CameraNearClipPlane = value; }
-        }
-
-        public float CurrentCameraFarClipPlane
-        {
-            get { return CacheGameplayCameraController.CameraFarClipPlane; }
-            set { CacheGameplayCameraController.CameraFarClipPlane = value; }
+            set { }
         }
 
         public float ThirdPersonCameraRotationSpeedScale
@@ -439,28 +472,68 @@ namespace MultiplayerARPG
             get { return CameraRotationSpeedScaleSetting.GetCameraRotationSpeedScaleByKey(firstPersonCameraRotationSpeedScaleSaveKey, 0.6f); }
         }
 
-        public float CameraRotationSpeedScale
+        public override float AssignedCameraRotationSpeedScale
         {
-            get { return CacheGameplayCameraController.CameraRotationSpeedScale; }
-            set { CacheGameplayCameraController.CameraRotationSpeedScale = value; }
+            get
+            {
+                switch (ActiveViewMode)
+                {
+                    case ShooterControllerViewMode.Fps:
+                        return FirstPersonCameraRotationSpeedScale;
+                    default:
+                        return ThirdPersonCameraRotationSpeedScale;
+                }
+            }
+            set { }
         }
 
+        public override bool AssignedEnableWallHitSpring
+        {
+            get
+            {
+                return enableWallHitSpring && (ActiveViewMode == ShooterControllerViewMode.Tps || ActiveViewMode == ShooterControllerViewMode.Shoulder);
+            }
+            set
+            {
+                enableWallHitSpring = value;
+            }
+        }
+
+        public ValueOverride<bool> OverrideIsLeftViewSide { get; } = new ValueOverride<bool>();
+        protected bool _isLeftViewSide;
         public bool IsLeftViewSide
         {
-            get { return CacheGameplayCameraController.IsLeftViewSide; }
-            set { CacheGameplayCameraController.IsLeftViewSide = value; }
+            get
+            {
+                if (OverrideIsLeftViewSide.TryGetValue(out bool value))
+                {
+                    return value;
+                }
+                return _isLeftViewSide;
+            }
         }
 
+        public ValueOverride<bool> OverrideIsZoomAimming { get; } = new ValueOverride<bool>();
+        protected bool _isZoomAimming;
         public bool IsZoomAimming
         {
-            get { return CacheGameplayCameraController.IsZoomAimming; }
-            set { CacheGameplayCameraController.IsZoomAimming = value; }
+            get
+            {
+                if (OverrideIsZoomAimming.TryGetValue(out bool value))
+                {
+                    return value;
+                }
+                return _isZoomAimming;
+            }
         }
 
+        public ValueOverride<float> OverrideTurnSpeed { get; private set; } = new ValueOverride<float>();
         public float CurrentTurnSpeed
         {
             get
             {
+                if (OverrideTurnSpeed.TryGetValue(out float overrideTurnSpeed))
+                    return overrideTurnSpeed;
                 if (PlayingCharacterEntity.MovementState.Has(MovementState.IsUnderWater))
                     return turnSpeedWhileSwimming;
                 switch (PlayingCharacterEntity.ExtraMovementState)
@@ -477,6 +550,7 @@ namespace MultiplayerARPG
                 return turnSpeed;
             }
         }
+
         public byte PauseFireInputFrames { get; set; }
         public bool IsAimming
         {
@@ -496,6 +570,18 @@ namespace MultiplayerARPG
                 return _moveInput;
             }
         }
+        public ValueOverride<float> OverrideCameraZoom { get; } = new ValueOverride<float>();
+        public ValueOverride<GameplayCameraRotationData> OverrideCameraRotation { get; } = new ValueOverride<GameplayCameraRotationData>();
+        public Transform LookForwardTransform
+        {
+            get { return CacheGameplayCameraController.LookForwardTransform; }
+        }
+
+        public readonly StateFlag ControllerBlockState = new StateFlag();
+        public readonly StateFlag ActionControllerBlockState = new StateFlag();
+        public readonly StateFlag FollowCameraTurnState = new StateFlag();
+        public readonly StateFlag FpsViewState = new StateFlag();
+        public readonly StateFlag TpsViewState = new StateFlag();
 
         // Input data
         protected InputStateManager _activateInput;
@@ -557,24 +643,14 @@ namespace MultiplayerARPG
                 ShooterGameplayCameraController castedObj = obj as ShooterGameplayCameraController;
                 castedObj.SetData(gameplayCameraPrefab);
             });
-            CacheGameplayCameraController.Init();
-            // TODO: Separated settings for shoulder view mode
-            switch (ActiveViewMode)
-            {
-                case ShooterControllerViewMode.Fps:
-                    CameraRotationSpeedScale = FirstPersonCameraRotationSpeedScale;
-                    break;
-                default:
-                    CameraRotationSpeedScale = ThirdPersonCameraRotationSpeedScale;
-                    break;
-            }
+            CacheGameplayCameraController.Init(this);
             // Initial minimap camera controller
             CacheMinimapCameraController = gameObject.GetOrAddComponent<IMinimapCameraController, DefaultMinimapCameraController>((obj) =>
             {
                 DefaultMinimapCameraController castedObj = obj as DefaultMinimapCameraController;
                 castedObj.SetData(minimapCameraPrefab);
             });
-            CacheMinimapCameraController.Init();
+            CacheMinimapCameraController.Init(this);
             // Initial build aim controller
             BuildAimController = gameObject.GetOrAddComponent<IShooterBuildAimController, ShooterBuildAimController>((obj) =>
             {
@@ -635,7 +711,12 @@ namespace MultiplayerARPG
             characterEntity.onLaunchDamageEntity += OnLaunchDamageEntity;
             if (CacheFpsModel != null)
                 Destroy(CacheFpsModel.gameObject);
-            CacheFpsModel = await characterEntity.ModelManager.InstantiateFpsModel(CacheGameplayCameraController.CameraTransform);
+            if (fpsModelContainer == null)
+            {
+                fpsModelContainer = CacheGameplayCameraController.CameraTransform;
+                updateFpsModelContainerActivating = false;
+            }
+            CacheFpsModel = await characterEntity.ModelManager.InstantiateFpsModel(fpsModelContainer);
             await UniTask.NextFrame();
             characterEntity.ModelManager.SetIsFps(ActiveViewMode == ShooterControllerViewMode.Fps);
             UpdateViewMode();
@@ -672,9 +753,9 @@ namespace MultiplayerARPG
             Cursor.visible = true;
         }
 
-        protected void SetupEquipWeapons()
+        protected void SetupEquipWeapons(BaseCharacterEntity target)
         {
-            SetupEquipWeapons(PlayingCharacterEntity.EquipWeapons);
+            SetupEquipWeapons(target.EquipWeapons);
         }
 
         protected virtual void SetupEquipWeapons(EquipWeapons equipWeapons)
@@ -690,19 +771,14 @@ namespace MultiplayerARPG
 
         public override void ManagedUpdate()
         {
+            // Reset input states
+            _moveInput = Vector2.zero;
+
             if (PauseFireInputFrames > 0)
                 --PauseFireInputFrames;
 
             if (PlayingCharacterEntity == null || !PlayingCharacterEntity.IsOwnerClient)
                 return;
-
-            CacheMinimapCameraController.FollowingEntityTransform = CameraTargetTransform;
-            CacheMinimapCameraController.FollowingGameplayCameraTransform = CacheGameplayCameraController.CameraTransform;
-
-            CacheGameplayCameraController.ActiveViewMode = ActiveViewMode;
-            CacheGameplayCameraController.TargetOffset = CameraTargetOffset;
-            CacheGameplayCameraController.EnableWallHitSpring = ActiveViewMode == ShooterControllerViewMode.Tps || ActiveViewMode == ShooterControllerViewMode.Shoulder;
-            CacheGameplayCameraController.FollowingEntityTransform = ActiveViewMode == ShooterControllerViewMode.Fps ? PlayingCharacterEntity.FpsCameraTargetTransform : PlayingCharacterEntity.CameraTargetTransform;
 
             // Set temp data
             float tempDeltaTime = Time.deltaTime;
@@ -739,7 +815,11 @@ namespace MultiplayerARPG
                 CacheGameplayCameraController.UpdateRotation = false;
                 CacheGameplayCameraController.UpdateZoom = !isBlockController;
             }
-            isBlockController |= GenericUtils.IsFocusInputField();
+            isBlockController |= ControllerBlockState.IsActive;
+            isBlockActionController |= ControllerBlockState.IsActive;
+            isBlockActionController |= ActionControllerBlockState.IsActive;
+            if (InputManager.IsUseNonMobileInput())
+                isBlockController |= GenericUtils.IsFocusInputField();
 
             // Clear selected entity
             SelectedEntity = null;
@@ -747,15 +827,6 @@ namespace MultiplayerARPG
             // Clear controlling states from last update
             _movementState = MovementState.None;
             _extraMovementState = ExtraMovementState.None;
-            switch (ActiveViewMode)
-            {
-                case ShooterControllerViewMode.Fps:
-                    CameraRotationSpeedScale = FirstPersonCameraRotationSpeedScale;
-                    break;
-                default:
-                    CameraRotationSpeedScale = ThirdPersonCameraRotationSpeedScale;
-                    break;
-            }
 
             // Prepare variables to find nearest raycasted hit point
             _centerRay = CacheGameplayCameraController.Camera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0));
@@ -779,7 +850,6 @@ namespace MultiplayerARPG
             {
                 // Clear movement inputs
                 _moveDirection = Vector3.zero;
-                DeactivateWeaponAbility();
             }
             else
             {
@@ -888,49 +958,33 @@ namespace MultiplayerARPG
                         ClientGenericActions.ClientReceiveGameMessage(UITextKeys.UI_ERROR_UNABLE_TO_STAND);
                     }
                 }
-                // Sprinting
-                if (PlayingCharacterEntity.MovementState.HasDirectionMovement() &&
-                    Time.unscaledTime - _lastActionTime > sprintDelayAfterActions)
+                if (_extraMovementState.IsStanding())
                 {
-                    if ((_extraMovementState == ExtraMovementState.None ||
-                        _extraMovementState == ExtraMovementState.IsWalking) &&
-                        DetectExtraActive("Sprint", sprintActiveMode, isBlockController, ref _toggleSprintOn))
+                    if (PlayingCharacterEntity.MovementState.HasDirectionMovement())
                     {
-                        _extraMovementState = ExtraMovementState.IsSprinting;
+                        if (DetectExtraActive("Sprint", sprintActiveMode, isBlockController, ref _toggleSprintOn))
+                        {
+                            _extraMovementState = ExtraMovementState.IsSprinting;
+                            _toggleWalkOn = false;
+                            _toggleCrouchOn = false;
+                            _toggleCrawlOn = false;
+                        }
+                        else if (DetectExtraActive("Walk", walkActiveMode, isBlockController, ref _toggleWalkOn))
+                        {
+                            _extraMovementState = ExtraMovementState.IsWalking;
+                            _toggleSprintOn = false;
+                            _toggleCrouchOn = false;
+                            _toggleCrawlOn = false;
+                        }
+                    }
+                    else
+                    {
+                        _extraMovementState = ExtraMovementState.None;
+                        _toggleSprintOn = false;
                         _toggleWalkOn = false;
                         _toggleCrouchOn = false;
                         _toggleCrawlOn = false;
                     }
-                }
-                else if (_extraMovementState == ExtraMovementState.IsSprinting)
-                {
-                    _extraMovementState = ExtraMovementState.None;
-                    _toggleSprintOn = false;
-                    _toggleWalkOn = false;
-                    _toggleCrouchOn = false;
-                    _toggleCrawlOn = false;
-                }
-                // Walking
-                if (PlayingCharacterEntity.MovementState.HasDirectionMovement() &&
-                    Time.unscaledTime - _lastActionTime > walkDelayAfterActions)
-                {
-                    if ((_extraMovementState == ExtraMovementState.None ||
-                        _extraMovementState == ExtraMovementState.IsWalking) &&
-                        DetectExtraActive("Walk", walkActiveMode, isBlockController, ref _toggleWalkOn))
-                    {
-                        _extraMovementState = ExtraMovementState.IsWalking;
-                        _toggleSprintOn = false;
-                        _toggleCrouchOn = false;
-                        _toggleCrawlOn = false;
-                    }
-                }
-                else if (_extraMovementState == ExtraMovementState.IsWalking)
-                {
-                    _extraMovementState = ExtraMovementState.None;
-                    _toggleSprintOn = false;
-                    _toggleWalkOn = false;
-                    _toggleCrouchOn = false;
-                    _toggleCrawlOn = false;
                 }
             }
             else
@@ -994,7 +1048,15 @@ namespace MultiplayerARPG
             }
 
             PlayingCharacterEntity.KeyMovement(_moveDirection, _movementState);
-            PlayingCharacterEntity.SetExtraMovementState(_extraMovementState);
+            ExtraMovementState validatedExtraMovementState = _extraMovementState;
+            switch (validatedExtraMovementState)
+            {
+                case ExtraMovementState.IsSprinting:
+                    if (Time.unscaledTime - _lastActionTime <= sprintDelayAfterActions || IsZoomAimming)
+                        validatedExtraMovementState = ExtraMovementState.None;
+                    break;
+            }
+            PlayingCharacterEntity.SetExtraMovementState(validatedExtraMovementState);
             PlayingCharacterEntity.SetSmoothTurnSpeed(0f);
 
             // View mode switching
@@ -1014,7 +1076,7 @@ namespace MultiplayerARPG
                             ViewMode = ShooterControllerViewMode.Tps;
                             break;
                     }
-                    DisableZoomAbility();
+                    DeactivateZoomAbility();
                 }
                 if (InputManager.GetButtonDown("SwitchViewModeTpsFps"))
                 {
@@ -1028,14 +1090,14 @@ namespace MultiplayerARPG
                             ViewMode = ShooterControllerViewMode.Tps;
                             break;
                     }
-                    DisableZoomAbility();
+                    DeactivateZoomAbility();
                 }
                 if (InputManager.GetButtonDown("SwitchViewModeTps"))
                 {
                     if (ViewMode != ShooterControllerViewMode.Tps)
                     {
                         ViewMode = ShooterControllerViewMode.Tps;
-                        DisableZoomAbility();
+                        DeactivateZoomAbility();
                     }
                 }
                 if (InputManager.GetButtonDown("SwitchViewModeShoulder"))
@@ -1048,37 +1110,37 @@ namespace MultiplayerARPG
                     {
                         ViewMode = ShooterControllerViewMode.Tps;
                     }
-                    DisableZoomAbility();
+                    DeactivateZoomAbility();
                 }
                 if (InputManager.GetButtonDown("SwitchViewModeFps"))
                 {
                     if (ViewMode != ShooterControllerViewMode.Fps)
                     {
                         ViewMode = ShooterControllerViewMode.Fps;
-                        DisableZoomAbility();
+                        DeactivateZoomAbility();
                     }
                 }
             }
 
             if (InputManager.GetButtonDown("SwitchViewSide"))
             {
-                IsLeftViewSide = !IsLeftViewSide;
+                _isLeftViewSide = !_isLeftViewSide;
                 if (ActiveViewMode == ShooterControllerViewMode.Fps)
-                    IsLeftViewSide = false;
+                    _isLeftViewSide = false;
             }
 
             if (InputManager.GetButtonDown("SwitchViewSideLeft"))
             {
-                IsLeftViewSide = true;
+                _isLeftViewSide = true;
                 if (ActiveViewMode == ShooterControllerViewMode.Fps)
-                    IsLeftViewSide = false;
+                    _isLeftViewSide = false;
             }
 
             if (InputManager.GetButtonDown("SwitchViewSideRight"))
             {
-                IsLeftViewSide = false;
+                _isLeftViewSide = false;
                 if (ActiveViewMode == ShooterControllerViewMode.Fps)
-                    IsLeftViewSide = false;
+                    _isLeftViewSide = false;
             }
 
             bool isDead = PlayingCharacterEntity.IsDead();
@@ -1112,16 +1174,26 @@ namespace MultiplayerARPG
             }
 
             // Update weapon ability here to make sure it able to make changes to view mode before apply it
-            UpdateWeaponAbilityActivation(tempDeltaTime);
+            UpdateWeaponAbilityActivation(isBlockController, tempDeltaTime);
 
             // Apply view mode updating
             if (_dirtyViewMode != ActiveViewMode)
+            {
+                if (ActiveViewMode != ShooterControllerViewMode.Fps)
+                    DeactivateZoomAbility();
                 UpdateViewMode();
+            }
+            else
+            {
+                if (IsForceTpsViewMode)
+                    DeactivateZoomAbility();
+            }
         }
 
-        protected virtual void DisableZoomAbility()
+        protected virtual void DeactivateZoomAbility()
         {
-            if (WeaponAbility is ZoomWeaponAbility)
+            if (WeaponAbilityState.IsActivate() &&
+                WeaponAbility is ZoomWeaponAbility)
             {
                 WeaponAbility.ForceDeactivated();
                 WeaponAbilityState = WeaponAbilityState.Deactivated;
@@ -1150,10 +1222,30 @@ namespace MultiplayerARPG
 
         public virtual void UpdateLookRotation()
         {
-            _cameraForward = CacheGameplayCameraController.LookForwardTransform.forward;
+            if (PlayingCharacterEntity.MovementDisableState.IsActive)
+                return;
+
+            _cameraForward = LookForwardTransform.forward;
             _cameraForward.y = 0f;
             _cameraForward.Normalize();
-            if (IsAimming || ActiveViewMode == ShooterControllerViewMode.Fps || Mode == ControllerMode.Combat)
+
+            bool isBlockAction = UISceneGameplay.IsBlockActionController();
+            isBlockAction |= ActionControllerBlockState.IsActive;
+            bool isFps = ActiveViewMode == ShooterControllerViewMode.Fps;
+            bool isShoulder = ActiveViewMode == ShooterControllerViewMode.Shoulder;
+            bool isCombat = Mode == ControllerMode.Combat;
+            bool isAdventure = Mode == ControllerMode.Adventure;
+            bool isLockLookRotation = IsAimming || isFps || isShoulder;
+
+            if (isBlockAction && isAdventure && !isLockLookRotation)
+            {
+                _targetLookDirection = _moveLookDirection;
+            }
+            else if (!isBlockAction && (isLockLookRotation || isCombat))
+            {
+                _targetLookDirection = _moveLookDirection = _cameraForward;
+            }
+            if (FollowCameraTurnState.IsActive)
                 _targetLookDirection = _moveLookDirection = _cameraForward;
             PlayingCharacterEntity.SetLookRotation(Quaternion.LookRotation(_targetLookDirection), true);
         }
@@ -1201,7 +1293,7 @@ namespace MultiplayerARPG
                     _tempPressWeaponAbility = !isBlockController && GetSecondaryAttackButtonDown();
                 }
 
-                if (disableAttackInSafeArea && PlayingCharacterEntity.IsInSafeArea)
+                if (DisableAttackInSafeArea && PlayingCharacterEntity.IsInSafeArea)
                 {
                     _tempPressAttackRight = false;
                     _tempPressAttackLeft = false;
@@ -1239,22 +1331,25 @@ namespace MultiplayerARPG
             _aimTargetPosition = _centerRay.origin + _centerRay.direction * (_centerOriginToCharacterDistance + attackDistance);
             // Aim to damageable hit boxes (higher priority than other entities)
             // Raycast from camera position to center of screen
+            bool prevQueriesHitBackfaces = Physics.queriesHitBackfaces;
+            Physics.queriesHitBackfaces = true;
             int tempCount = PhysicUtils.SortedRaycastNonAlloc3D(_centerRay.origin, _centerRay.direction, _raycasts, _centerOriginToCharacterDistance + attackDistance, GameInstance.Singleton.GetDamageEntityHitLayerMask());
             for (int tempCounter = 0; tempCounter < tempCount; ++tempCounter)
             {
                 tempHitInfo = _raycasts[tempCounter];
+                Collider collider = tempHitInfo.collider;
 
-                if (!tempHitInfo.collider.GetComponent<IUnHittable>().IsNull())
+                if (!collider.GetComponent<IUnHittable>().IsNull())
                 {
                     // Don't aim to unhittable objects
                     continue;
                 }
 
                 // Get damageable hit box component from hit target
-                tempHitBox = tempHitInfo.collider.GetComponent<DamageableHitBox>();
+                tempHitBox = collider.GetComponent<DamageableHitBox>();
                 if (tempHitBox == null || !tempHitBox.Entity)
                 {
-                    if (GameInstance.Singleton.IsDamageableLayer(tempHitInfo.collider.gameObject.layer))
+                    if (GameInstance.Singleton.IsDamageableLayer(collider.gameObject.layer))
                     {
                         // Hit something which is part of damageable entities, still continue
                         continue;
@@ -1265,15 +1360,16 @@ namespace MultiplayerARPG
                     break;
                 }
 
-                if (tempHitBox.IsHideFrom(PlayingCharacterEntity) ||
-                    tempHitBox.GetObjectId() == PlayingCharacterEntity.ObjectId)
+                bool isHideFromHost = PlayingCharacterEntity.Identity.IsServer && tempHitBox.Identity.IsHideFrom(PlayingCharacterEntity.Identity);
+                if (isHideFromHost || tempHitBox.GetObjectId() == PlayingCharacterEntity.ObjectId)
                 {
                     // Skip empty game entity / hidding entity / controlling player's entity
                     continue;
                 }
 
                 // Entity isn't in front of character, so it's not the target
-                if (turnForwardWhileDoingAction && !IsInFront(tempHitInfo.point))
+                Vector3 hitPoint = tempHitInfo.point;
+                if (turnForwardWhileDoingAction && !IsInFront(collider, ref hitPoint))
                     continue;
 
                 // Skip dead entity while attacking (to allow to use resurrect skills)
@@ -1282,7 +1378,7 @@ namespace MultiplayerARPG
 
                 // Entity is in front of character, so this is target
                 if (tempHitBox.CanReceiveDamageFrom(PlayingCharacterEntity.GetInfo()))
-                    _aimTargetPosition = tempHitInfo.point;
+                    _aimTargetPosition = hitPoint;
                 SelectedEntity = tempHitBox.Entity;
                 break;
             }
@@ -1298,25 +1394,27 @@ namespace MultiplayerARPG
                 for (int tempCounter = 0; tempCounter < tempCount; ++tempCounter)
                 {
                     tempHitInfo = _raycasts[tempCounter];
-                    if (!tempHitInfo.collider.GetComponent<IUnHittable>().IsNull())
+                    Collider collider = tempHitInfo.collider;
+
+                    if (!collider.GetComponent<IUnHittable>().IsNull())
                     {
                         // Don't aim to unhittable objects
                         continue;
                     }
 
                     // Get distance between character and raycast hit point
-                    tempGameEntity = tempHitInfo.collider.GetComponent<IGameEntity>();
+                    tempGameEntity = collider.GetComponent<IGameEntity>();
                     if (!tempGameEntity.IsNull())
                     {
-                        if (tempGameEntity.IsHideFrom(PlayingCharacterEntity) ||
-                            tempGameEntity.GetObjectId() == PlayingCharacterEntity.ObjectId)
+                        bool isHideFromHost = PlayingCharacterEntity.Identity.IsServer && tempGameEntity.Identity.IsHideFrom(PlayingCharacterEntity.Identity);
+                        if (isHideFromHost || tempGameEntity.GetObjectId() == PlayingCharacterEntity.ObjectId)
                         {
                             // Skip hiddeing entity / controlling player's entity
                             continue;
                         }
 
                         tempActivatableEntity = tempGameEntity as IBaseActivatableEntity;
-                        if (tempActivatableEntity != null && Vector3.Distance(EntityTransform.position, tempActivatableEntity.EntityTransform.position) <= tempActivatableEntity.GetActivatableDistance())
+                        if (tempActivatableEntity != null && GameplayUtils.IsTargetInDistance(EntityTransform.position, tempActivatableEntity.EntityTransform, tempActivatableEntity.GetActivatableDistance()))
                         {
                             // Entity is in front of character, so this is target
                             SelectedEntity = tempActivatableEntity;
@@ -1325,8 +1423,8 @@ namespace MultiplayerARPG
                         continue;
                     }
 
-                    tempActivatableEntity = tempHitInfo.collider.GetComponent<IBaseActivatableEntity>();
-                    if (tempActivatableEntity != null && Vector3.Distance(EntityTransform.position, tempActivatableEntity.EntityTransform.position) <= tempActivatableEntity.GetActivatableDistance())
+                    tempActivatableEntity = collider.GetComponent<IBaseActivatableEntity>();
+                    if (tempActivatableEntity != null && GameplayUtils.IsTargetInDistance(EntityTransform.position, tempActivatableEntity.EntityTransform, tempActivatableEntity.GetActivatableDistance()))
                     {
                         // Entity is in front of character, so this is target
                         SelectedEntity = tempActivatableEntity;
@@ -1334,6 +1432,7 @@ namespace MultiplayerARPG
                     }
                 }
             }
+            Physics.queriesHitBackfaces = prevQueriesHitBackfaces;
 
             // Calculate aim direction
             _turnDirection = _aimTargetPosition - EntityTransform.position;
@@ -1670,6 +1769,7 @@ namespace MultiplayerARPG
         }
 
         public void OnLaunchDamageEntity(
+            BaseCharacterEntity target,
             bool isLeftHand,
             CharacterItem weapon,
             int simulateSeed,
@@ -1864,6 +1964,9 @@ namespace MultiplayerARPG
                 else
                 {
                     // Build when click
+                    // If unable to build, return false
+                    if (ConstructingBuildingEntity == null || !ConstructingBuildingEntity.CanBuild())
+                        return false;
                     ConfirmBuild();
                 }
                 _mustReleaseFireKey = true;
@@ -1946,20 +2049,19 @@ namespace MultiplayerARPG
             if (WeaponAbility == null)
                 return;
 
-            if (WeaponAbilityState == WeaponAbilityState.Activated ||
-                WeaponAbilityState == WeaponAbilityState.Activating)
+            if (WeaponAbilityState.IsActivate())
                 return;
 
             WeaponAbility.OnPreActivate();
             WeaponAbilityState = WeaponAbilityState.Activating;
         }
 
-        protected virtual void UpdateWeaponAbilityActivation(float deltaTime)
+        protected virtual void UpdateWeaponAbilityActivation(bool isBlockController, float deltaTime)
         {
             if (WeaponAbility == null)
                 return;
 
-            WeaponAbilityState = WeaponAbility.UpdateActivation(WeaponAbilityState, deltaTime);
+            WeaponAbilityState = WeaponAbility.UpdateActivation(WeaponAbilityState, isBlockController, deltaTime);
         }
 
         protected virtual void DeactivateWeaponAbility()
@@ -1967,8 +2069,7 @@ namespace MultiplayerARPG
             if (WeaponAbility == null)
                 return;
 
-            if (WeaponAbilityState == WeaponAbilityState.Deactivated ||
-                WeaponAbilityState == WeaponAbilityState.Deactivating)
+            if (WeaponAbilityState.IsDeactivate())
                 return;
 
             WeaponAbility.OnPreDeactivate();
@@ -2067,30 +2168,54 @@ namespace MultiplayerARPG
         {
             _dirtyViewMode = ActiveViewMode;
             UpdateCameraSettings();
-            // Update camera zoom distance when change view mode only, to allow zoom controls
-            CurrentCameraZoomDistance = CameraZoomDistance;
         }
 
         public virtual void UpdateCameraSettings()
         {
-            CurrentCameraFov = CameraFov;
-            CurrentCameraNearClipPlane = CameraNearClipPlane;
-            CurrentCameraFarClipPlane = CameraFarClipPlane;
             if (PlayingCharacterEntity != null && PlayingCharacterEntity.ModelManager != null)
-                PlayingCharacterEntity.ModelManager.SetIsFps(ActiveViewMode == ShooterControllerViewMode.Fps);
+            {
+                bool isFps = ActiveViewMode == ShooterControllerViewMode.Fps;
+                PlayingCharacterEntity.ModelManager.SetIsFps(isFps);
+                if (updateFpsModelContainerActivating && fpsModelContainer.gameObject.activeSelf != isFps)
+                    fpsModelContainer.gameObject.SetActive(isFps);
+                int i;
+                GameObject tempObject;
+                for (i = 0; i < tpsObjects.Length; ++i)
+                {
+                    tempObject = tpsObjects[i];
+                    if (tempObject == null || tempObject.activeSelf == !isFps)
+                        continue;
+                    tempObject.SetActive(!isFps);
+                }
+                for (i = 0; i < fpsObjects.Length; ++i)
+                {
+                    tempObject = fpsObjects[i];
+                    if (tempObject == null || tempObject.activeSelf == isFps)
+                        continue;
+                    tempObject.SetActive(isFps);
+                }
+            }
         }
 
-        public virtual bool IsInFront(Vector3 target)
+        public virtual bool IsInFront(Collider collider, ref Vector3 target)
         {
             // Get aim position direction
-            AimPosition aimPosition = PlayingCharacterEntity.GetAttackAimPosition(ref _isLeftHandAttacking, target);
+            AimPosition aimPosition = PlayingCharacterEntity.GetAttackAimPosition(ref _isLeftHandAttacking, target, out Transform damageTransform);
             switch (aimPosition.type)
             {
                 case AimPositionType.Direction:
                     // Check that the direction is in front of character or not
-                    return Vector3.Angle(aimPosition.direction, EntityTransform.forward) < 115f;
+                    bool isInFront = Vector3.Angle(aimPosition.direction, EntityTransform.forward) < 115f;
+                    if (isInFront)
+                        return true;
+                    // Check if launch transform is in hitbox or not
+                    if (collider.bounds.Contains(aimPosition.position))
+                    {
+                        target = aimPosition.position + damageTransform.forward * 0.01f;
+                        return true;
+                    }
+                    return false;
             }
-            // 2D mode?
             return true;
         }
 

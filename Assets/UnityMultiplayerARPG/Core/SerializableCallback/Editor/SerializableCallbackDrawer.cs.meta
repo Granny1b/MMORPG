@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 65cd8a53f6f9cf04ea4aa8e2743322fd
 timeCreated: 1513845239
-licenseType: Store
+licenseType: Pro
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/SerializableCallback/Editor/SerializableCallbackDrawer.cs
-  uploadId: 857340

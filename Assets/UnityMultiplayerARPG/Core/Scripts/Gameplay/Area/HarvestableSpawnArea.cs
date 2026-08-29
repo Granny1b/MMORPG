@@ -14,6 +14,9 @@ namespace MultiplayerARPG
         [ReadOnlyField]
         public HarvestableEntity harvestableEntity;
 
+        protected Collider2D[] _overlaps2D = new Collider2D[128];
+        protected Collider[] _overlaps3D = new Collider[128];
+
         protected override void Awake()
         {
             base.Awake();
@@ -21,9 +24,10 @@ namespace MultiplayerARPG
         }
 
 #if UNITY_EDITOR
-        private void OnValidate()
+        protected override void OnValidate()
         {
             MigrateAsset();
+            base.OnValidate();
         }
 #endif
 
@@ -53,9 +57,17 @@ namespace MultiplayerARPG
             base.RegisterPrefabs();
 #if !EXCLUDE_PREFAB_REFS || DISABLE_ADDRESSABLES
             GameInstance.AddHarvestableEntities(prefab);
+            foreach (SpawnPrefabData spawnData in spawningPrefabs)
+            {
+                GameInstance.AddHarvestableEntities(spawnData.prefab);
+            }
 #endif
 #if !DISABLE_ADDRESSABLES
             GameInstance.AddAssetReferenceHarvestableEntities(addressablePrefab);
+            foreach (SpawnPrefabData spawnData in spawningPrefabs)
+            {
+                GameInstance.AddAssetReferenceHarvestableEntities(spawnData.addressablePrefab);
+            }
 #endif
         }
 
@@ -131,9 +143,11 @@ namespace MultiplayerARPG
         {
             if (CurrentGameInstance.DimensionType == DimensionType.Dimension2D)
             {
-                Collider2D[] overlaps = Physics2D.OverlapCircleAll(position, entity.ColliderDetectionRadius);
-                foreach (Collider2D overlap in overlaps)
+                ContactFilter2D contactFilter2D = new ContactFilter2D();
+                int hitCount = Physics2D.OverlapCircle(position, entity.ColliderDetectionRadius, contactFilter2D, _overlaps2D);
+                for (int i = 0; i < hitCount; ++i)
                 {
+                    Collider2D overlap = _overlaps2D[i];
                     if (overlap.gameObject.layer == CurrentGameInstance.playerLayer ||
                         overlap.gameObject.layer == CurrentGameInstance.playingLayer ||
                         overlap.gameObject.layer == CurrentGameInstance.monsterLayer ||
@@ -153,9 +167,10 @@ namespace MultiplayerARPG
             }
             else
             {
-                Collider[] overlaps = Physics.OverlapSphere(position, entity.ColliderDetectionRadius);
-                foreach (Collider overlap in overlaps)
+                int hitCount = Physics.OverlapSphereNonAlloc(position, entity.ColliderDetectionRadius, _overlaps3D);
+                for (int i = 0; i < hitCount; ++i)
                 {
+                    Collider overlap = _overlaps3D[i];
                     if (overlap.gameObject.layer == CurrentGameInstance.playerLayer ||
                         overlap.gameObject.layer == CurrentGameInstance.playingLayer ||
                         overlap.gameObject.layer == CurrentGameInstance.monsterLayer ||

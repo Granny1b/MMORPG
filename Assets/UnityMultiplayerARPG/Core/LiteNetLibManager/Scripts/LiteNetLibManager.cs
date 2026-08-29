@@ -1,17 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using Cysharp.Text;
+using Cysharp.Threading.Tasks;
+using LiteNetLib;
+using LiteNetLib.Utils;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using UnityEngine;
-using LiteNetLib;
-using LiteNetLib.Utils;
-using Cysharp.Threading.Tasks;
-using Cysharp.Text;
 
 namespace LiteNetLibManager
 {
     public class LiteNetLibManager : MonoBehaviour
     {
-        public const string TAG_NULL = "<NULL_M>";
+        public const string TAG_NULL = "M?";
         public LiteNetLibClient Client { get; protected set; }
         public LiteNetLibServer Server { get; protected set; }
         public bool IsServer { get; private set; }
@@ -69,12 +69,11 @@ namespace LiteNetLibManager
                 {
                     if (this != null)
                     {
-                        stringBuilder.Append(name);
-                        stringBuilder.Append('<');
                         stringBuilder.Append('M');
                         stringBuilder.Append('_');
                         stringBuilder.Append(GetType().Name);
-                        stringBuilder.Append('>');
+                        stringBuilder.Append('_');
+                        stringBuilder.Append(name);
                     }
                     else
                     {
@@ -347,12 +346,12 @@ namespace LiteNetLibManager
 
         public void ClientSendPacket<T>(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, T messageData, SerializerDelegate extraSerializer = null) where T : INetSerializable
         {
-            ClientSendPacket(dataChannel, deliveryMethod, msgType, (writer) =>
-            {
-                messageData.Serialize(writer);
-                if (extraSerializer != null)
-                    extraSerializer.Invoke(writer);
-            });
+            NetDataWriter writer = Client.s_Writer;
+            TransportHandler.WritePacket(writer, msgType);
+            messageData.Serialize(writer);
+            if (extraSerializer != null)
+                extraSerializer.Invoke(writer);
+            Client.SendMessage(dataChannel, deliveryMethod, writer);
         }
 
         public void ClientSendPacket(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType)
@@ -372,12 +371,12 @@ namespace LiteNetLibManager
 
         public void ServerSendPacket<T>(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, T messageData, SerializerDelegate extraSerializer = null) where T : INetSerializable
         {
-            ServerSendPacket(connectionId, dataChannel, deliveryMethod, msgType, (writer) =>
-            {
-                messageData.Serialize(writer);
-                if (extraSerializer != null)
-                    extraSerializer.Invoke(writer);
-            });
+            NetDataWriter writer = Server.s_Writer;
+            TransportHandler.WritePacket(writer, msgType);
+            messageData.Serialize(writer);
+            if (extraSerializer != null)
+                extraSerializer.Invoke(writer);
+            Server.SendMessage(connectionId, dataChannel, deliveryMethod, writer);
         }
 
         public void ServerSendPacket(long connectionId, byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType)
@@ -449,12 +448,12 @@ namespace LiteNetLibManager
 
         public void ServerSendPacketToAllConnections<T>(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType, T messageData, SerializerDelegate extraSerializer = null) where T : INetSerializable
         {
-            Server.SendPacketToAllConnections(dataChannel, deliveryMethod, msgType, (writer) =>
-            {
-                messageData.Serialize(writer);
-                if (extraSerializer != null)
-                    extraSerializer.Invoke(writer);
-            });
+            NetDataWriter writer = Server.s_Writer;
+            TransportHandler.WritePacket(writer, msgType);
+            messageData.Serialize(writer);
+            if (extraSerializer != null)
+                extraSerializer.Invoke(writer);
+            Server.SendMessageToAllConnections(dataChannel, deliveryMethod, writer);
         }
 
         public void ServerSendPacketToAllConnections(byte dataChannel, DeliveryMethod deliveryMethod, ushort msgType)
@@ -618,6 +617,179 @@ namespace LiteNetLibManager
         {
             if (LogInfo) Logging.Log(LogTag, "OnStopHost");
         }
+        #endregion
+
+        #region Test functions
+#if UNITY_EDITOR
+
+        [ContextMenu("Test Client Disconnect - ConnectionFailed")]
+        public void TestClientDisconnect_ConnectionFailed()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.ConnectionFailed,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - Timeout")]
+        public void TestClientDisconnect_Timeout()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.Timeout,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - HostUnreachable")]
+        public void TestClientDisconnect_HostUnreachable()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.HostUnreachable,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - NetworkUnreachable")]
+        public void TestClientDisconnect_NetworkUnreachable()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.NetworkUnreachable,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - RemoteConnectionClose")]
+        public void TestClientDisconnect_RemoteConnectionClose()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.RemoteConnectionClose,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - DisconnectPeerCalled")]
+        public void TestClientDisconnect_DisconnectPeerCalled()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.DisconnectPeerCalled,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - ConnectionRejected")]
+        public void TestClientDisconnect_ConnectionRejected()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.ConnectionRejected,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - InvalidProtocol")]
+        public void TestClientDisconnect_InvalidProtocol()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.InvalidProtocol,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - UnknownHost")]
+        public void TestClientDisconnect_UnknownHost()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.UnknownHost,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - Reconnect")]
+        public void TestClientDisconnect_Reconnect()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.Reconnect,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - PeerToPeerConnection")]
+        public void TestClientDisconnect_PeerToPeerConnection()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.PeerToPeerConnection,
+                },
+            });
+        }
+
+        [ContextMenu("Test Client Disconnect - PeerNotFound")]
+        public void TestClientDisconnect_PeerNotFound()
+        {
+            Client.OnClientReceive(new TransportEventData()
+            {
+                type = ENetworkEvent.DisconnectEvent,
+                disconnectInfo = new DisconnectInfo()
+                {
+                    SocketErrorCode = SocketError.Success,
+                    Reason = DisconnectReason.PeerNotFound,
+                },
+            });
+        }
+#endif
         #endregion
     }
 }

@@ -1,17 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 #if !NET && !NETCOREAPP
 using UnityEngine;
-using UnityEngine.Profiling;
 #endif
 
 namespace Insthync.DevExtension
 {
     public static class DevExtUtils
     {
-        private static readonly Dictionary<string, Dictionary<string, MethodInfo[]>> s_cacheDevExtMethods = new Dictionary<string, Dictionary<string, MethodInfo[]>>();
+        // NOTE: Use `Type` not `RuntimeTypeHandle` as the key because `RuntimeTypeHandle` comparison is slower than `Type` reference comparison, and `Type` is already cached by the runtime, so it won't cause additional memory usage.
+        private static readonly Dictionary<Type, Dictionary<string, MethodInfo[]>> s_cacheDevExtMethods = new Dictionary<Type, Dictionary<string, MethodInfo[]>>();
         private const BindingFlags InstanceMethodBindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
         private const BindingFlags StaticMethodBindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static;
         /// <summary>
@@ -46,15 +45,25 @@ namespace Insthync.DevExtension
             InvokeDevExtMethods(type, null, baseMethodName, StaticMethodBindingFlags, args);
         }
 
-        private static bool TryGetDevExtMethods(Type type, string baseMethodName, BindingFlags bindingFlags, out MethodInfo[] methods)
+        public static void CacheInstanceDevExtMethods(Type type, string baseMethodName)
+        {
+            TryGetDevExtMethods(type, baseMethodName, InstanceMethodBindingFlags, out _);
+        }
+
+        public static void CacheStaticDevExtMethods(Type type, string baseMethodName)
+        {
+            TryGetDevExtMethods(type, baseMethodName, StaticMethodBindingFlags, out _);
+        }
+
+        public static bool TryGetDevExtMethods(Type type, string baseMethodName, BindingFlags bindingFlags, out MethodInfo[] methods)
         {
             methods = null;
-            string typeName = type.FullName;
+            Type typeHandle = type;
 
-            if (!s_cacheDevExtMethods.TryGetValue(typeName, out var methodDict))
+            if (!s_cacheDevExtMethods.TryGetValue(typeHandle, out var methodDict))
             {
                 methodDict = new Dictionary<string, MethodInfo[]>();
-                s_cacheDevExtMethods[typeName] = methodDict;
+                s_cacheDevExtMethods[typeHandle] = methodDict;
             }
 
             if (!methodDict.TryGetValue(baseMethodName, out methods))

@@ -6,6 +6,7 @@ using LiteNetLibManager;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Threading;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -96,8 +97,8 @@ namespace MultiplayerARPG.MMO
 #if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
         private readonly ConcurrentDictionary<string, CentralServerPeerInfo> _mapServerConnectionIdsBySceneName = new ConcurrentDictionary<string, CentralServerPeerInfo>();
         private readonly ConcurrentDictionary<string, CentralServerPeerInfo> _instanceMapServerConnectionIdsByInstanceId = new ConcurrentDictionary<string, CentralServerPeerInfo>();
-        private readonly ConcurrentDictionary<string, SocialCharacterData> _usersByCharacterId = new ConcurrentDictionary<string, SocialCharacterData>();
-        private readonly ConcurrentDictionary<long, PlayerCharacterData> _pendingSpawnPlayerCharacters = new ConcurrentDictionary<long, PlayerCharacterData>();
+        private readonly ConcurrentDictionary<string, SocialCharacterData> _socialCharactersByUserId = new ConcurrentDictionary<string, SocialCharacterData>();
+        private readonly ConcurrentDictionary<string, IPlayerCharacterData> _pendingSpawnPlayerCharactersByUserId = new ConcurrentDictionary<string, IPlayerCharacterData>();
         // Database operations
         private readonly ConcurrentHashSet<StorageId> _loadingStorageIds = new ConcurrentHashSet<StorageId>();
         private readonly ConcurrentHashSet<int> _loadingPartyIds = new ConcurrentHashSet<int>();
@@ -207,8 +208,8 @@ namespace MultiplayerARPG.MMO
 #if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
             _mapServerConnectionIdsBySceneName.Clear();
             _instanceMapServerConnectionIdsByInstanceId.Clear();
-            _usersByCharacterId.Clear();
-            _pendingSpawnPlayerCharacters.Clear();
+            _socialCharactersByUserId.Clear();
+            _pendingSpawnPlayerCharactersByUserId.Clear();
             _loadingStorageIds.Clear();
             _loadingPartyIds.Clear();
             _loadedPartyTimes.Clear();
@@ -223,17 +224,18 @@ namespace MultiplayerARPG.MMO
 #endif
         }
 
+#if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
         protected override void UpdateOnlineCharacter(BasePlayerCharacterEntity playerCharacterEntity)
         {
+            // Set user data to map server
+            SocialCharacterData userData = SocialCharacterData.Create(playerCharacterEntity);
+            _socialCharactersByUserId[userData.userId] = userData;
+            // Add map user to cluster server
+            if (ClusterClient.IsNetworkActive)
+                UpdateMapUser(ClusterClient, UpdateUserCharacterMessage.UpdateType.Online, userData);
             base.UpdateOnlineCharacter(playerCharacterEntity);
-#if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
-            if (ClusterClient.IsNetworkActive && _usersByCharacterId.TryGetValue(playerCharacterEntity.Id, out SocialCharacterData tempUserData))
-            {
-                _usersByCharacterId[playerCharacterEntity.Id] = tempUserData = SocialCharacterData.Create(playerCharacterEntity);
-                UpdateMapUser(ClusterClient, UpdateUserCharacterMessage.UpdateType.Online, tempUserData);
-            }
-#endif
         }
+#endif
 
         public async void ProceedBeforeQuit()
         {
@@ -272,14 +274,11 @@ namespace MultiplayerARPG.MMO
         public override void RegisterPlayerCharacter(long connectionId, BasePlayerCharacterEntity playerCharacterEntity)
         {
             // Set user data to map server
-            if (!_usersByCharacterId.ContainsKey(playerCharacterEntity.Id))
-            {
-                SocialCharacterData userData = SocialCharacterData.Create(playerCharacterEntity);
-                _usersByCharacterId.TryAdd(userData.id, userData);
-                // Add map user to cluster server
-                if (ClusterClient.IsNetworkActive)
-                    UpdateMapUser(ClusterClient, UpdateUserCharacterMessage.UpdateType.Add, userData);
-            }
+            SocialCharacterData userData = SocialCharacterData.Create(playerCharacterEntity);
+            _socialCharactersByUserId[userData.userId] = userData;
+            // Add map user to cluster server
+            if (ClusterClient.IsNetworkActive)
+                UpdateMapUser(ClusterClient, UpdateUserCharacterMessage.UpdateType.Add, userData);
             base.RegisterPlayerCharacter(connectionId, playerCharacterEntity);
         }
 #endif
@@ -288,13 +287,12 @@ namespace MultiplayerARPG.MMO
         public override void UnregisterPlayerCharacter(long connectionId)
         {
             // Send remove character from map server
-            if (ServerUserHandlers.TryGetPlayerCharacter(connectionId, out IPlayerCharacterData playerCharacter) &&
-                _usersByCharacterId.TryGetValue(playerCharacter.Id, out SocialCharacterData userData))
+            if (ServerUserHandlers.TryGetPlayerCharacter(connectionId, out IPlayerCharacterData playerCharacter))
             {
-                _usersByCharacterId.TryRemove(playerCharacter.Id, out _);
+                _socialCharactersByUserId.TryRemove(playerCharacter.UserId, out _);
                 // Remove map user from cluster server
                 if (ClusterClient.IsNetworkActive)
-                    UpdateMapUser(ClusterClient, UpdateUserCharacterMessage.UpdateType.Remove, userData);
+                    UpdateMapUser(ClusterClient, UpdateUserCharacterMessage.UpdateType.Remove, SocialCharacterData.Create(playerCharacter));
             }
             base.UnregisterPlayerCharacter(connectionId);
         }
@@ -312,6 +310,7 @@ namespace MultiplayerARPG.MMO
         {
             if (ServerUserHandlers.TryGetUserId(connectionId, out string userId))
             {
+                _pendingSpawnPlayerCharactersByUserId.TryRemove(userId, out _);
                 storageUsers.TryRemove(userId, out _);
             }
             base.UnregisterUserIdAndAccessToken(connectionId);
@@ -471,7 +470,18 @@ namespace MultiplayerARPG.MMO
                 return false;
             }
 
-            await SaveAndDespawnPendingPlayerCharacter(userId);
+            BasePlayerCharacterEntity spawnedCharacterEntity = null;
+            if (_despawningPlayerCharacterCancellations.TryRemove(userId, out ObjectWithCancellationTokenSource<BasePlayerCharacterEntity> cancellationTokenSource))
+            {
+                // No despawning character
+                spawnedCharacterEntity = cancellationTokenSource.Object;
+                if (!cancellationTokenSource.IsCancellationRequested)
+                {
+                    cancellationTokenSource.Cancel();
+                    cancellationTokenSource.Dispose();
+                }
+            }
+
             UnregisterPlayerCharacterByUserId(userId);
             UnregisterUserIdAndAccessTokenByUserId(userId);
             // Unregister player
@@ -480,42 +490,49 @@ namespace MultiplayerARPG.MMO
             // Register player access
             RegisterUserIdAndAccessToken(connectionId, userId, accessToken);
 
-            // Prepare player character data
-            DatabaseApiResult<CharacterResp> characterResp = await DatabaseClient.GetCharacterAsync(new GetCharacterReq()
+            if (spawnedCharacterEntity == null)
             {
-                UserId = userId,
-                CharacterId = selectCharacterId
-            });
-            if (!characterResp.IsSuccess)
-            {
-                _enterGameRequestResponseMessages[requestId] = UITextKeys.UI_ERROR_CHARACTER_NOT_FOUND;
-                return false;
-            }
-            PlayerCharacterData playerCharacterData = characterResp.Response.CharacterData;
+                // Prepare player character data
+                DatabaseApiResult<CharacterResp> characterResp = await DatabaseClient.GetCharacterAsync(new GetCharacterReq()
+                {
+                    UserId = userId,
+                    CharacterId = selectCharacterId
+                });
+                if (!characterResp.IsSuccess)
+                {
+                    _enterGameRequestResponseMessages[requestId] = UITextKeys.UI_ERROR_CHARACTER_NOT_FOUND;
+                    return false;
+                }
+                PlayerCharacterData playerCharacterData = characterResp.Response.CharacterData;
 
-            // If it is not allow this character data, kick the player
-            if (!playerCharacterData.TryGetEntityPrefab(out _, out _)
+                // If it is not allow this character data, kick the player
+                if (!playerCharacterData.TryGetEntityPrefab(out _, out _)
 #if !DISABLE_ADDRESSABLES
-                && !playerCharacterData.TryGetEntityAddressablePrefab(out _, out _)
+                    && !playerCharacterData.TryGetEntityAddressablePrefab(out _, out _)
 #endif
-                )
-            {
-                if (LogError)
-                    Logging.LogError(LogTag, $"Cannot find player character with entity Id: {playerCharacterData.EntityId}");
-                _enterGameRequestResponseMessages[requestId] = UITextKeys.UI_ERROR_INVALID_CHARACTER_ENTITY;
-                return false;
-            }
+                    )
+                {
+                    if (LogError)
+                        Logging.LogError(LogTag, $"Cannot find player character with entity Id: {playerCharacterData.EntityId}");
+                    _enterGameRequestResponseMessages[requestId] = UITextKeys.UI_ERROR_INVALID_CHARACTER_ENTITY;
+                    return false;
+                }
 
-            // Set proper spawn position
-            if (!IsInstanceMap())
-            {
-                CurrentMapInfo.GetEnterMapPoint(playerCharacterData, out string mapName, out Vector3 position, out Vector3 rotation);
-                playerCharacterData.CurrentMapName = mapName;
-                playerCharacterData.CurrentPosition = position;
-                playerCharacterData.CurrentRotation = rotation;
-            }
+                // Set proper spawn position
+                if (!IsInstanceMap())
+                {
+                    CurrentMapInfo.GetEnterMapPoint(playerCharacterData, out string mapName, out Vector3 position, out Vector3 rotation);
+                    playerCharacterData.CurrentMapName = mapName;
+                    playerCharacterData.CurrentPosition = position;
+                    playerCharacterData.CurrentRotation = rotation;
+                }
 
-            _pendingSpawnPlayerCharacters[connectionId] = playerCharacterData;
+                _pendingSpawnPlayerCharactersByUserId[userId] = playerCharacterData;
+            }
+            else
+            {
+                _pendingSpawnPlayerCharactersByUserId[userId] = spawnedCharacterEntity;
+            }
             return true;
         }
 #endif
@@ -548,7 +565,7 @@ namespace MultiplayerARPG.MMO
                 _clientReadyRequestResponseMessages[requestId] = UITextKeys.UI_ERROR_INVALID_USER_TOKEN;
                 return UniTask.FromResult(false);
             }
-            if (!_pendingSpawnPlayerCharacters.TryGetValue(connectionId, out PlayerCharacterData data))
+            if (!_pendingSpawnPlayerCharactersByUserId.TryRemove(userId, out IPlayerCharacterData data))
             {
                 _clientReadyRequestResponseMessages[requestId] = UITextKeys.UI_ERROR_CHARACTER_NOT_FOUND;
                 return UniTask.FromResult(false);
@@ -600,7 +617,7 @@ namespace MultiplayerARPG.MMO
 #endif
 
 #if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
-        private async UniTaskVoid SetPlayerReadyRoutine(long connectionId, string userId, string accessToken, PlayerCharacterData playerCharacterData)
+        private async UniTaskVoid SetPlayerReadyRoutine(long connectionId, string userId, string accessToken, IPlayerCharacterData playerCharacterData)
         {
             // If data is empty / no selected character, kick the player
             if (playerCharacterData == null)
@@ -611,31 +628,140 @@ namespace MultiplayerARPG.MMO
                 return;
             }
 
-            // Spawn character entity and set its data
-            Vector3 characterPosition = playerCharacterData.CurrentPosition;
-            Quaternion characterRotation = Quaternion.Euler(playerCharacterData.CurrentRotation);
-            if (IsInstanceMap())
+            if (playerCharacterData is BasePlayerCharacterEntity playerCharacterEntity)
             {
-                characterPosition = MapInstanceWarpToPosition;
-                if (MapInstanceWarpOverrideRotation)
-                    characterRotation = Quaternion.Euler(MapInstanceWarpToRotation);
+                // NOTE: This may not required, but to make sure the data is updated, reload its relates data
+                await LoadPlayerCharacterEntityRelatesData(connectionId, playerCharacterEntity, userId, accessToken);
+
+                // Switch owner
+                playerCharacterEntity.SetOwnerClient(connectionId);
+
+                // Register player character entity to the server
+                RegisterPlayerCharacter(connectionId, playerCharacterEntity);
+
+                // Notify clients that this character is spawn or dead
+                if (!playerCharacterEntity.IsDead())
+                    playerCharacterEntity.CallRpcOnRespawn();
+                else
+                    playerCharacterEntity.CallRpcOnDead();
+            }
+            else
+            {
+
+                // Spawn character entity and set its data
+                Vector3 characterPosition = playerCharacterData.CurrentPosition;
+                Quaternion characterRotation = Quaternion.Euler(playerCharacterData.CurrentRotation);
+                if (IsInstanceMap())
+                {
+                    characterPosition = MapInstanceWarpToPosition;
+                    if (MapInstanceWarpOverrideRotation)
+                        characterRotation = Quaternion.Euler(MapInstanceWarpToRotation);
+                }
+
+                if (GameInstance.Singleton.DimensionType == DimensionType.Dimension2D)
+                    characterRotation = Quaternion.identity;
+
+                // NOTE: entity ID is a hash asset ID :)
+                int metaDataId;
+                LiteNetLibIdentity spawnObj = Assets.GetObjectInstance(
+                    GameInstance.GetPlayerCharacterEntityHashAssetId(playerCharacterData.EntityId, out metaDataId),
+                    characterPosition,
+                    characterRotation);
+
+                // Set current character data
+                playerCharacterEntity = spawnObj.GetComponent<BasePlayerCharacterEntity>();
+                GameInstance.SetupByMetaData(playerCharacterEntity, metaDataId);
+                playerCharacterData.CloneTo(playerCharacterEntity);
+
+                await LoadPlayerCharacterEntityRelatesData(connectionId, playerCharacterEntity, userId, accessToken);
+
+                // Force make caches, to calculate current stats to fill empty slots items
+                playerCharacterEntity.ForceMakeCaches();
+                playerCharacterEntity.FillEmptySlots();
+
+                List<CharacterBuff> summonBuffs = new List<CharacterBuff>();
+                if (!playerCharacterEntity.IsDead())
+                {
+                    // Summon saved summons
+                    DatabaseApiResult<GetSummonBuffsResp> summonBuffsResp = await DatabaseClient.GetSummonBuffsAsync(new GetSummonBuffsReq()
+                    {
+                        CharacterId = playerCharacterEntity.Id,
+                    });
+                    if (!summonBuffsResp.IsSuccess)
+                    {
+                        Assets.DestroyObjectInstance(spawnObj);
+                        KickClient(connectionId, UITextKeys.UI_ERROR_KICKED_FROM_SERVER);
+                        return;
+                    }
+                    summonBuffs.AddRange(summonBuffsResp.Response.SummonBuffs);
+                }
+
+                // Make sure that player does not exit before character data loaded
+                if (!ContainsConnectionId(connectionId))
+                {
+                    Assets.DestroyObjectInstance(spawnObj);
+                    KickClient(connectionId, UITextKeys.UI_ERROR_KICKED_FROM_SERVER);
+                    return;
+                }
+
+                // Make sure that there is no another player, enter the game with the character yet (prevent nested login)
+                if (_socialCharactersByUserId.ContainsKey(playerCharacterEntity.UserId))
+                {
+                    Assets.DestroyObjectInstance(spawnObj);
+                    KickClient(connectionId, UITextKeys.UI_ERROR_KICKED_FROM_SERVER);
+                    return;
+                }
+
+                // Spawn the character
+                Assets.NetworkSpawn(spawnObj, 0, connectionId);
+
+                // Register player character entity to the server
+                RegisterPlayerCharacter(connectionId, playerCharacterEntity);
+
+                // Don't destroy player character entity when disconnect
+                playerCharacterEntity.Identity.DoNotDestroyWhenDisconnect = true;
+
+                // Notify clients that this character is spawn or dead
+                if (!playerCharacterEntity.IsDead())
+                {
+                    playerCharacterEntity.CallRpcOnRespawn();
+                    // Summon mount
+                    playerCharacterEntity.SpawnMount(
+                        playerCharacterEntity.Mount.type,
+                        playerCharacterEntity.Mount.sourceId,
+                        playerCharacterEntity.Mount.mountRemainsDuration,
+                        playerCharacterEntity.Mount.level,
+                        playerCharacterEntity.Mount.currentHp);
+                    // Summon monsters
+                    for (int i = 0; i < playerCharacterEntity.Summons.Count; ++i)
+                    {
+                        CharacterSummon summon = playerCharacterEntity.Summons[i];
+                        summon.Summon(playerCharacterEntity, summon.level, summon.summonRemainsDuration, summon.exp, summon.currentHp, summon.currentMp);
+                        for (int j = 0; j < summonBuffs.Count; ++j)
+                        {
+                            if (summonBuffs[j].id.StartsWith(i.ToString()))
+                            {
+                                summon.CacheEntity.Buffs.Add(summonBuffs[j]);
+                                summonBuffs.RemoveAt(j);
+                                j--;
+                            }
+                        }
+                        playerCharacterEntity.Summons[i] = summon;
+                    }
+                }
+                else
+                {
+                    playerCharacterEntity.CallRpcOnDead();
+                }
             }
 
-            if (GameInstance.Singleton.DimensionType == DimensionType.Dimension2D)
-                characterRotation = Quaternion.identity;
+            // Add updater if it is not existed
+            if (!playerCharacterEntity.TryGetComponent<PlayerCharacterDataUpdater>(out _))
+                playerCharacterEntity.gameObject.AddComponent<PlayerCharacterDataUpdater>();
+        }
 
-            // NOTE: entity ID is a hash asset ID :)
-            int metaDataId;
-            LiteNetLibIdentity spawnObj = Assets.GetObjectInstance(
-                GameInstance.GetPlayerCharacterEntityHashAssetId(playerCharacterData.EntityId, out metaDataId),
-                characterPosition,
-                characterRotation);
-
-            // Set current character data
-            BasePlayerCharacterEntity playerCharacterEntity = spawnObj.GetComponent<BasePlayerCharacterEntity>();
-            GameInstance.SetupByMetaData(playerCharacterEntity, metaDataId);
-            playerCharacterData.CloneTo(playerCharacterEntity);
-
+        protected virtual async UniTask LoadPlayerCharacterEntityRelatesData(long connectionId, BasePlayerCharacterEntity playerCharacterEntity, string userId, string accessToken)
+        {
             // Set currencies
             // Gold
             DatabaseApiResult<GoldResp> getGoldResp = await DatabaseClient.GetGoldAsync(new GetGoldReq()
@@ -644,7 +770,7 @@ namespace MultiplayerARPG.MMO
             });
             if (!getGoldResp.IsSuccess)
             {
-                Destroy(spawnObj.gameObject);
+                playerCharacterEntity.NetworkDestroy();
                 KickClient(connectionId, UITextKeys.UI_ERROR_KICKED_FROM_SERVER);
                 return;
             }
@@ -656,7 +782,7 @@ namespace MultiplayerARPG.MMO
             });
             if (!getCashResp.IsSuccess)
             {
-                Destroy(spawnObj.gameObject);
+                playerCharacterEntity.NetworkDestroy();
                 KickClient(connectionId, UITextKeys.UI_ERROR_KICKED_FROM_SERVER);
                 return;
             }
@@ -672,7 +798,7 @@ namespace MultiplayerARPG.MMO
             });
             if (!getUserLevelResp.IsSuccess)
             {
-                Destroy(spawnObj.gameObject);
+                playerCharacterEntity.NetworkDestroy();
                 KickClient(connectionId, UITextKeys.UI_ERROR_KICKED_FROM_SERVER);
                 return;
             }
@@ -716,89 +842,6 @@ namespace MultiplayerARPG.MMO
             // Load storage
             StorageId storageId = new StorageId(StorageType.Player, userId);
             await LoadStorageRoutine(storageId);
-
-            // Force make caches, to calculate current stats to fill empty slots items
-            playerCharacterEntity.ForceMakeCaches();
-            playerCharacterEntity.FillEmptySlots();
-
-            List<CharacterBuff> summonBuffs = new List<CharacterBuff>();
-            if (!playerCharacterEntity.IsDead())
-            {
-                // Summon saved summons
-                DatabaseApiResult<GetSummonBuffsResp> summonBuffsResp = await DatabaseClient.GetSummonBuffsAsync(new GetSummonBuffsReq()
-                {
-                    CharacterId = playerCharacterEntity.Id,
-                });
-                if (!summonBuffsResp.IsSuccess)
-                {
-                    Destroy(spawnObj.gameObject);
-                    KickClient(connectionId, UITextKeys.UI_ERROR_KICKED_FROM_SERVER);
-                    return;
-                }
-                summonBuffs.AddRange(summonBuffsResp.Response.SummonBuffs);
-            }
-
-            // Make sure that player does not exit before character data loaded
-            if (!ContainsConnectionId(connectionId))
-            {
-                Destroy(spawnObj.gameObject);
-                KickClient(connectionId, UITextKeys.UI_ERROR_KICKED_FROM_SERVER);
-                return;
-            }
-
-            // Make sure that there is no another player, enter the game with the character yet (prevent nested login)
-            if (_usersByCharacterId.ContainsKey(playerCharacterEntity.Id))
-            {
-                Destroy(spawnObj.gameObject);
-                KickClient(connectionId, UITextKeys.UI_ERROR_KICKED_FROM_SERVER);
-                return;
-            }
-
-            // Spawn the character
-            Assets.NetworkSpawn(spawnObj, 0, connectionId);
-
-            // Register player character entity to the server
-            RegisterPlayerCharacter(connectionId, playerCharacterEntity);
-
-            // Don't destroy player character entity when disconnect
-            playerCharacterEntity.Identity.DoNotDestroyWhenDisconnect = true;
-
-            // Notify clients that this character is spawn or dead
-            if (!playerCharacterEntity.IsDead())
-            {
-                playerCharacterEntity.CallRpcOnRespawn();
-                // Summon mount
-                playerCharacterEntity.SpawnMount(
-                    playerCharacterEntity.Mount.type,
-                    playerCharacterEntity.Mount.sourceId,
-                    playerCharacterEntity.Mount.mountRemainsDuration,
-                    playerCharacterEntity.Mount.level,
-                    playerCharacterEntity.Mount.currentHp);
-                // Summon monsters
-                for (int i = 0; i < playerCharacterEntity.Summons.Count; ++i)
-                {
-                    CharacterSummon summon = playerCharacterEntity.Summons[i];
-                    summon.Summon(playerCharacterEntity, summon.level, summon.summonRemainsDuration, summon.exp, summon.currentHp, summon.currentMp);
-                    for (int j = 0; j < summonBuffs.Count; ++j)
-                    {
-                        if (summonBuffs[j].id.StartsWith(i.ToString()))
-                        {
-                            summon.CacheEntity.Buffs.Add(summonBuffs[j]);
-                            summonBuffs.RemoveAt(j);
-                            j--;
-                        }
-                    }
-                    playerCharacterEntity.Summons[i] = summon;
-                }
-            }
-            else
-            {
-                playerCharacterEntity.CallRpcOnDead();
-            }
-
-            // Add updater if it is not existed
-            if (!playerCharacterEntity.TryGetComponent<PlayerCharacterDataUpdater>(out _))
-                playerCharacterEntity.gameObject.AddComponent<PlayerCharacterDataUpdater>();
         }
 #endif
         #endregion
@@ -983,7 +1026,11 @@ namespace MultiplayerARPG.MMO
             RequestProceedResultDelegate<EmptyMessage> result)
         {
 #if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
-            if (!string.IsNullOrEmpty(request.userId))
+            bool despawning = !string.Equals(request.channelId, ChannelId, System.StringComparison.OrdinalIgnoreCase) || IsInstanceMap();
+            if (!despawning && _despawningPlayerCharacterCancellations.TryGetValue(request.userId, out ObjectWithCancellationTokenSource<BasePlayerCharacterEntity> cancellation) && 
+                !cancellation.IsCancellationRequested && cancellation.Object != null && !string.Equals(request.characterId, cancellation.Object.Id))
+                despawning = true;
+            if (despawning)
                 await SaveAndDespawnPendingPlayerCharacter(request.userId);
             // Always success, because it is just despawning player character, if it not found then it still can be determined that it was despawned
             result.InvokeSuccess(EmptyMessage.Value);
@@ -1125,20 +1172,25 @@ namespace MultiplayerARPG.MMO
         {
 #if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
             UpdateUserCharacterMessage message = messageHandler.ReadMessage<UpdateUserCharacterMessage>();
+            if (ServerUserHandlers.TryGetConnectionIdByUserId(message.character.userId, out _))
+            {
+                // This server is already handle this user ID, don't do anything
+                return;
+            }
             switch (message.type)
             {
                 case UpdateUserCharacterMessage.UpdateType.Add:
-                    if (!_usersByCharacterId.ContainsKey(message.character.id))
-                        _usersByCharacterId.TryAdd(message.character.id, message.character);
+                    if (!_socialCharactersByUserId.ContainsKey(message.character.userId))
+                        _socialCharactersByUserId.TryAdd(message.character.userId, message.character);
                     break;
                 case UpdateUserCharacterMessage.UpdateType.Remove:
-                    _usersByCharacterId.TryRemove(message.character.id, out _);
+                    _socialCharactersByUserId.TryRemove(message.character.userId, out _);
                     break;
                 case UpdateUserCharacterMessage.UpdateType.Online:
-                    if (_usersByCharacterId.ContainsKey(message.character.id))
+                    if (_socialCharactersByUserId.ContainsKey(message.character.userId))
                     {
                         int socialId;
-                        ServerCharacterHandlers.MarkOnlineCharacter(message.character.id);
+                        ServerCharacterHandlers.MarkOnlineCharacter(message.character.userId);
                         socialId = message.character.partyId;
                         if (socialId > 0 && ServerPartyHandlers.TryGetParty(socialId, out PartyData party))
                         {
@@ -1151,7 +1203,7 @@ namespace MultiplayerARPG.MMO
                             guild.UpdateMember(message.character);
                             ServerGuildHandlers.SetGuild(socialId, guild);
                         }
-                        _usersByCharacterId[message.character.id] = message.character;
+                        _socialCharactersByUserId[message.character.userId] = message.character;
                     }
                     break;
             }
@@ -1357,7 +1409,7 @@ namespace MultiplayerARPG.MMO
         private void UpdateMapUsers(LiteNetLibClient transportHandler, UpdateUserCharacterMessage.UpdateType updateType)
         {
 #if (UNITY_EDITOR || UNITY_SERVER || !EXCLUDE_SERVER_CODES) && UNITY_STANDALONE
-            foreach (SocialCharacterData user in _usersByCharacterId.Values)
+            foreach (SocialCharacterData user in _socialCharactersByUserId.Values)
             {
                 UpdateMapUser(transportHandler, updateType, user);
             }

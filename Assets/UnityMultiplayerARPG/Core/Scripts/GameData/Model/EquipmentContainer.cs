@@ -4,24 +4,36 @@ namespace MultiplayerARPG
 {
 
     [System.Serializable]
-    public struct EquipmentContainer
+    public partial class EquipmentContainer
     {
         public string equipSocket;
         public Transform transform;
 
         [Header("Single instantiated object setting")]
         public GameObject defaultModel;
-        public GameObject[] instantiatedObjects;
+        public GameObject[] instantiatedObjects = new GameObject[0];
 
         [Header("Multiple instantiated objects setting")]
         public EquipmentInstantiatedObjectGroup defaultInstantiatedObjectGroup;
-        public EquipmentInstantiatedObjectGroup[] instantiatedObjectGroups;
+        public EquipmentInstantiatedObjectGroup[] instantiatedObjectGroups = new EquipmentInstantiatedObjectGroup[0];
 
 #if UNITY_EDITOR
         [Header("Testing tools")]
         [Tooltip("Index of instantiate object which you want to test activation by character model's context menu")]
         public int activatingInstantiateObjectIndex;
 #endif
+
+        private readonly LazyComponentCache<Animator> _cachedDefaultModelAnimator = new LazyComponentCache<Animator>();
+        public Animator CachedDefaultModelAnimator
+        {
+            get => _cachedDefaultModelAnimator.Get(defaultModel);
+        }
+
+        private readonly LazyComponentCache<SkinnedMeshRenderer> _cachedDefaultModelSkinnedMesh = new LazyComponentCache<SkinnedMeshRenderer>();
+        public SkinnedMeshRenderer CachedDefaultModelSkinnedMesh
+        {
+            get => _cachedDefaultModelSkinnedMesh.Get(defaultModel);
+        }
 
         public void SetActiveDefaultModel(bool isActive)
         {

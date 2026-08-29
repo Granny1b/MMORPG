@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: a7b2d508febdf3948a754fdd91d9d94a
 timeCreated: 1517523304
-licenseType: Store
+licenseType: Pro
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/Scripts/Utils/GenericUtils.cs
-  uploadId: 857340

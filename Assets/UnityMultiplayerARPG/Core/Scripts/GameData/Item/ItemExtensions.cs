@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace MultiplayerARPG
 {
@@ -394,14 +395,21 @@ namespace MultiplayerARPG
             return true;
         }
 
-        public static bool CanAttack<T>(this T item, BaseCharacterEntity character)
-             where T : IWeaponItem
+        public static int GetAmmoCapacity<T>(this T item, ICharacterData character, int ammoDataId)
+            where T : IWeaponItem
         {
-            if (!item.IsWeapon() || character == null)
-                return false;
-
-            AmmoType requireAmmoType = item.WeaponType.AmmoType;
-            return requireAmmoType == null || character.IndexOfAmmoItem(requireAmmoType) >= 0;
+            int baseAmmoCapacity, ammoCapacity;
+            baseAmmoCapacity = ammoCapacity = item.AmmoCapacity;
+            if (ammoDataId != 0 && !item.NoAmmoCapacityOverriding &&
+                GameInstance.Items.TryGetValue(ammoDataId, out BaseItem prevAmmoItem) &&
+                prevAmmoItem.OverrideAmmoCapacity > 0)
+            {
+                baseAmmoCapacity = ammoCapacity = prevAmmoItem.OverrideAmmoCapacity;
+            }
+            CharacterDataCache cache = character.GetCaches();
+            ammoCapacity += Mathf.CeilToInt(cache.AmmoCapacityModifier);
+            ammoCapacity += Mathf.CeilToInt(cache.AmmoCapacityRate * baseAmmoCapacity);
+            return ammoCapacity;
         }
     }
 }

@@ -5,7 +5,7 @@ namespace MultiplayerARPG
 {
     public static class PoolSystem
     {
-        private static Dictionary<IPoolDescriptor, Queue<IPoolDescriptor>> pooledObjects = new Dictionary<IPoolDescriptor, Queue<IPoolDescriptor>>();
+        private static readonly Dictionary<IPoolDescriptor, Queue<IPoolDescriptor>> pooledObjects = new Dictionary<IPoolDescriptor, Queue<IPoolDescriptor>>();
 #if UNITY_EDITOR && INIT_POOL_TO_TRANSFORM
         private static Transform poolingTransform;
         private static Transform PoolingTransform
@@ -133,12 +133,22 @@ namespace MultiplayerARPG
                 Debug.LogWarning($"[PoolSystem] Cannot push back ({instance.gameObject}). The instance's prefab does not initailized yet.");
                 return;
             }
+            if (queue.Contains(instance))
+            {
+                return;
+            }
             if (queue.Count >= instance.ObjectPrefab.PoolSize)
             {
                 Object.Destroy(instance.gameObject);
             }
             else
             {
+#if UNITY_EDITOR && INIT_POOL_TO_TRANSFORM
+                instance.transform.SetParent(PoolingTransform);
+#else
+                instance.transform.SetParent(null);
+#endif
+                instance.OnPushBack();
                 instance.gameObject.SetActive(false);
                 queue.Enqueue(instance);
             }

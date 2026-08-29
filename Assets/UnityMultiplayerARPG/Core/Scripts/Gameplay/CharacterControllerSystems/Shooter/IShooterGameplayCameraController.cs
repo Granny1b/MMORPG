@@ -4,7 +4,7 @@ namespace MultiplayerARPG
 {
     public interface IShooterGameplayCameraController : IGameplayCameraController
     {
-        ShooterControllerViewMode ActiveViewMode { get; set; }
+        Transform LookForwardTransform { get; }
         bool EnableAimAssist { get; set; }
         bool EnableAimAssistX { get; set; }
         bool EnableAimAssistY { get; set; }
@@ -16,10 +16,6 @@ namespace MultiplayerARPG
         float AimAssistXSpeed { get; set; }
         float AimAssistYSpeed { get; set; }
         float AimAssistMaxAngleFromFollowingTarget { get; set; }
-        float CameraRotationSpeedScale { get; set; }
-        bool IsLeftViewSide { get; set; }
-        bool IsZoomAimming { get; set; }
-        Transform LookForwardTransform { get; }
         void Recoil(float pitch, float yaw, float roll);
     }
 }

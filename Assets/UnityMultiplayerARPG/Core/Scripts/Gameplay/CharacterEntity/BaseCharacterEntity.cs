@@ -1,8 +1,5 @@
 ﻿using Cysharp.Text;
 using Insthync.UnityEditorUtils;
-using LiteNetLibManager;
-using LiteNetLib;
-using LiteNetLib.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -17,7 +14,6 @@ namespace MultiplayerARPG
     [RequireComponent(typeof(CharacterSkillAndBuffComponent))]
     public abstract partial class BaseCharacterEntity : DamageableEntity, ICharacterData
     {
-        public const float ACTION_DELAY = 0.1f;
         public const float RESPAWN_GROUNDED_CHECK_DURATION = 1f;
         public const float RESPAWN_INVINCIBLE_DURATION = 1f;
         public const float FIND_ENTITY_DISTANCE_BUFFER = 1f;
@@ -139,17 +135,29 @@ namespace MultiplayerARPG
         public MovementRestriction MovementRestrictionWhileCharging { get { return ChargeComponent.MovementRestrictionWhileCharging; } }
         public float RespawnGroundedCheckCountDown { get; protected set; }
         public float RespawnInvincibleCountDown { get; protected set; }
-        public float LastUseItemTime { get; set; }
+        protected float _lastUseItemTime;
+        public float LastUseItemTime { get { return _lastUseItemTime; } set { _lastUseItemTime = value; } }
         public float LastActionEndTime => Mathf.Max(LastAttackEndTime, LastUseSkillEndTime, LastReloadEndTime);
-
-        protected int _countDownToUpdateAppearances = FRAMES_BEFORE_UPDATE_APPEARANCES;
         protected float _lastActionTime;
+        public float LastActionTime { get { return _lastActionTime; } set { _lastActionTime = value; } }
+        public readonly StateFlag FallDamageDisableState = new StateFlag();
+        protected int _countDownToUpdateAppearances = FRAMES_BEFORE_UPDATE_APPEARANCES;
         #endregion
 
         public IPhysicFunctions AttackPhysicFunctions { get; protected set; }
         public IPhysicFunctions FindPhysicFunctions { get; protected set; }
 
-        public override bool IsImmune { get { return base.IsImmune || RespawnInvincibleCountDown > 0f; } set { base.IsImmune = value; } }
+        public override int EntityId
+        {
+            get
+            {
+                if (MetaDataId != 0)
+                    return MetaDataId;
+                return HashAssetId;
+            }
+            set { }
+        }
+        public override bool IsInvincible { get { return base.IsInvincible || RespawnInvincibleCountDown > 0f; } set { base.IsInvincible = value; } }
         public override int MaxHp { get { return CachedData.MaxHp; } }
         public int MaxMp { get { return CachedData.MaxMp; } }
         public int MaxStamina { get { return CachedData.MaxStamina; } }
@@ -283,7 +291,7 @@ namespace MultiplayerARPG
                     CurrentGameplayRule.ApplyFallDamage(this, _lastGroundedPosition);
                 }
                 // Set last grounded state, it will be used next frame to find
-                _lastGrounded = isGrounded;
+                _lastGrounded = isGrounded || FallDamageDisableState.IsActive;
                 if (_lastGrounded)
                 {
                     // Set last grounded position, it will be used to calculate fall damage
@@ -291,7 +299,6 @@ namespace MultiplayerARPG
                 }
             }
 
-            bool tempEnableMovement = PassengingVehicleEntity.IsNull();
             if (RespawnGroundedCheckCountDown > 0f)
             {
                 // Character won't receive fall damage
@@ -324,18 +331,8 @@ namespace MultiplayerARPG
                 ExitVehicleAndForget();
             }
 
-            // Enable movement or not
-            if (!Movement.IsNull())
-            {
-                if (Movement.enabled != tempEnableMovement)
-                {
-                    if (!tempEnableMovement)
-                        Movement.StopMove();
-                    // Enable movement while not passenging any vehicle
-                    Movement.enabled = tempEnableMovement;
-                }
-            }
-
+            UpdateMovementEnabling();
+            UpdateOverrideInput();
             UpdateModelManager(deltaTime);
             UpdateCharacterModel(deltaTime);
             UpdateFpsModel(deltaTime);
@@ -353,44 +350,6 @@ namespace MultiplayerARPG
                 if (_countDownToUpdateAmmoSim <= 0)
                     UpdateAmmoSim();
             }
-        }
-
-        public override void SendClientState(long writeTimestamp)
-        {
-            s_EntityStateDataWriter.Reset();
-            if (!Movement.IsNull() && Movement.enabled && Movement.WriteClientState(writeTimestamp, s_EntityStateDataWriter, out bool shouldSendReliably))
-            {
-                TransportHandler.WritePacket(s_EntityStateMessageWriter, GameNetworkingConsts.EntityState);
-                s_EntityStateMessageWriter.PutPackedUInt(ObjectId);
-                s_EntityStateMessageWriter.PutPackedLong(writeTimestamp);
-                s_EntityStateMessageWriter.Put(s_EntityStateDataWriter.Data, 0, s_EntityStateDataWriter.Length);
-                ClientSendMessage(MOVEMENT_DATA_CHANNEL, shouldSendReliably ? DeliveryMethod.ReliableOrdered : DeliveryMethod.Sequenced, s_EntityStateMessageWriter);
-            }
-        }
-
-        public override void SendServerState(long writeTimestamp)
-        {
-            s_EntityStateDataWriter.Reset();
-            if (!Movement.IsNull() && Movement.enabled && Movement.WriteServerState(writeTimestamp, s_EntityStateDataWriter, out bool shouldSendReliably))
-            {
-                TransportHandler.WritePacket(s_EntityStateMessageWriter, GameNetworkingConsts.EntityState);
-                s_EntityStateMessageWriter.PutPackedUInt(ObjectId);
-                s_EntityStateMessageWriter.PutPackedLong(writeTimestamp);
-                s_EntityStateMessageWriter.Put(s_EntityStateDataWriter.Data, 0, s_EntityStateDataWriter.Length);
-                ServerSendMessageToSubscribers(MOVEMENT_DATA_CHANNEL, shouldSendReliably ? DeliveryMethod.ReliableOrdered : DeliveryMethod.Sequenced, s_EntityStateMessageWriter);
-            }
-        }
-
-        public override void ReadClientStateAtServer(long peerTimestamp, NetDataReader reader)
-        {
-            if (Movement != null)
-                Movement.ReadClientStateAtServer(peerTimestamp, reader);
-        }
-
-        public override void ReadServerStateAtClient(long peerTimestamp, NetDataReader reader)
-        {
-            if (Movement != null)
-                Movement.ReadServerStateAtClient(peerTimestamp, reader);
         }
 
         public override void PlayJumpAnimation()
@@ -491,7 +450,7 @@ namespace MultiplayerARPG
             if (!CanAttack())
                 return false;
 
-            if (!UpdateLastActionTime())
+            if (!UpdateLastActionTime(ref _lastActionTime, CurrentGameInstance.globalActionDelay))
                 return false;
 
             characterItem = this.GetAvailableWeapon(ref isLeftHand);
@@ -523,7 +482,10 @@ namespace MultiplayerARPG
                     return false;
             }
 
-            return true;
+            bool canAttack = true;
+            if (onCanAttackValidated != null)
+                onCanAttackValidated(this, ref canAttack);
+            return canAttack;
         }
 
         public bool ValidateUseSkill(int dataId, bool isLeftHand, uint targetObjectId)
@@ -531,7 +493,7 @@ namespace MultiplayerARPG
             if (!CanUseSkill())
                 return false;
 
-            if (!UpdateLastActionTime())
+            if (!UpdateLastActionTime(ref _lastActionTime, CurrentGameInstance.globalActionDelay))
                 return false;
 
             if (!this.ValidateSkillToUse(dataId, isLeftHand, targetObjectId, out BaseSkill skill, out _, out UITextKeys gameMessage))
@@ -559,7 +521,10 @@ namespace MultiplayerARPG
                     return false;
             }
 
-            return true;
+            bool canUseSkill = true;
+            if (onCanUseSkillValidated != null)
+                onCanUseSkillValidated(this, ref canUseSkill);
+            return canUseSkill;
         }
 
         public bool ValidateUseSkillItem(int index, bool isLeftHand, uint targetObjectId)
@@ -567,7 +532,7 @@ namespace MultiplayerARPG
             if (!CanUseSkillItem())
                 return false;
 
-            if (!UpdateLastActionTime())
+            if (!UpdateLastActionTime(ref _lastActionTime, CurrentGameInstance.globalActionDelay))
                 return false;
 
             if (!this.ValidateSkillItemToUse(index, isLeftHand, targetObjectId, out _, out BaseSkill skill, out _, out UITextKeys gameMessage))
@@ -595,7 +560,10 @@ namespace MultiplayerARPG
                     return false;
             }
 
-            return true;
+            bool canUseSkillItem = true;
+            if (onCanUseSkillItemValidated != null)
+                onCanUseSkillItemValidated(this, ref canUseSkillItem);
+            return canUseSkillItem;
         }
 
         public bool ValidateReload(bool isLeftHand)
@@ -629,7 +597,10 @@ namespace MultiplayerARPG
                     return false;
             }
 
-            return true;
+            bool canReload = true;
+            if (onCanReloadValidated != null)
+                onCanReloadValidated(this, ref canReload);
+            return canReload;
         }
 
         public bool Attack(ref WeaponHandlingState weaponHandlingState)
@@ -722,20 +693,6 @@ namespace MultiplayerARPG
             return false;
         }
 
-        public bool UpdateLastActionTime()
-        {
-            float time = Time.unscaledTime;
-            if (time - _lastActionTime < ACTION_DELAY)
-                return false;
-            _lastActionTime = time;
-            return true;
-        }
-
-        public bool CanDoNextAction()
-        {
-            return Time.unscaledTime - _lastActionTime >= ACTION_DELAY;
-        }
-
         public void ClearActionStates()
         {
             AttackComponent.ClearAttackStates();
@@ -751,7 +708,12 @@ namespace MultiplayerARPG
 
         public AimPosition GetAttackAimPosition(ref bool isLeftHand, Vector3 targetPosition)
         {
-            return GetAttackAimPosition(this.GetAvailableWeaponDamageInfo(ref isLeftHand), isLeftHand, targetPosition);
+            return GetAttackAimPosition(ref isLeftHand, targetPosition, out _);
+        }
+
+        public AimPosition GetAttackAimPosition(ref bool isLeftHand, Vector3 targetPosition, out Transform damageTransform)
+        {
+            return GetAttackAimPosition(this.GetAvailableWeaponDamageInfo(ref isLeftHand), isLeftHand, targetPosition, out damageTransform);
         }
 
         public AimPosition GetAttackAimPositionByDirection(ref bool isLeftHand, Vector3 direction, bool aimToTargetIfExisted = true)
@@ -788,7 +750,13 @@ namespace MultiplayerARPG
 
         public AimPosition GetAttackAimPosition(DamageInfo damageInfo, bool isLeftHand, Vector3 targetPosition)
         {
-            return GetAttackAimPosition(damageInfo.GetDamageTransform(this, isLeftHand).position, targetPosition);
+            return GetAttackAimPosition(damageInfo, isLeftHand, targetPosition, out _);
+        }
+
+        public AimPosition GetAttackAimPosition(DamageInfo damageInfo, bool isLeftHand, Vector3 targetPosition, out Transform damageTransform)
+        {
+            damageTransform = damageInfo.GetDamageTransform(this, isLeftHand);
+            return GetAttackAimPosition(damageTransform.position, targetPosition);
         }
 
         public AimPosition GetAttackAimPosition(Vector3 position, Vector3 targetPosition)
@@ -914,15 +882,6 @@ namespace MultiplayerARPG
             return IsPlayingAttackOrUseSkillAnimation() || IsPlayingReloadAnimation();
         }
 
-        public float GetAttackSpeed()
-        {
-            float atkSpeed = CachedData.AtkSpeed;
-            // Minimum attack speed is 0.1
-            if (atkSpeed <= 0.1f)
-                atkSpeed = 0.1f;
-            return atkSpeed;
-        }
-
         public override bool IsHide()
         {
             return CachedData.IsHide;
@@ -954,6 +913,11 @@ namespace MultiplayerARPG
 
         public bool IsPositionInFov(Vector3 origin, float fov, Vector3 position)
         {
+            if (Movement.GetMovementBounds().Contains(position))
+            {
+                // Very close to target, determine that it is in fov
+                return true;
+            }
             if (CurrentGameInstance.DimensionType == DimensionType.Dimension2D)
                 return origin.GetVector2().IsPositionInFov2D(fov, position, Direction2D);
             return origin.IsPositionInFov3D(fov, position, EntityTransform.forward);
@@ -971,19 +935,18 @@ namespace MultiplayerARPG
             return FindPhysicFunctions.IsGameEntityInDistance(targetEntity, EntityTransform.position, targetEntity.GetActivatableDistance() + FIND_ENTITY_DISTANCE_BUFFER, includeUnHittable);
         }
 
-        public List<T> FindGameEntitiesInDistance<T>(float distance, int overlayMask)
+        public void FindGameEntitiesInDistance<T>(List<T> list, float distance, int overlayMask)
             where T : class, IGameEntity
         {
-            return FindPhysicFunctions.FindGameEntitiesInDistance<T>(EntityTransform.position, distance + FIND_ENTITY_DISTANCE_BUFFER, overlayMask);
+            FindPhysicFunctions.FindGameEntitiesInDistance(EntityTransform.position, distance + FIND_ENTITY_DISTANCE_BUFFER, overlayMask, list);
         }
 
-        public List<T> FindEntities<T>(Vector3 origin, float distance, bool findForAlive, bool findForAlly, bool findForEnemy, bool findForNeutral, int overlapMask, bool findInFov = false, float fov = 0)
+        public void FindEntities<T>(List<T> list, Vector3 origin, float distance, bool findForAlive, bool findForAlly, bool findForEnemy, bool findForNeutral, int overlapMask, bool findInFov = false, float fov = 0)
             where T : DamageableEntity
         {
-            List<T> result = new List<T>();
             int tempOverlapSize = FindPhysicFunctions.OverlapObjects(origin, distance, overlapMask);
             if (tempOverlapSize == 0)
-                return result;
+                return;
             IDamageableEntity tempBaseEntity;
             T tempEntity;
             for (int tempLoopCounter = 0; tempLoopCounter < tempOverlapSize; ++tempLoopCounter)
@@ -994,29 +957,28 @@ namespace MultiplayerARPG
                 tempEntity = tempBaseEntity.Entity as T;
                 if (!IsEntityWhichLookingFor(tempEntity, findForAlive, findForAlly, findForEnemy, findForNeutral, findInFov, fov))
                     continue;
-                if (result.Contains(tempEntity))
+                if (list.Contains(tempEntity))
                     continue;
-                result.Add(tempEntity);
+                list.Add(tempEntity);
             }
-            return result;
         }
 
-        public List<T> FindEntities<T>(float distance, bool findForAlive, bool findForAlly, bool findForEnemy, bool findForNeutral, int overlapMask, bool findInFov = false, float fov = 0)
+        public void FindEntities<T>(List<T> list, float distance, bool findForAlive, bool findForAlly, bool findForEnemy, bool findForNeutral, int overlapMask, bool findInFov = false, float fov = 0)
             where T : DamageableEntity
         {
-            return FindEntities<T>(EntityTransform.position, distance, findForAlive, findForAlly, findForEnemy, findForNeutral, overlapMask, findInFov, fov);
+            FindEntities(list, EntityTransform.position, distance, findForAlive, findForAlly, findForEnemy, findForNeutral, overlapMask, findInFov, fov);
         }
 
-        public List<T> FindAliveEntities<T>(Vector3 origin, float distance, bool findForAlly, bool findForEnemy, bool findForNeutral, int overlapMask, bool findInFov = false, float fov = 0)
+        public void FindAliveEntities<T>(List<T> list, Vector3 origin, float distance, bool findForAlly, bool findForEnemy, bool findForNeutral, int overlapMask, bool findInFov = false, float fov = 0)
             where T : DamageableEntity
         {
-            return FindEntities<T>(origin, distance, true, findForAlly, findForEnemy, findForNeutral, overlapMask, findInFov, fov);
+            FindEntities(list, origin, distance, true, findForAlly, findForEnemy, findForNeutral, overlapMask, findInFov, fov);
         }
 
-        public List<T> FindAliveEntities<T>(float distance, bool findForAlly, bool findForEnemy, bool findForNeutral, int overlapMask, bool findInFov = false, float fov = 0)
+        public void FindAliveEntities<T>(List<T> list, float distance, bool findForAlly, bool findForEnemy, bool findForNeutral, int overlapMask, bool findInFov = false, float fov = 0)
             where T : DamageableEntity
         {
-            return FindAliveEntities<T>(EntityTransform.position, distance, findForAlly, findForEnemy, findForNeutral, overlapMask, findInFov, fov);
+            FindAliveEntities(list, EntityTransform.position, distance, findForAlly, findForEnemy, findForNeutral, overlapMask, findInFov, fov);
         }
 
         public T FindNearestEntity<T>(Vector3 origin, float distance, bool findForAliveOnly, bool findForAlly, bool findForEnemy, bool findForNeutral, int overlapMask, bool findInFov = false, float fov = 0)
@@ -1156,14 +1118,6 @@ namespace MultiplayerARPG
                     break;
             }
         }
-
-        public float GetAnimSpeedRate(AnimActionType animActionType)
-        {
-            if (animActionType == AnimActionType.AttackRightHand ||
-                animActionType == AnimActionType.AttackLeftHand)
-                return GetAttackSpeed();
-            return 1f;
-        }
         #endregion
 
         #region Character model updating
@@ -1238,13 +1192,13 @@ namespace MultiplayerARPG
                 summon.CacheEntity.NotifyEnemySpottedByAlly(this, enemy);
             }
             if (onNotifyEnemySpotted != null)
-                onNotifyEnemySpotted(enemy);
+                onNotifyEnemySpotted(this, enemy);
         }
 
         public virtual void NotifyEnemySpottedByAlly(BaseCharacterEntity ally, BaseCharacterEntity enemy)
         {
             if (onNotifyEnemySpottedByAlly != null)
-                onNotifyEnemySpottedByAlly(ally, enemy);
+                onNotifyEnemySpottedByAlly(this, ally, enemy);
         }
     }
 }

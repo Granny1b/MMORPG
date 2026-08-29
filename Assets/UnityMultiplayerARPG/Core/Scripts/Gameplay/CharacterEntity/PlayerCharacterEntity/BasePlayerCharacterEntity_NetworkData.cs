@@ -1,5 +1,4 @@
-﻿using Insthync.AddressableAssetTools;
-using Insthync.UnityEditorUtils;
+﻿using Insthync.UnityEditorUtils;
 using LiteNetLibManager;
 using NotifiableCollection;
 using System.Collections.Generic;
@@ -428,7 +427,6 @@ namespace MultiplayerARPG
         {
             base.SetupNetElements();
             // Sync fields
-            syncMetaDataId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             dataId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             factionId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             statPoint.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
@@ -438,15 +436,26 @@ namespace MultiplayerARPG
             userCash.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
             partyId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             guildId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
+            persistChannel.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
+            persistChannel.redundancyCount = 0;
+            persistMapName.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
+            persistMapName.redundancyCount = 0;
+            persistPosition.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
+            persistPosition.redundancyCount = 0;
+            persistSafeArea.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
+            persistSafeArea.redundancyCount = 0;
 #if !DISABLE_DIFFER_MAP_RESPAWNING
             respawnMapName.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
+            respawnMapName.redundancyCount = 0;
             respawnPosition.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
+            respawnPosition.redundancyCount = 0;
 #endif
             iconDataId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             frameDataId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             backgroundDataId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             titleDataId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             lastDeadTime.syncMode = LiteNetLibSyncFieldMode.ServerToOwnerClient;
+            lastDeadTime.redundancyCount = 0;
 #if !DISABLE_CLASSIC_PK
             isPkOn.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             pkPoint.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
@@ -472,11 +481,7 @@ namespace MultiplayerARPG
             publicFloats.forOwnerOnly = false;
 #endif
             guildSkills.forOwnerOnly = false;
-        }
 
-        public override void OnSetup()
-        {
-            base.OnSetup();
             // On data changes events
             id.onChange += OnPlayerIdChange;
             syncTitle.onChange += OnPlayerCharacterNameChange;
@@ -565,117 +570,13 @@ namespace MultiplayerARPG
 #endif
             guildSkills.onOperation -= OnGuildSkillsOperation;
 
-            if (IsOwnerClient && BasePlayerCharacterController.Singleton != null)
-                Destroy(BasePlayerCharacterController.Singleton.gameObject);
-
             // Unsubscribe this entity
             if (GameInstance.ClientCharacterHandlers != null)
                 GameInstance.ClientCharacterHandlers.UnsubscribePlayerCharacter(this);
         }
-
-        protected override void EntityOnSetOwnerClient()
-        {
-            base.EntityOnSetOwnerClient();
-            InstantiatePlayerCharacterObjects();
-        }
-
-        private async void InstantiatePlayerCharacterObjects()
-        {
-            // Setup relates elements
-            if (IsOwnerClient)
-            {
-                BasePlayerCharacterController controllerPrefab = null;
-#if !EXCLUDE_PREFAB_REFS || DISABLE_ADDRESSABLES
-                if (ControllerPrefab != null)
-                {
-                    controllerPrefab = ControllerPrefab;
-                }
-                else if (CurrentGameInstance.DefaultControllerPrefab != null)
-                {
-                    controllerPrefab = CurrentGameInstance.DefaultControllerPrefab;
-                }
-#endif
-                if (controllerPrefab != null)
-                {
-                    // Do nothing, just have it to make it able to compile properly (it have compile condition above)
-                }
-#if !DISABLE_ADDRESSABLES
-                else if (AddressableControllerPrefab.IsDataValid())
-                {
-                    controllerPrefab = await AddressableControllerPrefab.GetOrLoadAssetAsync<BasePlayerCharacterController>();
-                }
-                else if (CurrentGameInstance.AddressableDefaultControllerPrefab.IsDataValid())
-                {
-                    controllerPrefab = await CurrentGameInstance.AddressableDefaultControllerPrefab.GetOrLoadAssetAsync<BasePlayerCharacterController>();
-                }
-#endif
-                else if (BasePlayerCharacterController.Singleton != null)
-                {
-                    controllerPrefab = BasePlayerCharacterController.LastPrefab;
-                }
-                else
-                {
-                    Logging.LogWarning(ToString(), "`Controller Prefab` is empty so it cannot be instantiated");
-                    controllerPrefab = null;
-                }
-                if (controllerPrefab != null)
-                {
-                    BasePlayerCharacterController.LastPrefab = controllerPrefab;
-                    BasePlayerCharacterController controller = Instantiate(controllerPrefab);
-                    controller.PlayingCharacterEntity = this;
-                }
-#if !DISABLE_ADDRESSABLES
-                // Instantiates owning objects
-                await CurrentGameInstance.AddressableOwningCharacterObjects.InstantiateObjectsOrUsePrefabs(CurrentGameInstance.OwningCharacterObjects, EntityTransform);
-#else
-                foreach (var prefab in CurrentGameInstance.OwningCharacterObjects)
-                {
-                    if (prefab == null) continue;
-                    Instantiate(prefab, EntityTransform.position, EntityTransform.rotation, EntityTransform);
-                }
-#endif
-#if !DISABLE_ADDRESSABLES
-                // Instantiates owning minimap objects
-                await CurrentGameInstance.AddressableOwningCharacterMiniMapObjects.InstantiateObjectsOrUsePrefabs(CurrentGameInstance.OwningCharacterMiniMapObjects, EntityTransform);
-#else
-                foreach (var prefab in CurrentGameInstance.OwningCharacterMiniMapObjects)
-                {
-                    if (prefab == null) continue;
-                    Instantiate(prefab, EntityTransform.position, EntityTransform.rotation, EntityTransform);
-                }
-#endif
-                // Instantiates owning character UI
-                InstantiateUI(await CurrentGameInstance.GetLoadedOwningCharacterUIPrefab());
-            }
-            else if (IsClient)
-            {
-#if !DISABLE_ADDRESSABLES
-                // Instantiates non-owning objects
-                await CurrentGameInstance.AddressableNonOwningCharacterObjects.InstantiateObjectsOrUsePrefabs(CurrentGameInstance.NonOwningCharacterObjects, EntityTransform);
-#else
-                foreach (var prefab in CurrentGameInstance.NonOwningCharacterObjects)
-                {
-                    if (prefab == null) continue;
-                    Instantiate(prefab, EntityTransform.position, EntityTransform.rotation, EntityTransform);
-                }
-#endif
-#if !DISABLE_ADDRESSABLES
-                // Instantiates non-owning minimap objects
-                await CurrentGameInstance.AddressableNonOwningCharacterMiniMapObjects.InstantiateObjectsOrUsePrefabs(CurrentGameInstance.NonOwningCharacterMiniMapObjects, EntityTransform);
-#else
-                foreach (var prefab in CurrentGameInstance.NonOwningCharacterMiniMapObjects)
-                {
-                    if (prefab == null) continue;
-                    Instantiate(prefab, EntityTransform.position, EntityTransform.rotation, EntityTransform);
-                }
-#endif
-                // Instantiates non-owning character UI
-                InstantiateUI(await CurrentGameInstance.GetLoadedNonOwningCharacterUIPrefab());
-            }
-        }
 #endregion
 
-            #region Sync data changes callback
+        #region Sync data changes callback
         private void OnPlayerIdChange(bool isInitial, string oldId, string id)
         {
             if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(CharacterName) && GameInstance.ClientCharacterHandlers != null)
@@ -692,118 +593,118 @@ namespace MultiplayerARPG
         {
             IsRecaching = true;
             if (onDataIdChange != null)
-                onDataIdChange.Invoke(dataId);
+                onDataIdChange.Invoke(this, oldDataId, dataId);
         }
 
         private void OnFactionIdChange(bool isInitial, int oldFactionId, int factionId)
         {
             IsRecaching = true;
             if (onFactionIdChange != null)
-                onFactionIdChange.Invoke(factionId);
+                onFactionIdChange.Invoke(this, oldFactionId, factionId);
         }
 
         private void OnStatPointChange(bool isInitial, float oldStatPoint, float statPoint)
         {
             if (onStatPointChange != null)
-                onStatPointChange.Invoke(statPoint);
+                onStatPointChange.Invoke(this, oldStatPoint, statPoint);
         }
 
         private void OnSkillPointChange(bool isInitial, float oldSkillPoint, float skillPoint)
         {
             if (onSkillPointChange != null)
-                onSkillPointChange.Invoke(skillPoint);
+                onSkillPointChange.Invoke(this, oldSkillPoint, skillPoint);
         }
 
         private void OnGoldChange(bool isInitial, int oldGold, int gold)
         {
             if (onGoldChange != null)
-                onGoldChange.Invoke(gold);
+                onGoldChange.Invoke(this, oldGold, gold);
         }
 
         private void OnUserGoldChange(bool isInitial, int oldUserGold, int userGold)
         {
             if (onUserGoldChange != null)
-                onUserGoldChange.Invoke(userGold);
+                onUserGoldChange.Invoke(this, oldUserGold, userGold);
         }
 
         private void OnUserCashChange(bool isInitial, int oldUserCash, int userCash)
         {
             if (onUserCashChange != null)
-                onUserCashChange.Invoke(userCash);
+                onUserCashChange.Invoke(this, oldUserCash, userCash);
         }
 
         private void OnPartyIdChange(bool isInitial, int oldPartyId, int partyId)
         {
             IsRecaching = true;
             if (onPartyIdChange != null)
-                onPartyIdChange.Invoke(partyId);
+                onPartyIdChange.Invoke(this, oldPartyId, partyId);
         }
 
         private void OnGuildIdChange(bool isInitial, int oldGuildId, int guildId)
         {
             IsRecaching = true;
             if (onGuildIdChange != null)
-                onGuildIdChange.Invoke(guildId);
+                onGuildIdChange.Invoke(this, oldGuildId, guildId);
         }
 
         private void OnIconDataIdChange(bool isInitial, int oldIconDataId, int iconDataId)
         {
             IsRecaching = true;
             if (onIconDataIdChange != null)
-                onIconDataIdChange.Invoke(iconDataId);
+                onIconDataIdChange.Invoke(this, oldIconDataId, iconDataId);
         }
 
         private void OnFrameDataIdChange(bool isInitial, int oldFrameDataId, int frameDataId)
         {
             IsRecaching = true;
             if (onFrameDataIdChange != null)
-                onFrameDataIdChange.Invoke(frameDataId);
+                onFrameDataIdChange.Invoke(this, oldFrameDataId, frameDataId);
         }
 
         private void OnBackgroundDataIdChange(bool isInitial, int oldBackgroundDataId, int backgroundDataId)
         {
             IsRecaching = true;
             if (onBackgroundDataIdChange != null)
-                onBackgroundDataIdChange.Invoke(backgroundDataId);
+                onBackgroundDataIdChange.Invoke(this, oldBackgroundDataId, backgroundDataId);
         }
 
         private void OnTitleDataIdChange(bool isInitial, int oldTitleDataId, int titleDataId)
         {
             IsRecaching = true;
             if (onTitleDataIdChange != null)
-                onTitleDataIdChange.Invoke(titleDataId);
+                onTitleDataIdChange.Invoke(this, oldTitleDataId, titleDataId);
         }
 
 #if !DISABLE_CLASSIC_PK
         private void OnIsPkOnChange(bool isInitial, bool oldIsOn, bool isPkOn)
         {
             if (onIsPkOnChange != null)
-                onIsPkOnChange.Invoke(isPkOn);
+                onIsPkOnChange.Invoke(this, oldIsOn, isPkOn);
         }
 
         private void OnPkPointChange(bool isInitial, int oldPkPoint, int pkPoint)
         {
             if (onPkPointChange != null)
-                onPkPointChange.Invoke(pkPoint);
+                onPkPointChange.Invoke(this, oldPkPoint, pkPoint);
         }
 
         private void OnConsecutivePkKillsChange(bool isInitial, int oldConsecutivePkKills, int consecutivePkKills)
         {
             if (onConsecutivePkKillsChange != null)
-                onConsecutivePkKillsChange.Invoke(consecutivePkKills);
+                onConsecutivePkKillsChange.Invoke(this, oldConsecutivePkKills, consecutivePkKills);
         }
 #endif
 
         private void OnReputationChange(bool isInitial, int oldReputation, int reputation)
         {
             if (onReputationChange != null)
-                onReputationChange.Invoke(reputation);
+                onReputationChange.Invoke(this, oldReputation, reputation);
         }
 
-        private void OnIsWarpingChange(bool isInitial, bool isOldWarping, bool isWarping)
+        private void OnIsWarpingChange(bool isInitial, bool oldIsWarping, bool isWarping)
         {
             if (onIsWarpingChange != null)
-                onIsWarpingChange.Invoke(isWarping);
+                onIsWarpingChange.Invoke(this, oldIsWarping, isWarping);
         }
         #endregion
 

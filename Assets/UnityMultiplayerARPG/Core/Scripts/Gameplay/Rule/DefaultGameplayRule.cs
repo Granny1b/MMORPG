@@ -694,6 +694,12 @@ namespace MultiplayerARPG
                 EntityInfo attackerInfo = attacker.GetInfo();
                 EntityInfo damageReceiverInfo = damageReceiver.GetInfo();
                 // Attacker
+                BaseCharacter attackerDb = attacker.GetDatabase();
+                if (!attacker.IsDead() && attackerDb != null)
+                {
+                    attackerDb.ApplySelfStatusEffectsWhenAttacking(attacker.Level, attackerInfo, attacker);
+                    attackerDb.ApplyEnemyStatusEffectsWhenAttacking(attacker.Level, attackerInfo, damageReceiver);
+                }
                 if (!attacker.IsDead())
                 {
                     // Armors
@@ -755,6 +761,12 @@ namespace MultiplayerARPG
                     }
                 }
                 // Damage Receiver
+                BaseCharacter damageReceiverDb = damageReceiver.GetDatabase();
+                if (!damageReceiver.IsDead() && damageReceiverDb != null)
+                {
+                    damageReceiverDb.ApplySelfStatusEffectsWhenAttacked(damageReceiver.Level, damageReceiverInfo, damageReceiver);
+                    damageReceiverDb.ApplyEnemyStatusEffectsWhenAttacked(damageReceiver.Level, damageReceiverInfo, attacker);
+                }
                 if (!damageReceiver.IsDead())
                 {
                     // Armors
@@ -823,8 +835,6 @@ namespace MultiplayerARPG
             bool isWeapon = equipmentItem is IWeaponItem;
             equipmentItem.ApplySelfStatusEffectsWhenAttacking(characterItem.level, attackerInfo, isWeapon ? characterItem : CharacterItem.Empty, attacker);
             equipmentItem.ApplyEnemyStatusEffectsWhenAttacking(characterItem.level, attackerInfo, isWeapon ? characterItem : CharacterItem.Empty, damageReceiver);
-            if (characterItem.sockets == null || characterItem.sockets.Count == 0)
-                return;
             foreach (int socketItemDataId in characterItem.sockets)
             {
                 ApplyStatusEffectsWhenAttacking(isWeapon ? characterItem : CharacterItem.Empty, socketItemDataId, attackerInfo, attacker, damageReceiver);
@@ -846,8 +856,6 @@ namespace MultiplayerARPG
                 return;
             equipmentItem.ApplySelfStatusEffectsWhenAttacked(characterItem.level, damageReceiverInfo, damageReceiver);
             equipmentItem.ApplyEnemyStatusEffectsWhenAttacked(characterItem.level, damageReceiverInfo, attacker);
-            if (characterItem.sockets == null || characterItem.sockets.Count == 0)
-                return;
             foreach (int socketItemDataId in characterItem.sockets)
             {
                 ApplyStatusEffectsWhenAttacked(socketItemDataId, damageReceiverInfo, attacker, damageReceiver);
@@ -999,11 +1007,6 @@ namespace MultiplayerARPG
                 intDamage = 0;
             character.CurrentHp -= intDamage;
             character.ReceivedDamage(HitBoxPosition.None, character.EntityTransform.position, EntityInfo.Empty, null, CombatAmountType.FallDamage, intDamage, CharacterItem.Empty, null, 0, CharacterBuff.Empty);
-            if (character.IsDead())
-            {
-                // Dead by itself, so instigator is itself
-                character.ValidateRecovery(character.GetInfo());
-            }
         }
 
         public override bool CanInteractEntity(BaseCharacterEntity character, uint objectId)
@@ -1014,10 +1017,13 @@ namespace MultiplayerARPG
             if (!character.Manager.Assets.TryGetSpawnedObject(objectId, out interactingEntity))
                 return false;
             // This function will sort: near to far, so loop from 0
-            float dist = Vector3.Distance(character.EntityTransform.position, interactingEntity.EntityTransform.position);
-            Vector3 dir = (interactingEntity.EntityTransform.position - character.EntityTransform.position).normalized;
+            Vector3 interactPosition = character.EntityTransform.position;
+            Vector3 characterPosition = character.EntityTransform.position;
+            Vector3 offsetVector = characterPosition - interactPosition;
+            float dist = offsetVector.magnitude;
+            Vector3 dir = offsetVector.normalized;
             // Find that the entity is behind the wall or not
-            int count = character.FindPhysicFunctions.Raycast(character.MeleeDamageTransform.position, dir, dist, GameInstance.Singleton.buildingLayer.Mask, QueryTriggerInteraction.Ignore);
+            int count = character.FindPhysicFunctions.Raycast(interactPosition, dir, dist, GameInstance.Singleton.buildingLayer.Mask, QueryTriggerInteraction.Ignore);
             IGameEntity gameEntity;
             for (int i = 0; i < count; ++i)
             {

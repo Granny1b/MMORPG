@@ -1,7 +1,7 @@
 fileFormatVersion: 2
 guid: 83db81f92abadca439507e25d517cabe
 timeCreated: 1541633798
-licenseType: Store
+licenseType: Free
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
@@ -11,10 +11,3 @@ MonoImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 110188
-  packageName: MMORPG KIT (2D/3D/Survival)
-  packageVersion: 1.97b
-  assetPath: Assets/UnityMultiplayerARPG/Core/xNode/Scripts/Editor/Drawers/NodeEnumDrawer.cs
-  uploadId: 857340

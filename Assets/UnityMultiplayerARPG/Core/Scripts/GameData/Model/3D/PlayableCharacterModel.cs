@@ -64,6 +64,9 @@ namespace MultiplayerARPG.GameData.Model.Playables
         protected EquipWeapons? _oldEquipWeapons = null;
         protected System.Action _onStopAction = null;
         protected int _latestCustomAnimationActionId = 0;
+        protected readonly WaitForSecondsRealtime _equipWeaponsAwaiter = new WaitForSecondsRealtime(0f);
+        protected readonly WaitForSecondsRealtime _playSkillCastClipAwaiter = new WaitForSecondsRealtime(0f);
+        protected readonly WaitForSecondsRealtime _playActionAnimationAwaiter = new WaitForSecondsRealtime(0f);
 
         protected override void Awake()
         {
@@ -86,7 +89,7 @@ namespace MultiplayerARPG.GameData.Model.Playables
             Entity.onIsUpdateEntityComponentsChanged += CacheEntity_onUpdateEntityComponentsChanged;
         }
 
-        private void CacheEntity_onUpdateEntityComponentsChanged(bool isUpdate)
+        private void CacheEntity_onUpdateEntityComponentsChanged(BaseGameEntity target, bool isUpdate)
         {
             if (!isUpdate)
             {
@@ -98,6 +101,13 @@ namespace MultiplayerARPG.GameData.Model.Playables
                 if (IsActiveModel && !Graph.IsPlaying())
                     Graph.Play();
             }
+        }
+
+        private WaitForSecondsRealtime WaitForSecondsRealtime(WaitForSecondsRealtime awaiter, float waitTime)
+        {
+            awaiter.waitTime = waitTime;
+            awaiter.Reset();
+            return awaiter;
         }
 
         public override void UpdateAnimation(float deltaTime)
@@ -423,7 +433,7 @@ namespace MultiplayerARPG.GameData.Model.Playables
                 triggeredDelay = triggeredDelay2;
 
             if (triggeredDelay > 0f)
-                yield return new WaitForSecondsRealtime(triggeredDelay);
+                yield return WaitForSecondsRealtime(_equipWeaponsAwaiter, triggeredDelay);
 
             SetNewEquipWeapons(newEquipWeapons, equipItems, selectableWeaponSets, equipWeaponSet, isWeaponsSheathed);
             _onStopAction = null;
@@ -431,7 +441,7 @@ namespace MultiplayerARPG.GameData.Model.Playables
             if (animationDelay - triggeredDelay > 0f)
             {
                 // Wait by remaining animation playing duration
-                yield return new WaitForSecondsRealtime(animationDelay - triggeredDelay);
+                yield return WaitForSecondsRealtime(_equipWeaponsAwaiter, animationDelay - triggeredDelay);
             }
 
             _isDoingAction = false;
@@ -594,7 +604,7 @@ namespace MultiplayerARPG.GameData.Model.Playables
         {
             _isDoingAction = true;
             // Waits by skill cast duration
-            yield return new WaitForSecondsRealtime(Behaviour.PlayAction(castState, 1f, 0f, loop: true));
+            yield return WaitForSecondsRealtime(_playSkillCastClipAwaiter, Behaviour.PlayAction(castState, 1f, 0f, loop: true));
             _isDoingAction = false;
         }
 
@@ -619,9 +629,9 @@ namespace MultiplayerARPG.GameData.Model.Playables
             _isDoingAction = true;
             PlayActionAnimationAudioClip(actionAnimation);
             // Wait by animation playing duration
-            yield return new WaitForSecondsRealtime(Behaviour.PlayAction(actionAnimation.state, playSpeedMultiplier, changeClipLength, overrideClipLength));
+            yield return WaitForSecondsRealtime(_playActionAnimationAwaiter, Behaviour.PlayAction(actionAnimation.state, playSpeedMultiplier, changeClipLength, overrideClipLength));
             // Waits by current transition + extra duration before end playing animation state
-            yield return new WaitForSecondsRealtime(actionAnimation.GetExtendDuration() / playSpeedMultiplier);
+            yield return WaitForSecondsRealtime(_playActionAnimationAwaiter, actionAnimation.GetExtendDuration() / playSpeedMultiplier);
             _isDoingAction = false;
         }
 

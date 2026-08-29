@@ -95,6 +95,10 @@ namespace MultiplayerARPG
         protected int passwordLength = 6;
         public int PasswordLength { get { return passwordLength; } }
 
+        [SerializeField]
+        protected bool canUseByCreatorOnly = false;
+        public bool CanUseByCreatorOnly { get { return canUseByCreatorOnly; } }
+
         [Category("Events")]
         [SerializeField]
         protected UnityEvent onBuildingDestroy = new UnityEvent();
@@ -108,7 +112,7 @@ namespace MultiplayerARPG
         public List<string> BuildingTypes { get { return buildingTypes; } }
         public float BuildDistance { get { return buildDistance; } }
         public float BuildYRotation { get; set; }
-        public override bool IsImmune { get { return base.IsImmune || !canBeAttacked; } set { base.IsImmune = value; } }
+        public override bool IsInvincible { get { return base.IsInvincible || !canBeAttacked; } set { base.IsInvincible = value; } }
         public override int MaxHp { get { return maxHp; } }
         public float LifeTime { get { return lifeTime; } }
         public int BuildLimit { get { return buildLimit; } }
@@ -254,9 +258,9 @@ namespace MultiplayerARPG
         protected readonly HashSet<GameObject> _triggerObjects = new HashSet<GameObject>();
         protected readonly HashSet<BuildingEntity> _children = new HashSet<BuildingEntity>();
         protected readonly HashSet<BuildingMaterial> _buildingMaterials = new HashSet<BuildingMaterial>();
-        protected int _lastAddedTriggerObjectFrame;
+        protected int _lastAddedTriggerObjectFrame = 0;
         protected bool _parentFound = true; // No parent by default
-        protected bool _isDestroyed;
+        protected bool _isDestroyed = false;
 
         protected override void EntityAwake()
         {
@@ -362,10 +366,12 @@ namespace MultiplayerARPG
             _buildingMaterials.Add(material);
         }
 
-        public override void OnSetup()
+        protected override void SetupNetElements()
         {
-            base.OnSetup();
+            base.SetupNetElements();
+            parentId.syncMode = LiteNetLibSyncFieldMode.ServerToClients;
             parentId.onChange += OnParentIdChange;
+            parentId.redundancyCount = 0;
         }
 
         protected override void EntityOnDestroy()

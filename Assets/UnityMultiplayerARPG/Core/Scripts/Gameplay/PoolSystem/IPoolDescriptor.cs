@@ -13,8 +13,12 @@ namespace MultiplayerARPG
         /// </summary>
         void InitPrefab();
         /// <summary>
-        /// Use this function to do something when get instance
+        /// Use this function to do something when get instance from pool
         /// </summary>
         void OnGetInstance();
+        /// <summary>
+        /// Use this function to do something when push back to pool
+        /// </summary>
+        void OnPushBack();
     }
 }

@@ -43,6 +43,30 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Changed
 
+- **MMORPG KIT updated from the creator's GitHub** (2026-08-29) — the single largest change in
+  this log. The Asset Store package was ~7 months stale: `Core` matched upstream commit
+  `7876b7e` (2026-02-02) byte-for-byte and was **368 commits / 300 files behind** `main`.
+  - `Core/` mirrored from [UnityMultiplayerARPG_Core](https://github.com/suriyun-mmorpg/UnityMultiplayerARPG_Core)
+    @ `2830829`, including all 14 submodules (`LiteNetLibManager`, `CameraAndInput`, `SharedData`,
+    `xNode`, `UpdateManager`, …). 2,982 files touched.
+  - `MMO/` mirrored from [UnityMultiplayerARPG_MMO](https://github.com/suriyun-mmorpg/UnityMultiplayerARPG_MMO)
+    @ `cbccdcf`, with the `MMOSource` and `DatabaseManagerSource` submodules. 426 files touched.
+  - Totals: 3,173 modified, 125 deleted, 115 added.
+  - **Verified safe before applying:** every `.cs` `.meta` GUID is identical between the store
+    version and upstream (0 mismatches across 2,577 shared files in Core, 0 in MMO), so prefab and
+    scene references survived intact. The only 12 GUID differences were folder `.meta` files under
+    `LiteNetLibManager/Plugins/UniTask`.
+  - Notable upstream API changes that landed: `EntityInfo` is now pooled (`_info.SetEntityInfo(...)`
+    instead of a 10-arg constructor) as part of the GC.Alloc reduction work; entity event delegates
+    gained a leading `target` parameter; `IGameEntity attacker` became `EntityInfo`;
+    `NetManager.*` renamed to `LiteNetManager.*`; ZLogger dropped from `LiteNetLibManager/Plugins`;
+    `Editor/Addressables/` renamed to `Editor/AssetTools/`; `ICharacterData` / `IPlayerCharacterData`
+    moved from `Core/Scripts/CharacterData/` into the `SharedData` submodule.
+  - **Not updated:** `Demo/`, `Demo2D/`, `DemoShooter/`, `DemoSurvival/`, `DemoGuildWar/` have no
+    public repo and remain February-era Asset Store content. This is the most likely source of
+    future oddities — see Known follow-ups.
+  - Rollback: the pre-update state is commit `e3a5a32` on branch `topdown-controller`.
+
 - **`Assets/UnityMultiplayerARPG/Core/CameraAndInput/Scripts/Camera/FollowCameraControls.cs`**
   (2026-08-29) — moved the camera-state save out of `Update()`, which was calling
   `PlayerPrefs.Save()` (a disk/registry write) every frame while `isSaveCamera` was on.
@@ -85,6 +109,27 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
   **This edits a stock kit asset** — a kit reimport would revert it.
 
 ### Fixed
+
+- **Item duplication exploit** (2026-08-29, from upstream `13f341d`) — `CmdPickupItemFromContainer`
+  did not clamp the requested amount to what the container actually held, so a modified client could
+  duplicate items on pickup. Fixed by the Core update: `if (amount < 0)` → `if (amount < 0 || amount > pickingItem.amount)`.
+  This was the concrete reason for doing the update.
+- **DevExt demo scripts vs. new delegate signatures** (2026-08-29) — `DevExtDemo_PlayerCharacterEntity.cs`
+  and `DevExtDemo_MonsterCharacterEntity.cs` are Asset-Store-only demo content with no upstream
+  counterpart, so they were hand-fixed for the new delegates: added the leading `target` parameter
+  and changed `IGameEntity attacker` to `EntityInfo attacker`. Parameter *names* don't affect
+  delegate compatibility, so only types changed; the one body change is
+  `attacker.GetGameObject().name` → a null-guarded `attacker.Entity != null ? ... : attacker.Id`,
+  because `EntityInfo` has no `GetGameObject()`.
+- **GuildWar vs. new Core APIs** (2026-08-29) — three files. `BaseGameNetworkManager_GuildWar.cs`
+  could no longer `foreach` over `Assets.GetSpawnedObjects()` (now returns an `Enumerator`), and
+  `GuildWarMonsterCharacterEntity.cs` / `GuildWarMapInfo.cs` used the removed `EntityInfo` constructor,
+  `SummonerType`, `SummonerGuildId` and `CharacterSummoner.Id/IsAlly/IsEnemy`. All three now match
+  [UnityMultiplayerARPG_GuildWar](https://github.com/suriyun-mmorpg/UnityMultiplayerARPG_GuildWar)
+  `main` byte-for-byte rather than being hand-patched.
+- **Re-applied our `FollowCameraControls` teardown-save patch** (2026-08-29) — the Core mirror
+  overwrote it. Re-derived against the new upstream file rather than force-applying the old diff,
+  since upstream had refactored to cached save keys (`_xRotationSaveKey`). Same design as before.
 
 - **Attacks firing in the movement direction instead of the aim direction** (2026-08-29) —
   two independent causes in `TopDownAimController`:
@@ -133,6 +178,16 @@ Not project changes, but they affected the editor and are worth recording:
   hit the same block. Shipped players on other machines are unaffected.
 
 ## Known follow-ups
+
+- `Demo/`, `Demo2D/`, `DemoShooter/`, `DemoSurvival/`, `DemoGuildWar/` are still February-era Asset
+  Store content running against August Core. They compile, but February prefabs/scenes deserialising
+  against changed August code is the most likely source of subtle breakage. Check this first if a
+  demo scene misbehaves. An Asset Store package update would realign them.
+- Compare our hand-built `TopDownAimController` against the creator's official
+  [UnityMultiplayerARPG_AimAtCursorController](https://github.com/suriyun-mmorpg/UnityMultiplayerARPG_AimAtCursorController)
+  (pushed 2026-05-20) — it may cover the same ground and be worth adopting or borrowing from.
+- Re-run the update periodically; the creator commits to `Core` most days. The version can be
+  pinned by diffing a known file against upstream history, as was done to identify `7876b7e`.
 
 
 - Bind M1/M2 to abilities Battlerite-style: `Attack` is already a virtual button, and

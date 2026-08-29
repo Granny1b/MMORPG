@@ -22,9 +22,10 @@ namespace MultiplayerARPG
         }
 
 #if UNITY_EDITOR
-        private void OnValidate()
+        protected override void OnValidate()
         {
             MigrateAsset();
+            base.OnValidate();
         }
 #endif
 
@@ -54,9 +55,17 @@ namespace MultiplayerARPG
             base.RegisterPrefabs();
 #if !EXCLUDE_PREFAB_REFS || DISABLE_ADDRESSABLES
             GameInstance.AddMonsterCharacterEntities(prefab);
+            foreach (SpawnPrefabData spawnData in spawningPrefabs)
+            {
+                GameInstance.AddMonsterCharacterEntities(spawnData.prefab);
+            }
 #endif
 #if !DISABLE_ADDRESSABLES
             GameInstance.AddAssetReferenceMonsterCharacterEntities(addressablePrefab);
+            foreach (SpawnPrefabData spawnData in spawningPrefabs)
+            {
+                GameInstance.AddAssetReferenceMonsterCharacterEntities(spawnData.addressablePrefab);
+            }
 #endif
         }
 
