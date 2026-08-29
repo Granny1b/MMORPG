@@ -104,3 +104,20 @@ InitTestScene*.unity*
 
 # Auto-generated cache in Assets folder
 /[Aa]ssets/[Ss]ceneDependencyCache*
+
+# --- Asset Store content (Synty) ---
+# Store-bought art is re-downloadable from the Asset Store / Synty Store, so it is
+# kept out of the repo instead of pushing ~1.8 GB of FBX, textures and UI sprites.
+# Covers meshes, animations, materials and the Interface* UI image packs.
+# After a fresh clone, re-import these packages before opening the project, or
+# prefab/scene references to them will show up as missing.
+/[Aa]ssets/Synty/
+/[Aa]ssets/Synty.meta
+
+# Synty packages that import to the project root instead of Assets/Synty/
+/[Aa]ssets/Polygon*/
+/[Aa]ssets/Polygon*.meta
+/[Aa]ssets/Interface*/
+/[Aa]ssets/Interface*.meta
+/[Aa]ssets/AnimationBaseLocomotion/
+/[Aa]ssets/AnimationBaseLocomotion.meta

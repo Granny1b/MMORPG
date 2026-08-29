@@ -7,6 +7,21 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ## [Unreleased]
 
+### Changed
+
+- **`.gitignore`** (2026-08-29) — Synty Asset Store content is no longer committed. `Assets/Synty/`
+  alone is ~1.8 GB of FBX meshes, animation clips and UI sprite sheets (`InterfaceCore`,
+  `InterfaceFantasyWarriorHUD`), all of it re-downloadable from the Synty/Asset Store, and every
+  `.fbx`/`.png`/`.tga` in it would otherwise go through Git LFS. Nothing under `Assets/Synty/` was
+  tracked yet, so no history rewrite was needed — the rules just stop it from ever being added.
+  - The folder `.meta` files are ignored alongside the folders. Committing `Assets/Synty.meta`
+    without `Assets/Synty/` would leave an orphan meta that Unity deletes on next import.
+  - Also covers `Assets/Polygon*/`, `Assets/Interface*/` and `Assets/AnimationBaseLocomotion/`,
+    the paths Synty packages land in when imported to the project root instead of `Assets/Synty/`.
+  - Consequence for a fresh clone: re-import the Synty packages **before** opening the project,
+    or prefabs under `Assets/1. Data/Prefabs` that reference them come up with missing meshes and
+    sprites. Synty package GUIDs are stable across re-imports, so the references reconnect.
+
 ### Added
 
 - **`Assets/Scripts/UI/UIEscapeWindowsHandler.cs`** (2026-08-29) — WoW-style escape handling:
