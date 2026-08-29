@@ -20,6 +20,12 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
   - Deliberately **not** collected: `UIConstructBuilding` and `UICurrentBuilding`, whose kit close
     paths (`HideConstructBuildingDialog` / `HideCurrentBuildingDialog`) fire callbacks a plain
     `Hide()` would skip, and `UIIsWarping`, which must stay up while warping.
+  - `excludingWindows` holds two entries, both found by inspecting what auto-collection actually
+    caught in the editor: `UIDialogs_Standalone/--Character` (a stray `UICharacter` placeholder —
+    no children, no graphics, referenced by nothing) and `UIMailLayout/NotificationComponent`
+    (`UIMailNotification` + `RepeatingEvent`, the mail-notification poller). Both are authored
+    active, unlike all 44 real windows, which are authored inactive; hiding the poller would have
+    stopped mail notifications for the rest of the session.
   - The kit's `UIStackManager` / `UIStackEntry` pair was not reused: `UIStackEntry` is attached to
     nothing in the project, so its static stack is always empty, and it pops only one entry anyway.
 
@@ -62,7 +68,8 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
   `keyCode: 27` entry from `UISceneGameplay.toggleUis`, which used to toggle `UISystemDialog`
   directly. Both must not read Escape in the same frame, or the menu would open while the windows
   are closing. Wired containers: `UIDialogs_Standalone`, `UIInAppPurchase`, `UIMailLayout`,
-  `UICraftingLayout`; object: `UISettingDialog`; system menu: `UISystemDialog`.
+  `UICraftingLayout`; object: `UISettingDialog`; system menu: `UISystemDialog`;
+  excluded: `--Character`, `NotificationComponent` (wired in the editor, 2026-08-29).
   `CanvasGameplayMobile.prefab` and the two Survival canvases still carry the stock Escape entry.
 
 - **MMORPG KIT updated from the creator's GitHub** (2026-08-29) — the single largest change in

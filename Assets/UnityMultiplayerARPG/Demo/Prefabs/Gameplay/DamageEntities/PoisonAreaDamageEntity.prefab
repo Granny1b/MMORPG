@@ -9806,16 +9806,7 @@ MonoBehaviour:
   onGetInstance:
     m_PersistentCalls:
       m_Calls: []
-  onSubscriberAdded:
-    m_PersistentCalls:
-      m_Calls: []
-  onSubscriberRemoved:
-    m_PersistentCalls:
-      m_Calls: []
-  onServerSubscribingAdded:
-    m_PersistentCalls:
-      m_Calls: []
-  onServerSubscribingRemoved:
+  onPushBack:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &1375710912440260

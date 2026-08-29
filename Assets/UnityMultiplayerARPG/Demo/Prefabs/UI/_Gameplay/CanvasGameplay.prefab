@@ -305,6 +305,31 @@ MonoBehaviour:
   uiGuildChatMessagePrefab: {fileID: 8230439767929373467, guid: e7981257896674f4b810287c93eb13d1,
     type: 3}
   visibleDuration: 3
+--- !u!114 &8137452960214883571
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1164220226400930}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 59f69c4ccf1f40748d83884bae72297e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  keyCode: 27
+  buttonName: CloseUI
+  windowContainers:
+  - {fileID: 224100069548900120}
+  - {fileID: 8362276928305633707}
+  - {fileID: 5647243959927644369}
+  - {fileID: 650149196346412532}
+  windowObjects:
+  - {fileID: 224557729394539404}
+  excludingWindows:
+  - {fileID: 9103543208703482154}
+  - {fileID: 9129256570019575699}
+  uiSystemMenu: {fileID: 114315585977473158}
 --- !u!1 &1979434012980664
 GameObject:
   m_ObjectHideFlags: 0
@@ -798,6 +823,18 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: aee565b4f8fa1a441b09d4c3bfefa094, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &9103543208703482154 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7712056102908271478, guid: 9fa31f76a78d71d41ab4fbf8dbecc3a8,
+    type: 3}
+  m_PrefabInstance: {fileID: 1535994080973800028}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfb8d7b04137e29498cc6ee2635e3818, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1001 &1819351566869651362
@@ -5233,6 +5270,18 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 8311485585756962506}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &9129256570019575699 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1002603292325857625, guid: fb98ffa69f16e9143aa0b49d0b058bc0,
+    type: 3}
+  m_PrefabInstance: {fileID: 8311485585756962506}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 336cb3ef83e705c42b8063cff5c707b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &8510034646631550343
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5806,26 +5855,3 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 8873279353247482306}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &8137452960214883571
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1164220226400930}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 59f69c4ccf1f40748d83884bae72297e, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  keyCode: 27
-  buttonName: CloseUI
-  windowContainers:
-  - {fileID: 224100069548900120}
-  - {fileID: 8362276928305633707}
-  - {fileID: 5647243959927644369}
-  - {fileID: 650149196346412532}
-  windowObjects:
-  - {fileID: 224557729394539404}
-  excludingWindows: []
-  uiSystemMenu: {fileID: 114315585977473158}
