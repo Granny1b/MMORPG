@@ -9,6 +9,20 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Added
 
+- **`Assets/Scripts/UI/UIEscapeWindowsHandler.cs`** (2026-08-29) — WoW-style escape handling:
+  the first Escape press closes every opened window, the next one toggles the system menu.
+  Windows are auto-collected at `Awake` from `windowContainers` (`UIBase` on direct children) and
+  `windowObjects` (`UIBase` on the transform itself), with an `excludingWindows` opt-out, so new
+  dialogs dropped into `UIDialogs_Standalone` are picked up without re-wiring the inspector.
+  After closing anything it calls `UISceneGameplay.HideNpcDialog()`, the only close path that also
+  tells the server the player stopped talking to the NPC — a bare `UIBase.Hide()` would leave
+  `CurrentNpcDialog` set server-side.
+  - Deliberately **not** collected: `UIConstructBuilding` and `UICurrentBuilding`, whose kit close
+    paths (`HideConstructBuildingDialog` / `HideCurrentBuildingDialog`) fire callbacks a plain
+    `Hide()` would skip, and `UIIsWarping`, which must stay up while warping.
+  - The kit's `UIStackManager` / `UIStackEntry` pair was not reused: `UIStackEntry` is attached to
+    nothing in the project, so its static stack is always empty, and it pops only one entry anyway.
+
 - **`blockAttackWhenCursorOverUI`** on `TopDownAimController` (2026-08-29) — stops a click
   on inventory/shop/hotkey UI from also swinging the weapon, now that M1 is bound to Attack.
   `UpdateWASDAttack` is not virtual and reads `InputManager.GetButton("Attack")` directly, so
@@ -42,6 +56,14 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 - **This changelog** (2026-08-29).
 
 ### Changed
+
+- **`Assets/UnityMultiplayerARPG/Demo/Prefabs/UI/_Gameplay/CanvasGameplay.prefab`** (2026-08-29) —
+  **stock kit asset.** Added `UIEscapeWindowsHandler` to the canvas root and removed the
+  `keyCode: 27` entry from `UISceneGameplay.toggleUis`, which used to toggle `UISystemDialog`
+  directly. Both must not read Escape in the same frame, or the menu would open while the windows
+  are closing. Wired containers: `UIDialogs_Standalone`, `UIInAppPurchase`, `UIMailLayout`,
+  `UICraftingLayout`; object: `UISettingDialog`; system menu: `UISystemDialog`.
+  `CanvasGameplayMobile.prefab` and the two Survival canvases still carry the stock Escape entry.
 
 - **MMORPG KIT updated from the creator's GitHub** (2026-08-29) — the single largest change in
   this log. The Asset Store package was ~7 months stale: `Core` matched upstream commit
