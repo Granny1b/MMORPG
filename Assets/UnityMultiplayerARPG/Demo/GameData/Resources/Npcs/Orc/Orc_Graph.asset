@@ -196,17 +196,7 @@ MonoBehaviour:
   description: 
   descriptions: []
   icon: {fileID: 0}
-  addressableIcon:
-    m_AssetGUID: 
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
   voice: {fileID: 0}
-  addressableVoice:
-    m_AssetGUID: 
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
   enterDialogActionOnClient: {fileID: 0}
   enterDialogActionsOnClient: []
   enterDialogActionOnServer: {fileID: 0}
@@ -483,17 +473,7 @@ MonoBehaviour:
   description: Hello, Human
   descriptions: []
   icon: {fileID: 0}
-  addressableIcon:
-    m_AssetGUID: 
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
   voice: {fileID: 0}
-  addressableVoice:
-    m_AssetGUID: 
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
   enterDialogActionOnClient: {fileID: 0}
   enterDialogActionsOnClient: []
   enterDialogActionOnServer: {fileID: 0}
@@ -793,17 +773,7 @@ MonoBehaviour:
 '
   descriptions: []
   icon: {fileID: 0}
-  addressableIcon:
-    m_AssetGUID: 
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
   voice: {fileID: 0}
-  addressableVoice:
-    m_AssetGUID: 
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
   enterDialogActionOnClient: {fileID: 0}
   enterDialogActionsOnClient: []
   enterDialogActionOnServer: {fileID: 0}

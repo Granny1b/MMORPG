@@ -20,11 +20,6 @@ MonoBehaviour:
   languageSpecificDescriptions: []
   category: Daily
   icon: {fileID: 0}
-  addressableIcon:
-    m_AssetGUID: 
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
   requirement:
     character: {fileID: 0}
     faction: {fileID: 0}

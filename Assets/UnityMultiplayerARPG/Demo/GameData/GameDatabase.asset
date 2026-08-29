@@ -27,10 +27,6 @@ MonoBehaviour:
   vehicleEntities:
   - {fileID: 114414903903199864, guid: ff9787a13f67d204f9931790d6db8e1d, type: 3}
   otherNetworkObjects: []
-  addressablePlayerCharacterEntities: []
-  addressableMonsterCharacterEntities: []
-  addressableVehicleEntities: []
-  addressableOtherNetworkObjects: []
   attributes:
   - {fileID: 11400000, guid: cf50e3647cfae0e44b683163d2171277, type: 2}
   - {fileID: 11400000, guid: cd3d2fb4f3c67fd4dbba3bd0ccd0095e, type: 2}
@@ -90,6 +86,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 526ec951a3646104eabc7ed548e89726, type: 2}
   - {fileID: 11400000, guid: cef25d7570c129340a039818a8fca7c6, type: 2}
   - {fileID: 11400000, guid: effa88bea19e7fe4babaf64ec0c771a2, type: 2}
+  - {fileID: 11400000, guid: 0241a06b54a0a45968fea89c5e2dabdb, type: 2}
+  - {fileID: 11400000, guid: eb55a8b7b8df844f88b4e2241b36c257, type: 2}
   - {fileID: 11400000, guid: c644cbfe48942184985385fdf09fa774, type: 2}
   - {fileID: 11400000, guid: a46be55d0bb06d841869dcc11c617100, type: 2}
   - {fileID: 11400000, guid: 5c41c66bae9e3894998afbb3f19cdfd5, type: 2}
@@ -99,8 +97,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 93c389fe9d40638469bffd9de26d31ba, type: 2}
   - {fileID: 11400000, guid: b64f816f68b7d6a42b7d3857a4b5d931, type: 2}
   - {fileID: 11400000, guid: 0a439d3c316c36f4cae03a253c8839d4, type: 2}
-  - {fileID: 11400000, guid: 0241a06b54a0a45968fea89c5e2dabdb, type: 2}
-  - {fileID: 11400000, guid: eb55a8b7b8df844f88b4e2241b36c257, type: 2}
   itemCraftFormulas:
   - {fileID: 11400000, guid: 4fa8022457399b045aa759a2adf444be, type: 2}
   - {fileID: 11400000, guid: f3bf4536f24588043986c153c1e7e430, type: 2}
@@ -155,10 +151,10 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 7082a6e38d055b6488ab9c67d95d3907, type: 2}
   - {fileID: 11400000, guid: 00144a2dd7250bb4ab60d49c66cc48f0, type: 2}
   - {fileID: 11400000, guid: dda02c5321170454e9c7eaab45f1a277, type: 2}
+  - {fileID: 11400000, guid: 64b1275dffe46c04b9df1e7b24e11a67, type: 2}
   - {fileID: 11400000, guid: 558b16358ddfa6346b5e5e6211155da6, type: 2}
   - {fileID: 11400000, guid: 401cce43094968c4bbca0024b52a4644, type: 2}
   - {fileID: 11400000, guid: 494792636296b624fbf4ff17294217c5, type: 2}
-  - {fileID: 11400000, guid: 64b1275dffe46c04b9df1e7b24e11a67, type: 2}
   playerIcons: []
   playerFrames: []
   playerBackgrounds: []
@@ -177,6 +173,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: ac04beb40ca9c70478d208fcfc254bea, type: 2}
   statusEffects:
   - {fileID: 11400000, guid: 3fbe8e97c3db52e4da23d8105901819c, type: 2}
+  - {fileID: 11400000, guid: 03e8369db761e104e9a44a6735825393, type: 2}
+  - {fileID: 11400000, guid: f9cc13cd64ce7464ab2dfced17df9f2c, type: 2}
   playerCharacters:
   - {fileID: 11400000, guid: 0122f68aff58f2a4e995208bf67f18ba, type: 2}
   - {fileID: 11400000, guid: f924bc5e901d46141bb3c3ca9b6ef27a, type: 2}
