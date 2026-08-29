@@ -56606,7 +56606,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MultiplayerARPG.PlayerCharacterEntity
   _behaviourIndex: 0
-  entityTitle: 
+  entityTitle: Synty Male
   entityTitles: []
   syncTitle:
     _behaviour: {fileID: 0}
@@ -56802,7 +56802,11 @@ MonoBehaviour:
     _elementId: 0
     logTagName: 
     isDebug: 0
-  characterDatabases: []
+  characterDatabases:
+  - {fileID: 11400000, guid: 8c31218a0e7c7604ea751e1a56a13a76, type: 2}
+  - {fileID: 11400000, guid: f924bc5e901d46141bb3c3ca9b6ef27a, type: 2}
+  - {fileID: 11400000, guid: 0122f68aff58f2a4e995208bf67f18ba, type: 2}
+  - {fileID: 11400000, guid: 1f9d2937bcd564b47b49c53b58e4e8af, type: 2}
   dataId:
     _behaviour: {fileID: 0}
     _elementId: 0
