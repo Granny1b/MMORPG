@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 114096437919969166}
   - component: {fileID: 4649721385588621722}
   m_Layer: 0
-  m_Name: TopDownWasdPlayerCharacterController
+  m_Name: TopDownAimController
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -42,7 +42,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 1287010141937558}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 43638d0fc9612d5448c201d1038910d8, type: 3}
+  m_Script: {fileID: 11500000, guid: 92a239f7c07156a41ab8d13d364d3172, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   gameplayCameraPrefab: {fileID: 114548782499701980, guid: e5b06e9fb70836f4bb5da551fcf430c9,
@@ -70,6 +70,13 @@ MonoBehaviour:
   uiNotBlockForStandalone: 1
   uiNotBlockForMobile: 1
   uiNotBlockForConsole: 0
+  faceCursor: 1
+  turnImmediately: 1
+  strictCursorAim: 1
+  faceCursorWhileDoingAction: 1
+  ignoreWhileCursorOverUI: 1
+  aimPlaneHeightOffset: 0
+  minAimDistance: 0.2
 --- !u!114 &4649721385588621722
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -107,17 +107,38 @@ namespace Insthync.CameraAndInput
             }
         }
 
+        private void OnDisable()
+        {
+            SaveCameraPrefs();
+        }
+
+        private void OnApplicationQuit()
+        {
+            SaveCameraPrefs();
+        }
+
+        /// <summary>
+        /// Persists the camera state once on teardown, rather than every frame in Update().
+        /// NOTE: deliberately not hooked to OnDestroy - the base FollowCamera declares a private
+        /// OnDestroy, and adding one here would hide it from Unity's message dispatch and leak
+        /// its _targetFollower cleanup.
+        /// </summary>
+        protected virtual void SaveCameraPrefs()
+        {
+            // [ExecuteInEditMode] means these callbacks also fire on editor domain reloads.
+            if (!Application.isPlaying)
+                return;
+            if (!isSaveCamera)
+                return;
+            PlayerPrefs.SetFloat(savePrefsPrefix + "_XRotation", xRotation);
+            PlayerPrefs.SetFloat(savePrefsPrefix + "_YRotation", yRotation);
+            PlayerPrefs.SetFloat(savePrefsPrefix + "_ZoomDistance", zoomDistance);
+            PlayerPrefs.Save();
+        }
+
         protected override void Update()
         {
             float deltaTime = Time.deltaTime;
-
-            if (isSaveCamera)
-            {
-                PlayerPrefs.SetFloat(savePrefsPrefix + "_XRotation", xRotation);
-                PlayerPrefs.SetFloat(savePrefsPrefix + "_YRotation", yRotation);
-                PlayerPrefs.SetFloat(savePrefsPrefix + "_ZoomDistance", zoomDistance);
-                PlayerPrefs.Save();
-            }
 
             // X rotation
             if (updateRotation || updateRotationX)

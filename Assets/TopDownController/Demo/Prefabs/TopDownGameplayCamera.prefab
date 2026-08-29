@@ -110,7 +110,7 @@ MonoBehaviour:
   xRotation: 40
   yRotation: 0
   useTargetYRotation: 0
-  zoomDistance: 12
+  zoomDistance: 20
   zoomByAspectRatio: 0
   zoomByAspectRatioSettings:
   - width: 16
@@ -185,7 +185,7 @@ MonoBehaviour:
   aimAssistMaxAngleFromFollowingTarget: 360
   recoilReturnSpeed: 2
   recoilSmoothing: 15
-  isSaveCamera: 0
+  isSaveCamera: 1
   savePrefsPrefix: GAMEPLAY
 --- !u!114 &114185086765178122
 MonoBehaviour:

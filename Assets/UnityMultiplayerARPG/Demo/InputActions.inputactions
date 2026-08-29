@@ -410,6 +410,17 @@
                 },
                 {
                     "name": "",
+                    "id": "9efd0169-b7dd-41ab-a571-0bda1cc3f361",
+                    "path": "<Mouse>/leftButton",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Attack",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
                     "id": "093f2e89-3f9d-4c2e-898b-1521e1247b4e",
                     "path": "<Gamepad>/buttonWest",
                     "interactions": "",
