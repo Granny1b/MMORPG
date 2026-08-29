@@ -35,6 +35,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &212600357658168516
 SpriteRenderer:
+  serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -50,6 +51,11 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 4294967295
   m_RendererPriority: 0
   m_Materials:
@@ -71,9 +77,11 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: 794791751
   m_SortingLayer: 1
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: c330fa25d7995ce40ae0121750fb9a23, type: 3}
   m_Color: {r: 0.11764706, g: 0.11764706, b: 0.11764706, a: 0.5}
   m_FlipX: 0
@@ -83,7 +91,6 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!114 &114068373179492914
 MonoBehaviour:
@@ -132,6 +139,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &212146428497973652
 SpriteRenderer:
+  serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -147,6 +155,11 @@ SpriteRenderer:
   m_ReflectionProbeUsage: 1
   m_RayTracingMode: 0
   m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
   m_RenderingLayerMask: 4294967295
   m_RendererPriority: 0
   m_Materials:
@@ -168,9 +181,11 @@ SpriteRenderer:
   m_AutoUVMaxDistance: 0.5
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
   m_SortingLayerID: -737121915
   m_SortingLayer: 2
   m_SortingOrder: 0
+  m_MaskInteraction: 0
   m_Sprite: {fileID: 21300156, guid: 50b8f77b7fd1c0e459b687ecbeb1c701, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -180,7 +195,6 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!114 &114186577926800302
 MonoBehaviour:
@@ -344,6 +358,7 @@ GameObject:
   - component: {fileID: 5396559224469950011}
   - component: {fileID: 6136991298170714632}
   - component: {fileID: 1430920412083772934}
+  - component: {fileID: 3364276112920890423}
   m_Layer: 0
   m_Name: OrcsWarrior2D
   m_TagString: Untagged
@@ -377,7 +392,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!50 &50366234597687626
 Rigidbody2D:
-  serializedVersion: 4
+  serializedVersion: 5
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -388,8 +403,8 @@ Rigidbody2D:
   m_UseFullKinematicContacts: 0
   m_UseAutoMass: 0
   m_Mass: 1
-  m_LinearDrag: 0
-  m_AngularDrag: 0.05
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
   m_GravityScale: 0
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -415,21 +430,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoAssignAssetIdIfEmpty: 1
+  forceUseAssetGUIDAsAssetId: 0
   assetId: 
-  autoAssignSceneObjectId: 1
-  sceneObjectId: 0
+  autoAssignSceneObjectIdIfEmpty: 1
+  sceneObjectId: 
+  forceNotSceneObject: 0
   networkedObjectId: 0
+  syncChannelId: 0
+  defaultRpcChannelId: 0
+  subChannelId: 
   visibleRange: 0
   alwaysVisible: 0
   doNotDestroyWhenDisconnect: 0
   poolingSize: 0
+  forceRenderingOffWhileHidding: 1
+  muteAudioSourceWhileHidding: 1
   onGetInstance:
     m_PersistentCalls:
       m_Calls: []
-  onSubscriberAdded:
-    m_PersistentCalls:
-      m_Calls: []
-  onSubscriberRemoved:
+  onPushBack:
     m_PersistentCalls:
       m_Calls: []
 --- !u!114 &114534462938717378
@@ -468,34 +487,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 61d2259a73df6f04086ff215d8c8c32d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  behaviourIndex: 0
-  dataChannel: 0
-  sendOptions: 2
-  sendInterval: 0.1
-  syncMetaDataId:
-    _behaviour: {fileID: 0}
-    _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+  _behaviourIndex: 0
   entityTitle: Warrior
   entityTitles: []
   syncTitle:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 
+    logTagName: 
+    isDebug: 0
   ownerObjects: []
   nonOwnerObjects: []
   model: {fileID: 114361600907372614}
@@ -503,6 +502,26 @@ MonoBehaviour:
   fpsCameraTargetTransform: {fileID: 0}
   canSideSprint: 0
   canBackwardSprint: 0
+  syncOverrideInput:
+    _behaviour: {fileID: 0}
+    _elementId: 0
+    logTagName: 
+    isDebug: 0
+  syncOverrideMoveSpeed:
+    _behaviour: {fileID: 0}
+    _elementId: 0
+    logTagName: 
+    isDebug: 0
+  syncOverrideJumpHeight:
+    _behaviour: {fileID: 0}
+    _elementId: 0
+    logTagName: 
+    isDebug: 0
+  syncOverrideGravityRate:
+    _behaviour: {fileID: 0}
+    _elementId: 0
+    logTagName: 
+    isDebug: 0
   combatTextTransform: {fileID: 4756678810346610}
   opponentAimTransform: {fileID: 4756678810346610}
   isStaticHitBoxes: 0
@@ -518,28 +537,16 @@ MonoBehaviour:
   onDamageMissed:
     m_PersistentCalls:
       m_Calls: []
-  isImmune:
+  isInvincible:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   currentHp:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   meleeDamageTransform: {fileID: 863990141979263679}
   missileDamageTransform: {fileID: 4964309914312846}
   characterUiTransform: {fileID: 4356832015785686}
@@ -559,493 +566,308 @@ MonoBehaviour:
   id:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 
+    logTagName: 
+    isDebug: 0
+  metaDataId:
+    _behaviour: {fileID: 0}
+    _elementId: 0
+    logTagName: 
+    isDebug: 0
   level:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   exp:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   currentMp:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   currentStamina:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 0
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   currentFood:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   currentWater:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   equipWeaponSet:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   isWeaponsSheathed:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 2
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 2
-    _value: 0
+    logTagName: 
+    isDebug: 0
   pitch:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 2
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 1
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   lookPosition:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 2
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 1
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: {x: 0, y: 0, z: 0}
+    logTagName: 
+    isDebug: 0
     valueChangeDistance: 0.01
   aimPosition:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 2
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 1
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
+    logTagName: 
+    isDebug: 0
   targetEntityId:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 2
-    sendInterval: 0.1
-    dataChannel: 3
-    deliveryMethod: 2
-    clientDataChannel: 3
-    clientDeliveryMethod: 2
-    _value: 0
+    logTagName: 
+    isDebug: 0
   mount:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 1
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value:
-      type: 0
-      sourceId: 
-      mountRemainsDuration: 0
-      level: 0
-      currentHp: 0
+    logTagName: 
+    isDebug: 0
+  summoner:
+    _behaviour: {fileID: 0}
+    _elementId: 0
+    logTagName: 
+    isDebug: 0
   selectableWeaponSets:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 0
+    logTagName: 
+    isDebug: 0
   attributes:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 0
+    logTagName: 
+    isDebug: 0
   skills:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 0
+    logTagName: 
+    isDebug: 0
   skillUsages:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 1
+    logTagName: 
+    isDebug: 0
   buffs:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 0
+    logTagName: 
+    isDebug: 0
   equipItems:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 0
+    logTagName: 
+    isDebug: 0
   nonEquipItems:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 1
+    logTagName: 
+    isDebug: 0
   summons:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 1
+    logTagName: 
+    isDebug: 0
   characterDatabases:
   - {fileID: 11400000, guid: df4b0a5cc68c15a4090f0dc937a52246, type: 2}
-  controllerPrefab: {fileID: 114072456199855828, guid: 9b0dda0d289a10c40ba6b4f2444b5b0e,
-    type: 3}
-  addressableControllerPrefab:
-    m_AssetGUID: 
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
   dataId:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   factionId:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   statPoint:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 1
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   skillPoint:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 1
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   gold:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 1
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   userGold:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 1
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   userCash:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 1
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   partyId:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   guildId:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
+  persistChannel:
+    _behaviour: {fileID: 0}
+    _elementId: 0
+    logTagName: 
+    isDebug: 0
+  persistMapName:
+    _behaviour: {fileID: 0}
+    _elementId: 0
+    logTagName: 
+    isDebug: 0
+  persistPosition:
+    _behaviour: {fileID: 0}
+    _elementId: 0
+    logTagName: 
+    isDebug: 0
+    valueChangeDistance: 0.01
+  persistSafeArea:
+    _behaviour: {fileID: 0}
+    _elementId: 0
+    logTagName: 
+    isDebug: 0
   respawnMapName:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 1
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 
+    logTagName: 
+    isDebug: 0
   respawnPosition:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 1
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: {x: 0, y: 0, z: 0}
+    logTagName: 
+    isDebug: 0
     valueChangeDistance: 0.01
   iconDataId:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   frameDataId:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
+  backgroundDataId:
+    _behaviour: {fileID: 0}
+    _elementId: 0
+    logTagName: 
+    isDebug: 0
   titleDataId:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   lastDeadTime:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 1
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   unmuteTime:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 1
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   isPkOn:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   pkPoint:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   consecutivePkKills:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 1
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   reputation:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 0
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   isWarping:
     _behaviour: {fileID: 0}
     _elementId: 0
-    syncBehaviour: 0
-    syncMode: 1
-    sendInterval: 0.1
-    dataChannel: 0
-    deliveryMethod: 2
-    clientDataChannel: 0
-    clientDeliveryMethod: 1
-    _value: 0
+    logTagName: 
+    isDebug: 0
   hotkeys:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 1
+    logTagName: 
+    isDebug: 0
   quests:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 1
+    logTagName: 
+    isDebug: 0
   currencies:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 1
+    logTagName: 
+    isDebug: 0
   privateBools:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 1
+    logTagName: 
+    isDebug: 0
   privateInts:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 1
+    logTagName: 
+    isDebug: 0
   privateFloats:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 1
+    logTagName: 
+    isDebug: 0
   publicBools:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 0
+    logTagName: 
+    isDebug: 0
   publicInts:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 0
+    logTagName: 
+    isDebug: 0
   publicFloats:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 0
+    logTagName: 
+    isDebug: 0
   guildSkills:
     _behaviour: {fileID: 0}
     _elementId: 0
-    dataChannel: 0
-    forOwnerOnly: 0
+    logTagName: 
+    isDebug: 0
 --- !u!58 &58222117543592658
 CircleCollider2D:
   m_ObjectHideFlags: 0
@@ -1054,6 +876,7 @@ CircleCollider2D:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1789174580581568}
   m_Enabled: 1
+  serializedVersion: 3
   m_Density: 1
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -1077,9 +900,9 @@ CircleCollider2D:
     m_Bits: 4294967295
   m_IsTrigger: 0
   m_UsedByEffector: 0
-  m_UsedByComposite: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0}
-  serializedVersion: 2
   m_Radius: 0.05
 --- !u!61 &61584394195405170
 BoxCollider2D:
@@ -1089,6 +912,7 @@ BoxCollider2D:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1789174580581568}
   m_Enabled: 1
+  serializedVersion: 3
   m_Density: 1
   m_Material: {fileID: 0}
   m_IncludeLayers:
@@ -1112,7 +936,8 @@ BoxCollider2D:
     m_Bits: 4294967295
   m_IsTrigger: 1
   m_UsedByEffector: 0
-  m_UsedByComposite: 0
+  m_CompositeOperation: 0
+  m_CompositeOrder: 0
   m_Offset: {x: 0, y: 0.5}
   m_SpriteTilingProperty:
     border: {x: 0, y: 0, z: 0, w: 0}
@@ -1123,7 +948,6 @@ BoxCollider2D:
     drawMode: 0
     adaptiveTiling: 0
   m_AutoTiling: 0
-  serializedVersion: 2
   m_Size: {x: 0.5, y: 1}
   m_EdgeRadius: 0
 --- !u!114 &114464384706255784
@@ -1138,14 +962,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e0d7dfc5b7cb2c04cac88f6f134fbd32, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  behaviourIndex: 0
-  dataChannel: 0
-  sendOptions: 0
-  sendInterval: 0.1
+  _behaviourIndex: 0
   stoppingDistance: 0.1
   movementSecure: 1
   dashingForceApplier:
-    mode: 0
     speed: 20
     deceleration: 20
     duration: 0
@@ -1163,11 +983,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainTpsModel: {fileID: 114361600907372614}
-  addressableFpsModelPrefab:
-    m_AssetGUID: 
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
+  fpsModelPrefab: {fileID: 0}
   fpsModelPositionOffsets: {x: 0, y: 0, z: 0}
   fpsModelRotationOffsets: {x: 0, y: 0, z: 0}
   vehicleModels: []
@@ -1307,7 +1123,7 @@ MonoBehaviour:
   setAnimatorClipsForTest: 0
 --- !u!95 &95588922360897908
 Animator:
-  serializedVersion: 5
+  serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -1321,6 +1137,7 @@ Animator:
   m_ApplyRootMotion: 0
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
   m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
@@ -1468,10 +1285,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f59b792856e9da488870d43b58f675c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  behaviourIndex: 0
-  dataChannel: 0
-  sendOptions: 0
-  sendInterval: 0.1
+  _behaviourIndex: 0
 --- !u!114 &3370219688137110401
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1484,10 +1298,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f653b457982431e418621ca9efdedad2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  behaviourIndex: 0
-  dataChannel: 0
-  sendOptions: 0
-  sendInterval: 0.1
+  _behaviourIndex: 0
   maxQueueSize: 5
 --- !u!114 &5396559224469950011
 MonoBehaviour:
@@ -1501,10 +1312,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 28b7c18fcf2a2384b8e3e93ea376db6f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  behaviourIndex: 0
-  dataChannel: 0
-  sendOptions: 0
-  sendInterval: 0.1
+  _behaviourIndex: 0
 --- !u!114 &6136991298170714632
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1517,10 +1325,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8af2fdfb0f755ab4a9847cb15871c95d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  behaviourIndex: 0
-  dataChannel: 0
-  sendOptions: 0
-  sendInterval: 0.1
+  _behaviourIndex: 0
 --- !u!114 &1430920412083772934
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1533,10 +1338,19 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 24cd55fe8aac141488b495f85d5eaef4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  behaviourIndex: 0
-  dataChannel: 0
-  sendOptions: 0
-  sendInterval: 0.1
+  _behaviourIndex: 0
+--- !u!114 &3364276112920890423
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1789174580581568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3095f43324f7cc948b12c70cae24cecd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MultiplayerARPG.PlayerCharacterItemLockAndExpireComponent
 --- !u!1 &1858731753981642
 GameObject:
   m_ObjectHideFlags: 0

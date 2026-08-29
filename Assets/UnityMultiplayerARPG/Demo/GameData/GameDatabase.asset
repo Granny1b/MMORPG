@@ -19,6 +19,7 @@ MonoBehaviour:
   - {fileID: 114666491478848388, guid: 545a32703d951094185d08198bc8316d, type: 3}
   - {fileID: 114586576023340800, guid: 0f0836d25b5171245a4c66deb284f48d, type: 3}
   - {fileID: 114191363084881030, guid: c4ba22d80e3951149993cfdfa83d5bbd, type: 3}
+  - {fileID: 143658971448182001, guid: eed144d63bc846040b206afa9fefdb4f, type: 3}
   monsterCharacterEntities:
   - {fileID: 114107677553822186, guid: 2124e2e5e8dd2794ea8c8aff808d0096, type: 3}
   - {fileID: 114313543944479198, guid: c26675f5ea04ade429c509dd5998a3a3, type: 3}
