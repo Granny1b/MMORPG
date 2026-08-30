@@ -431,7 +431,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   autoAssignAssetIdIfEmpty: 1
   forceUseAssetGUIDAsAssetId: 0
-  assetId: 
+  assetId: 16d3c42383dac0048b31cb89d7da574d
   autoAssignSceneObjectIdIfEmpty: 1
   sceneObjectId: 
   forceNotSceneObject: 0

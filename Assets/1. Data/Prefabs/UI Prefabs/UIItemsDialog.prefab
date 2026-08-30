@@ -17991,6 +17991,12 @@ MonoBehaviour:
   - armorType: {fileID: 11400000, guid: 926f1d3f76315644784baae8e6482caf, type: 2}
     equipSlotIndex: 1
     ui: {fileID: 6766656793880246380}
+  - armorType: {fileID: 11400000, guid: 0829b8372f9eb6a499e6b68766cd15e8, type: 2}
+    equipSlotIndex: 0
+    ui: {fileID: 1938258329892813826}
+  - armorType: {fileID: 11400000, guid: acacbce03b495b14c81834e5cdc2b3e8, type: 2}
+    equipSlotIndex: 0
+    ui: {fileID: 8304506587911317829}
   notForOwningCharacter: 0
 --- !u!114 &6767436560817172616
 MonoBehaviour:

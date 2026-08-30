@@ -9,6 +9,68 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Changed
 
+- **UI dialog chain forked out of the kit tree** (2026-08-30) — `CanvasGameplay_G` now uses
+  `Assets/1. Data/Prefabs/UI Prefabs/UIDialogs_G.prefab`, a fork of `UIDialogs_Standalone` whose
+  `UIItemsDialog` child points at `1. Data/Prefabs/UI Prefabs/UIItemsDialog.prefab`. No kit prefab
+  is modified by the swap.
+  - Forking `UIDialogs_Standalone` does not fork the ~25 dialogs inside it: they remain instances of
+    their own kit prefabs (`UIQuestDialog`, `UINpcDialog`, ...), so kit fixes to those still flow
+    through. Only the one dialog actually replaced is detached.
+  - Swapped with `PrefabUtility.ReplacePrefabAssetOfPrefabInstance` (`ObjectMatchMode.ByHierarchy`)
+    rather than deleting and re-adding the instance. Deleting would have broken every reference
+    pointing into the subtree; 38 such references exist from elsewhere in the canvas, and all 38
+    survived — including `UIGenericLayout/Menu/ButtonItems.onClick -> UIItemsDialog.Toggle`.
+  - The instance is still *named* `UIDialogs_Standalone` even though it now comes from
+    `UIDialogs_G` (`changeRootNameToAssetName` left false). Renaming is safe —
+    `UIEscapeWindowsHandler.excludingWindows` is a `List<UIBase>`, so it matches by reference, not
+    by path — but the name was left alone to keep the swap minimal.
+
+- **`Legs` and `Cloak` equip slots bound in `UIItemsDialog`** (2026-08-30) — the `EquipSlotLegs` and
+  `EquipSlotCloak` objects already existed with `UICharacterItem` components, but
+  `UIEquipItems.otherEquipSlots` still listed only six entries. The GameObjects alone do nothing;
+  that array is what binds a slot to an armor type and gives it an equip position. Now eight:
+  Head, Body, Gloves, Shoes, Ring, Ring, Legs, Cloak.
+
+- **Project game data moved out of the kit's `Demo/` tree** (2026-08-30) — created
+  `Assets/1. Data/GameData/` mirroring the kit's own category names (ArmorTypes, Items/Armors/...,
+  Skills, Quests and the rest), and moved the first slice into it: the `Legs` and `Cloak` armor
+  types and the `Legs001_G` armor item.
+  - Moved with `AssetDatabase.MoveAsset`, which preserves GUIDs, so the `GameDatabase` item list and
+    the item's armor-type reference survived untouched — verified after the move.
+  - Deliberately **not** under a `Resources/` folder, unlike the kit's copy. The project uses the
+    explicit-list `GameDatabase`, not `ResourcesFolderGameDatabase`, so game data does not need to
+    be in `Resources/` — and everything under one is force-included in every build whether it is
+    referenced or not.
+  - Empty folders carry a `.gitkeep`. Git does not track empty directories, so without one the
+    folder `.meta` would arrive at a fresh clone as an orphan and Unity would delete it, taking the
+    skeleton with it. Unity ignores files beginning with `.`, so they generate no `.meta` of their
+    own. Delete each one as its folder gets real content.
+  - What cannot move: *edits* to kit-named files, such as the equip slots being added to
+    `UIItemsDialog.prefab`. Those stay in `Demo/` and rely on this log to be re-applied after an
+    Asset Store re-import. The `Demo*` trees are not covered by the GitHub kit update.
+
+- **Equipment sockets renamed `Pants` -> `Legs` and `Back` -> `Cloak`** (2026-08-30) — in
+  `SyntyEquipmentContainerBuilder`'s slot map and on `SyntyPlayerCharacter`, so socket names follow
+  the kit's armor-type convention, which is body parts rather than garments (Body, Head, Gloves,
+  Shoes). Nothing required them to match the armor types — `ArmorType.EquipPosition` picks the
+  inventory slot and `EquipmentModel.equipSocket` picks the mesh container, and the kit never
+  compares the two — but one arbitrary name out of step was worth removing while only three
+  references existed.
+  - Renamed in place rather than by re-running the builder: `ApplyContainers` matches by socket
+    name and only replaces same-named entries, so a run producing `Legs` would have added it
+    alongside the old `Pants` container instead of superseding it.
+  - Safe whenever it is done: equip position is derived from the item's armor type at lookup time
+    in `IndexOfEquipItemByEquipPosition`, never stored on the character, so renaming cannot orphan
+    equipped gear.
+
+- **`Legs001_G`** (2026-08-30) — given an `EquipmentModel` (`equipSocket: Legs`,
+  `useInstantiatedObject`, `instantiatedObjectIndex: 1`) and added to the `GameDatabase` item list.
+  Without the first it equips invisibly; without the second it does not exist at runtime, since the
+  database holds explicit references rather than scanning `Resources/`. Its `Legs` armor type comes
+  along automatically through `ArmorItem.PrepareRelatesData()`.
+  - Still outstanding: no slot for equip position `Legs` in `UIEquipItems.otherEquipSlots` on
+    `UIItemsDialog.prefab`, so the item has nowhere to be displayed.
+
 - **`.gitignore`** (2026-08-29) — the BLINK icon pack is no longer committed.
   `Assets/2. Art/Blink/` is ~214 MB across 608 PNG icons and 15 PSD sources, all of it purchased
   and re-downloadable, and every PNG/PSD would otherwise go through Git LFS. It was still
