@@ -31696,7 +31696,7 @@ Transform:
   m_GameObject: {fileID: 3856699178767925128}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalPosition: {x: 0, y: 1.881, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -32594,7 +32594,7 @@ Transform:
   m_GameObject: {fileID: 3982856646966044372}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 2.322712, z: 0}
+  m_LocalPosition: {x: 0, y: 2.564, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -54302,7 +54302,7 @@ MonoBehaviour:
       - {fileID: 3056031023690163000}
       - {fileID: 6852865149053678883}
     activatingInstantiateObjectIndex: 0
-  - equipSocket: Pants
+  - equipSocket: Legs
     transform: {fileID: 25253457587830421}
     defaultModel: {fileID: 0}
     instantiatedObjects: []
@@ -54591,7 +54591,7 @@ MonoBehaviour:
       instantiatedObjects: []
     instantiatedObjectGroups: []
     activatingInstantiateObjectIndex: 0
-  - equipSocket: Back
+  - equipSocket: Cloak
     transform: {fileID: 1795105712716786571}
     defaultModel: {fileID: 0}
     instantiatedObjects:

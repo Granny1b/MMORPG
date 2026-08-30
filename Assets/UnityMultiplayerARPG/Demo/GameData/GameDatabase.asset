@@ -96,6 +96,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 93c389fe9d40638469bffd9de26d31ba, type: 2}
   - {fileID: 11400000, guid: b64f816f68b7d6a42b7d3857a4b5d931, type: 2}
   - {fileID: 11400000, guid: 0a439d3c316c36f4cae03a253c8839d4, type: 2}
+  - {fileID: 11400000, guid: 9bc44b8886e1083478dc1fd24943aff1, type: 2}
   itemCraftFormulas:
   - {fileID: 11400000, guid: 4fa8022457399b045aa759a2adf444be, type: 2}
   - {fileID: 11400000, guid: f3bf4536f24588043986c153c1e7e430, type: 2}
@@ -113,6 +114,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a1143a42e9d328c4988c7b1b33b11451, type: 2}
   - {fileID: 11400000, guid: 926f1d3f76315644784baae8e6482caf, type: 2}
   - {fileID: 11400000, guid: 745bc973ccf3f5640af5285026a87d5d, type: 2}
+  - {fileID: 11400000, guid: 0829b8372f9eb6a499e6b68766cd15e8, type: 2}
+  - {fileID: 11400000, guid: acacbce03b495b14c81834e5cdc2b3e8, type: 2}
   weaponTypes:
   - {fileID: 11400000, guid: dea0ff090cc71dd41ad5154120895633, type: 2}
   - {fileID: 11400000, guid: d433f880a1c9d6149bcbf3b5676ea6a0, type: 2}

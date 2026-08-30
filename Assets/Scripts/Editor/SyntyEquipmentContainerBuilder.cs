@@ -59,7 +59,9 @@ namespace MMORPGGranny.EditorTools
             new SlotDef("Gloves",
                 "{G}_Parts/{G}_08_Hand_Right",
                 "{G}_Parts/{G}_09_Hand_Left"),
-            new SlotDef("Pants",
+            // Socket names follow the kit's armor-type convention, which is body parts rather than
+            // garments: Body, Head, Gloves, Shoes - so Legs, not Pants.
+            new SlotDef("Legs",
                 "{G}_Parts/{G}_10_Hips",
                 "{G}_Parts/{G}_11_Leg_Right",
                 "{G}_Parts/{G}_12_Leg_Left"),
@@ -80,7 +82,7 @@ namespace MMORPGGranny.EditorTools
             new SlotDef("Hair", "All_Gender_Parts/All_01_Hair"),
             new SlotDef("Helmet", "All_Gender_Parts/All_02_Head_Attachment/Helmet"),
             new SlotDef("ChestAttachment", "All_Gender_Parts/All_03_Chest_Attachment"),
-            new SlotDef("Back", "All_Gender_Parts/All_04_Back_Attachment"),
+            new SlotDef("Cloak", "All_Gender_Parts/All_04_Back_Attachment"),
             new SlotDef("Shoulders",
                 "All_Gender_Parts/All_05_Shoulder_Attachment_Right",
                 "All_Gender_Parts/All_06_Shoulder_Attachment_Left"),
