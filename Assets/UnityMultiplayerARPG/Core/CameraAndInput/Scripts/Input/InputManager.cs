@@ -185,7 +185,8 @@ namespace Insthync.CameraAndInput
 #endif
 
 #if ENABLE_INPUT_SYSTEM
-                if (TryGetInputAction(name, out InputAction inputAction))
+                bool hasInputAction = TryGetInputAction(name, out InputAction inputAction);
+                if (hasInputAction)
                 {
                     float axis = inputAction.ReadValue<float>();
                     if (raw)
@@ -201,11 +202,22 @@ namespace Insthync.CameraAndInput
 #endif
 
 #if ENABLE_LEGACY_INPUT_MANAGER
-                if (IsValidAxis(name))
+#if ENABLE_INPUT_SYSTEM
+                // An axis bound in the input action asset owns that axis - never let the legacy input
+                // manager answer for it on frames where the action reads zero. With both backends active
+                // ("Active Input Handling: Both") they scale the same physical input differently, e.g. the
+                // mouse wheel reports 0.001/notch through the action's Scale processor but 0.1/notch through
+                // the legacy axis sensitivity. Falling through would apply that 100x value as a single-frame
+                // input spike, which the camera turns into a huge zoom jump.
+                if (!hasInputAction)
+#endif
                 {
-                    float axis = raw ? Input.GetAxisRaw(name) : Input.GetAxis(name);
-                    if (Mathf.Abs(axis) > 0.00001f)
-                        return axis;
+                    if (IsValidAxis(name))
+                    {
+                        float axis = raw ? Input.GetAxisRaw(name) : Input.GetAxis(name);
+                        if (Mathf.Abs(axis) > 0.00001f)
+                            return axis;
+                    }
                 }
 #endif
             }
