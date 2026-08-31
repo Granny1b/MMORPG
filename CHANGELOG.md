@@ -17,6 +17,187 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
   references to them will show up as missing. The animation and model packs are in a separate block
   in `.gitignore` so they are easy to un-ignore if they should be tracked after all.
 
+- **Two-hand sword attack, authored on the `TwoHandSword` WeaponType** (2026-08-30) —
+  `HumanM@Attack2H01` from Kevin Iglesias `Human Animations`, masked to `SyntyUpperBody` while
+  moving, trigger rate 0.350, carrying the same five swoosh clips as the 1H sword.
+  - Set on the **WeaponType asset** (`playableCharacterModelSettings.applyWeaponAnimations`) rather
+    than in the character prefab's `weaponAnimations` list. `TryGetWeaponAnimations` checks the
+    model's own list first and falls through to the WeaponType, so this is a project-wide default
+    that every humanoid model inherits, leaving the per-model list free for real exceptions.
+  - Edited the kit's `Demo/GameData/Resources/WeaponTypes/TwoHandSword.asset` in place rather than
+    forking it into `1. Data`: it is already referenced by `GameDatabase_G`, `DarkFortressSword001_G`
+    already uses the Demo `OneHandSword` type, and a fork would change the DataId and orphan the
+    registered `TwoHandSword001` item. The `Demo/` tree has no upstream repo, so the GitHub update
+    path never overwrites it.
+  - Clip chosen by measurement across all four male 2H attacks, 61 sampled poses on the Synty rig.
+    `2H01` moves the legs 0.159 against `2H03`'s 0.603 and `2H04`'s 0.907 (a lunge and a spin, both
+    unusable under an upper-body mask), while swinging harder than the 1H clip in service
+    (arms 0.672 vs 0.520). All four are self-contained - start pose equals end pose, zero root
+    drift - unlike the Synty combo clips that had to be discarded.
+  - `2H02` isolates marginally better (legs 0.131, ratio 5.17 vs 4.23) but lands contact at 0.73s
+    against `2H01`'s 0.56s, with a broad speed plateau instead of a single sharp peak. Both clear
+    the "subtle legs" bar, so timing decided it.
+  - `leftHandAttackAnimations` left empty: `equipType 2` means the type can never occupy the left
+    hand. The asymmetry that makes this safe is worth recording - **attack arrays do not fall back**
+    (`GetRightHandAttackAnimations` tests `!= null`, and an empty array is not null), so any weapon
+    type given an entry must carry at least one attack clip or its attacks resolve to a zero-length
+    action. Base locomotion states *do* fall back, because `SetBaseState` skips null clips.
+
+- **Weapon swing SFX** (2026-08-30) — five clips from
+  `Melee Weapons Pack 1/Designed/Weapon Swing/Design 1` on the sword's attack, played at random per
+  swing by `ActionAnimation.GetRandomAudioClip()`.
+  - Wired through a new `weaponAnimations` entry keyed to `OneHandSword` rather than onto
+    `defaultAnimations`, so the swoosh only plays with a sword equipped and not while unarmed.
+    Only `rightHandAttackAnimations` is filled — `SetBaseState` skips states with a null clip, so
+    idle and movement still fall back to the defaults rather than being blanked.
+  - **`genericAudioSource` had to be created.** `PlayActionAnimationAudioClip` routes through
+    `AudioManager.PlaySfxClipAtAudioSource(clip, GenericAudioSource)`, which returns early on a null
+    source — so the field being unset drops the audio silently, with nothing in the console. There
+    was no in-project example to copy: the kit's own `Male_CC` leaves it null too and relies on
+    animation events instead, as the field's own tooltip suggests. Added an `AudioSource` on the
+    character root, 3D (`spatialBlend 1`), `playOnAwake` off, rolloff 2-30m.
+
+- **`Assets/1. Data/Prefabs/Weapons/SM_Wep_Sword_01_G.prefab`** (2026-08-30) — a copy of the Dark
+  Fortress sword prefab in project space, with `DarkFortressSword001_G` repointed at it. The grip
+  offsets live on the item, so they were unaffected by the swap.
+  - The copy carries a defect from the source art: **two `MeshCollider` components** on the same
+    object. The kit does melee hit detection through damage transforms, not weapon colliders, and a
+    collider parented to a hand bone can disturb physics - worth removing both.
+
+- **`DarkFortressSword001_G`** (2026-08-30) — a `WeaponItem` using
+  `PolygonDarkFortress/Prefabs/Weapons/SM_Wep_Sword_01`, `weaponType: OneHandSword`, socket
+  `WeaponR`, registered in `GameDatabase_G`.
+  - Grip fitted through the item's own `EquipmentModel` transform fields rather than by moving the
+    `WeaponR` anchor: `localPosition (0.103, 0.020, -0.004)`, `localEulerAngles
+    (-57.98, 247.952, -245.48)`. Adjusting the anchor instead would shift every weapon ever
+    equipped; the item is the right level for a per-weapon fit, at the cost of each new weapon
+    needing its own.
+  - `localScale` stays at 1: the Dark Fortress sword is authored at real-world scale (mesh 1.466
+    units tall) and the FixedScale rig gives `WeaponR` a world scale of 1.
+  - `moveSpeedRateWhileAttacking` set to 1, from the field's default of **0**. It multiplies
+    movement speed directly (`moveSpeed *= MoveSpeedRateWhileAttacking` in
+    `BaseCharacterEntity_MoveFunctions`), so the default is a hard freeze for the length of every
+    swing. `MovementRestriction` only covers jump/dash/turn, so this rate is the only thing gating
+    movement while attacking.
+  - Note that `SyntySword001_G` still has the default 0 and no grip offsets, so it freezes movement
+    and sits wrong in the hand. The two prefabs have different pivots, so its offsets cannot be
+    copied from this one.
+
+- **Right-hand attacks reduced to one** (2026-08-30) — back to `HumanM@Attack1H04_R` alone;
+  `01_R` and `05_R` removed. The kit randomises between entries, and a single clip reads more
+  consistently.
+
+- **`Assets/Scripts/Gameplay/ActionLayerMaskUpdater.cs`** (2026-08-30) — hands the legs back to
+  locomotion when the character starts moving part-way through an attack.
+  - `AnimationPlayableBehaviour.PlayAction` chooses the action layer's avatar mask **once**, at the
+    instant the swing starts, and never revisits it. Begin an attack standing still — so the mask
+    falls through to `EmptyMask` and the attack drives the whole body — then walk, and the legs stay
+    welded to the attack clip for the rest of the swing while the character slides.
+  - The component re-evaluates the same condition the kit uses
+    (`MovementState.HasDirectionMovement()` and `IsGrounded`) each frame and swaps the mask on any
+    action layer whose weight is above zero. It only writes on a change of state, not every frame.
+  - Reads only public API — `PlayableCharacterModel.Behaviour`, `LayerMixer`, and the
+    `ACTION_LAYER` / `EmptyMask` members of `AnimationPlayableBehaviour`. No kit file is modified,
+    but a version that hides any of those breaks the build rather than failing quietly.
+  - Layers below `ACTION_LAYER` (base locomotion and left-hand wielding) are never touched.
+
+- **Right-hand attack variety** (2026-08-30) — `HumanM@Attack1H01_R` and `HumanM@Attack1H05_R` added
+  alongside `04_R`, since the kit picks among the entries at random. All three are self-contained
+  with zero hip drift; 01 and 05 swing harder (arm movement 0.591 and 0.576 against 04's 0.520) at
+  the cost of more leg movement. Trigger rates measured per clip from peak hand speed: 0.317, 0.267
+  and 0.283.
+
+- **Upper-body attack layering** (2026-08-30) — `Assets/1. Data/AvatarMasks/SyntyUpperBody.mask`
+  plus `avatarMaskWhileMoving` on the attack states, so attacks play on the torso while the legs
+  keep strafing. Standing still is left unmasked, so the attack's own (slight) footwork still reads.
+  - `PlayAction` picks the mask once, at the start of the swing:
+    `avatarMaskWhileMoving` applies only when grounded **and** moving, then falls through
+    `actionState.avatarMask` -> `CharacterModel.actionAvatarMask` -> `EmptyMask`. Leaving the last
+    two null is what gives full-body-when-standing for free.
+  - The kit's own `TopMask.mask` could not be reused: its humanoid flags are right, but its
+    transform paths are the demo rig's (`Root_M/Hip_L/...`), which do not exist on the Synty
+    hierarchy.
+  - The mask deactivates the lower body derived from the **avatar's bone mapping**, not from name
+    guesses. A first attempt filtered on name prefixes and silently missed `LowerLeg_*` and `Ball_*`
+    — the shins and toe-balls stayed active while the thighs and ankles were masked, which would
+    have looked broken. 15 transforms are masked out now, the complete leg chains plus
+    `Root`, `Hips` and `Hips_Attachment`.
+
+- **Attack animation switched to Kevin Iglesias `Human Animations`** (2026-08-30) — right hand
+  `HumanM@Attack1H04_R`, left hand `HumanM@Attack1H04_L`, replacing the Synty sword combo clips.
+  - Why the Synty ones had to go: measured against the idle pose, every clip in
+    `AnimationSwordCombat` starts at 0.147 (the pack's combat-ready stance) and ends 0.30-0.49 away
+    from idle. They are combo *links* — `LightCombo01B` starts at 0.304, exactly where `A` ends.
+    The kit plays one randomly chosen clip per swing, so B or C always begin from a pose the
+    character is not in. Structural mismatch, not a bad clip choice.
+  - `Attack1H04_R` was picked by measurement across the five 1H attacks: start pose equals end pose
+    (0.000, so no snap), zero hip drift, and the least lower-body movement of the set (0.188) while
+    keeping a strong arm swing (0.520) — the best upper-to-lower ratio at 2.8:1, which is what
+    "subtle legs when standing" needs.
+  - Trigger rate 0.317, taken from the frame of peak hand speed rather than the usual flat 0.5.
+
+- **`SyntyPlayerCharacter` rebuilt on the FixedScale base** (2026-08-30) — the character was built
+  from `PolygonFantasyHeroCharacters/Prefabs/ModularCharacters.prefab`, whose rig `Root` sits at
+  `localScale 0.01`. Anything parented to a hand bone therefore rendered at 1/100 scale, so
+  instantiated weapons were invisibly small. Synty ships the same character re-imported at unit
+  scale under `Prefabs/FixedScale/`, and that is what the character now uses.
+  - Both bases produce the same real-world character: arm-span bounds measured 2.049 either side of
+    the swap. Only the internal bone scale differs, along with the avatar asset
+    (`Models/FixedScale/ModularCharacters.fbx` instead of `Models/ModularCharacters.fbx`). Both are
+    Humanoid, so every clip retargets unchanged.
+  - Done as surgery rather than a rebuild from scratch: only the `Modular_Characters` and `Root`
+    children were replaced. The nine `_TpsCamTarget` / `_CombatText` / `_MeleeDamage` style kit
+    anchors were kept, which is what preserved `PlayerCharacterEntity`'s nine transform references
+    and every kit component's settings.
+  - Of the 467 references into the replaced subtree, 458 were `PlayableCharacterModel.
+    equipmentContainers` — rebuilt in one pass by the equipment builder — and 9 were those kit
+    anchors, which survived.
+  - **The animation setup survived untouched**: `defaultAnimations` and `LocomotionPhaseSync.
+    clipPhases` hold clip references, not transforms. Verified after the swap - idle, the eight-way
+    locomotion set, three attacks and all 24 measured clip phases still in place.
+  - Weapon anchors were recreated at `localScale 1`. On the old base they needed `localScale 100` to
+    cancel the rig scale; that hack is now gone, which is the point of the exercise.
+  - Consequence: the character's *appearance* reset to the modular defaults (10 active renderers
+    where there were 11), because the FixedScale preset enables a different set of parts and the
+    builder's "reset to default state" pass then shows the bare defaults. The look needs picking
+    again; nothing else was lost.
+
+- **`SyntyEquipmentContainerBuilder.Build(...)`** (2026-08-30) — a static entry point mirroring the
+  locomotion builder's `Assign(...)`, so the container pass can be run headlessly. Added because
+  rebuilding a character after a rig swap needs it without a human clicking the window.
+
+- **Attack animations on `SyntyPlayerCharacter`** (2026-08-30) — `rightHandAttackAnimations` and
+  `leftHandAttackAnimations` were both empty, which threw on every swing:
+  `DefaultCharacterAttackComponent.AttackRoutine` takes `triggerDurations` from
+  `Entity.GetAnimationData(...)` and walks it, so with no attack configured there is nothing to
+  walk. Filled from `Assets/Synty/AnimationSwordCombat` — right hand gets the three-hit
+  `LightCombo01` A/B/C, left hand gets A.
+  - Each attack `.fbx` in that pack holds four clips, not one: the whole swing (`A_Attack_X_Sword`)
+    plus `WindUp`, `Hit` and `FollowThrough` phases that sum to it. The kit plays one clip per
+    attack, so the whole-swing clip is the one wired; selecting it needs an **exact name match**,
+    since "the first clip in the file" picks a phase fragment instead.
+  - The phase clips give the trigger rate exactly rather than by eye: `WindUp.length / full.length`
+    is the moment contact begins. The three differ enough to matter — 0.417, 0.250 and 0.500 — so
+    the usual flat 0.5 would have been wrong on two of the three.
+  - The pack is Humanoid, same as the Synty avatar, so it retargets without a rig change.
+  - `actionAvatarMask` is still null, so attacks play full-body. That is safe — `PlayAction` falls
+    back through `actionState.avatarMask` and the model's `actionAvatarMask` to `EmptyMask` — but it
+    means the legs stop strafing mid-swing.
+  - A/B/C are a combo, but `DefaultCharacterAttackComponent.doNotRandomAnimation` defaults to false,
+    so the kit picks among them at random rather than in sequence. The component is not on the
+    prefab (it is added at runtime), so making it a real combo means adding it explicitly and
+    setting that flag.
+  - Still empty and worth filling from the same pack later: `hurtState` (Hit/HitReact),
+    `deadState` (Death), `skillActivateAnimation`, `rightHandChargeState`, `pickupState`. None throw;
+    they just play nothing.
+
+- **`GameInstance.uiSceneGameplayPrefab` pointed at `CanvasGameplay_G`** (2026-08-30) — in
+  `Demo/Scenes/00Init.unity`. The `_G` canvas fork existed but nothing referenced it, so the game
+  still instantiated the kit's `CanvasGameplay` and none of the forked dialog chain reached the
+  running game. The new Legs and Cloak equip slots appeared anyway only because the same slot
+  objects had also been added to the kit's `UIItemsDialog.prefab`, whose
+  `UIEquipItems.otherEquipSlots` was never wired — visible slots that nothing was routed to.
+
 - **UI dialog chain forked out of the kit tree** (2026-08-30) — `CanvasGameplay_G` now uses
   `Assets/1. Data/Prefabs/UI Prefabs/UIDialogs_G.prefab`, a fork of `UIDialogs_Standalone` whose
   `UIItemsDialog` child points at `1. Data/Prefabs/UI Prefabs/UIItemsDialog.prefab`. No kit prefab

@@ -162,11 +162,11 @@ MonoBehaviour:
   rotationSpeedScale: 1
   limitZoomDistance: 1
   minZoomDistance: 6
-  maxZoomDistance: 25
+  maxZoomDistance: 20
   smoothZoom: 0
   zoomDeacceleration: 10
   startZoomDistance: 12
-  zoomSpeed: -100
+  zoomSpeed: -250
   zoomSpeedScale: 1
   enableAimAssist: 0
   enableAimAssistX: 1

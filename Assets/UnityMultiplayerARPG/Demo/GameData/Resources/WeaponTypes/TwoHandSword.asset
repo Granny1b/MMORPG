@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eea06a475b732744abb433090755a3e1, type: 3}
   m_Name: TwoHandSword
   m_EditorClassIdentifier: 
+  btnValidate: 0
   id: 
   defaultTitle: Two Hand Sword
   languageSpecificTitles: []
@@ -19,11 +20,6 @@ MonoBehaviour:
   languageSpecificDescriptions: []
   category: 
   icon: {fileID: 0}
-  addressableIcon:
-    m_AssetGUID: 
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
   equipType: 2
   dualWieldRestriction: 0
   equippableSetIndexes: 
@@ -33,39 +29,26 @@ MonoBehaviour:
     startAttackDistance: 0
     hitDistance: 1.5
     hitFov: 90
+    originOffsets: 1
     missileDistance: 5
     missileSpeed: 5
+    isHeadshotInstantDeath: 1
     missileDamageEntity: {fileID: 0}
-    addressableMissileDamageEntity:
-      m_AssetGUID: 
-      m_SubObjectName: 
-      m_SubObjectType: 
-      m_EditorAssetChanged: 0
     projectileEffect: {fileID: 0}
-    addressableProjectEffect:
-      m_AssetGUID: 
-      m_SubObjectName: 
-      m_SubObjectType: 
-      m_EditorAssetChanged: 0
     pierceThroughEntities: 0
     impactEffects: {fileID: 0}
     throwForce: 0
     throwableLifeTime: 0
     throwableDamageEntity: {fileID: 0}
-    addressableThrowableDamageEntity:
-      m_AssetGUID: 
-      m_SubObjectName: 
-      m_SubObjectType: 
-      m_EditorAssetChanged: 0
     customDamageInfo: {fileID: 0}
   effectivenessAttributes:
   - attribute: {fileID: 11400000, guid: 0e223af20738b88419c22a1a0401a21b, type: 2}
     effectiveness: 0.1
   ammoType: {fileID: 0}
   playableCharacterModelSettings:
-    applyWeaponAnimations: 0
+    applyWeaponAnimations: 1
     weaponAnimations:
-      weaponType: {fileID: 0}
+      weaponType: {fileID: 11400000}
       idleState:
         clip: {fileID: 0}
         animSpeedRate: 0
@@ -633,7 +616,36 @@ MonoBehaviour:
         avatarMaskWhileAirbourne: {fileID: 0}
         skipMovementValidation: 0
         shouldUseRootMotion: 0
-      rightHandAttackAnimations: []
+      rightHandAttackAnimations:
+      - state:
+          clip: {fileID: 3094330708855449807, guid: a3b2bd75dc433e742844e9c7e0ecb01e,
+            type: 3}
+          animSpeedRate: 0
+          transitionDuration: 0
+          isAdditive: 0
+          applyFootIk: 0
+          applyPlayableIk: 0
+          avatarMask: {fileID: 0}
+          clipWhileMoving: {fileID: 0}
+          avatarMaskWhileMoving: {fileID: 31900000, guid: 7d146708f79b5eb4c9c2a11f83fc0219,
+            type: 2}
+          clipWhileSprinting: {fileID: 0}
+          avatarMaskWhileSprinting: {fileID: 0}
+          clipWhileAirbourne: {fileID: 0}
+          avatarMaskWhileAirbourne: {fileID: 0}
+          skipMovementValidation: 0
+          shouldUseRootMotion: 0
+        triggerDurationRates:
+        - 0.35
+        durationType: 0
+        fixedDuration: 0
+        extendDuration: 0
+        audioClips:
+        - {fileID: 8300000, guid: a564a5b81c6739d439709359f3cdd0ff, type: 3}
+        - {fileID: 8300000, guid: 6c43fa2b34c2d464eacca5d38cf9fde7, type: 3}
+        - {fileID: 8300000, guid: 43e14c2212e929b4fbc01c07f1d061c3, type: 3}
+        - {fileID: 8300000, guid: 8b2883dac32bb1d4794213ff58a4f76c, type: 3}
+        - {fileID: 8300000, guid: b9ffdfa66923ef14285a7b0e08a0cea3, type: 3}
       leftHandAttackAnimations: []
       rightHandReloadAnimation:
         state:
@@ -657,7 +669,6 @@ MonoBehaviour:
         fixedDuration: 0
         extendDuration: 0
         audioClips: []
-        addressableAudioClips: []
       leftHandReloadAnimation:
         state:
           clip: {fileID: 0}
@@ -680,7 +691,6 @@ MonoBehaviour:
         fixedDuration: 0
         extendDuration: 0
         audioClips: []
-        addressableAudioClips: []
       rightHandWeaponSheathingAnimation:
         sheathState:
           clip: {fileID: 0}

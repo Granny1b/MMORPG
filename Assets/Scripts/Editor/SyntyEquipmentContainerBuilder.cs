@@ -119,6 +119,30 @@ namespace MMORPGGranny.EditorTools
             GetWindow<SyntyEquipmentContainerBuilder>(false, "Synty Equipment", true).minSize = new Vector2(460f, 460f);
         }
 
+        /// <summary>
+        /// Runs the same pass as the window's Build button without opening it, for scripted or batch
+        /// use - rebuilding a character after its rig has been swapped, for instance.
+        /// Returns the report the window would have shown.
+        /// </summary>
+        public static string Build(GameObject characterRoot, Gender gender, bool includeSharedSlots = true, bool resetToDefaultState = true, string socketSuffix = "")
+        {
+            SyntyEquipmentContainerBuilder builder = CreateInstance<SyntyEquipmentContainerBuilder>();
+            try
+            {
+                builder._characterRoot = characterRoot;
+                builder._gender = gender;
+                builder._includeSharedSlots = includeSharedSlots;
+                builder._resetToDefaultState = resetToDefaultState;
+                builder._socketSuffix = socketSuffix;
+                builder.Run(true);
+                return builder._report;
+            }
+            finally
+            {
+                DestroyImmediate(builder);
+            }
+        }
+
         private void OnGUI()
         {
             EditorGUILayout.HelpBox(

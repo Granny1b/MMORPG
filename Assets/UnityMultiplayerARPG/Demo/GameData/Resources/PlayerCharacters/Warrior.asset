@@ -20,12 +20,6 @@ MonoBehaviour:
   languageSpecificDescriptions: []
   category: 
   icon: {fileID: 21300000, guid: 330a9dc4f0581fe4381e4981d4f2686b, type: 3}
-  addressableIcon:
-    m_AssetGUID: 330a9dc4f0581fe4381e4981d4f2686b
-    m_SubObjectName: Warrior
-    m_SubObjectType: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
-      Culture=neutral, PublicKeyToken=null
-    m_EditorAssetChanged: 1
   expTable: {fileID: 0}
   stats:
     baseStats:
@@ -60,13 +54,22 @@ MonoBehaviour:
       fallDamageAbsorbs: 0
       gravityRate: 0
       protectedSlotLimit: 0
-      ammoCapacity: 0
+      ammoCapacityModifier: 0
+      ammoCapacityRate: 0
       recoilModifier: 0
+      recoilYawModifier: 0
+      recoilRollModifier: 0
       recoilRate: 0
-      rateOfFire: 0
-      reloadDuration: 0
+      recoilYawRate: 0
+      recoilRollRate: 0
+      rateOfFireModifier: 0
+      rateOfFireRate: 0
+      reloadDurationModifier: 0
+      reloadDurationRate: 0
+      fireSpreadRangeModifier: 0
       fireSpreadRangeRate: 0
-      fireSpread: 0
+      fireSpreadModifier: 0
+      fireSpreadRate: 0
       decreaseFoodDecreation: 0
       decreaseWaterDecreation: 0
       decreaseStaminaDecreation: 0
@@ -105,13 +108,22 @@ MonoBehaviour:
       fallDamageAbsorbs: 0
       gravityRate: 0
       protectedSlotLimit: 0
-      ammoCapacity: 0
+      ammoCapacityModifier: 0
+      ammoCapacityRate: 0
       recoilModifier: 0
+      recoilYawModifier: 0
+      recoilRollModifier: 0
       recoilRate: 0
-      rateOfFire: 0
-      reloadDuration: 0
+      recoilYawRate: 0
+      recoilRollRate: 0
+      rateOfFireModifier: 0
+      rateOfFireRate: 0
+      reloadDurationModifier: 0
+      reloadDurationRate: 0
+      fireSpreadRangeModifier: 0
       fireSpreadRangeRate: 0
-      fireSpread: 0
+      fireSpreadModifier: 0
+      fireSpreadRate: 0
       decreaseFoodDecreation: 0
       decreaseWaterDecreation: 0
       decreaseStaminaDecreation: 0
@@ -150,13 +162,22 @@ MonoBehaviour:
       fallDamageAbsorbs: 0
       gravityRate: 0
       protectedSlotLimit: 0
-      ammoCapacity: 0
+      ammoCapacityModifier: 0
+      ammoCapacityRate: 0
       recoilModifier: 0
+      recoilYawModifier: 0
+      recoilRollModifier: 0
       recoilRate: 0
-      rateOfFire: 0
-      reloadDuration: 0
+      recoilYawRate: 0
+      recoilRollRate: 0
+      rateOfFireModifier: 0
+      rateOfFireRate: 0
+      reloadDurationModifier: 0
+      reloadDurationRate: 0
+      fireSpreadRangeModifier: 0
       fireSpreadRangeRate: 0
-      fireSpread: 0
+      fireSpreadModifier: 0
+      fireSpreadRate: 0
       decreaseFoodDecreation: 0
       decreaseWaterDecreation: 0
       decreaseStaminaDecreation: 0
@@ -192,6 +213,10 @@ MonoBehaviour:
   resistances: []
   armors: []
   statusEffectResistances: []
+  selfStatusEffectsWhenAttacking: []
+  enemyStatusEffectsWhenAttacking: []
+  selfStatusEffectsWhenAttacked: []
+  enemyStatusEffectsWhenAttacked: []
   skills:
   - skill: {fileID: 11400000, guid: 62050ee15b839a04080e8d1764fc4737, type: 2}
     level: 0
@@ -250,7 +275,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e43af8a3a8f9a7a478dc243c7b15ff5f, type: 2}
   - {fileID: 11400000, guid: f913fbdc47f19a4408bc793331f9583a, type: 2}
   startItems: []
-  startMap: {fileID: 0}
+  startMap: {fileID: 11400000, guid: 086de608fd6fe2f40ad803d1d0e57eef, type: 2}
   useOverrideStartPosition: 0
   overrideStartPosition: {x: 0, y: 0, z: 0}
   useOverrideStartRotation: 0

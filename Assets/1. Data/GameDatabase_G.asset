@@ -53,6 +53,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: c66ef51ae8805aa47bb9fa26bcf2109c, type: 2}
   - {fileID: 11400000, guid: 05fd047386612f342aa61c5ddcf274d1, type: 2}
   - {fileID: 11400000, guid: 52d2c6fb152031542b7798e45c786553, type: 2}
+  - {fileID: 11400000, guid: 9aa1b9c4b31b6e2438ec86416be6b67d, type: 2}
   - {fileID: 11400000, guid: 71c16926d2dc33343ab0727be3d5341e, type: 2}
   - {fileID: 11400000, guid: cb8adb55fb513f54fa8d9b619540d1d4, type: 2}
   - {fileID: 11400000, guid: e43af8a3a8f9a7a478dc243c7b15ff5f, type: 2}
@@ -66,6 +67,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 620467d42dba7b344ab2159462ce3b23, type: 2}
   - {fileID: 11400000, guid: d49d8d8518aed8f4db28cbf1fdd0dc63, type: 2}
   - {fileID: 11400000, guid: 29915ca929a14214baec7de15f1af758, type: 2}
+  - {fileID: 11400000, guid: 9bc44b8886e1083478dc1fd24943aff1, type: 2}
   - {fileID: 11400000, guid: c4f83999d394a4c4cbd65dc4e44885df, type: 2}
   - {fileID: 11400000, guid: 84eba039ed32fda4693c20ebba14c822, type: 2}
   - {fileID: 11400000, guid: 5842068f5743c524c967a28b483477ed, type: 2}
@@ -94,9 +96,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 4519d6286cf69b142ac9894ff8e06a31, type: 2}
   - {fileID: 11400000, guid: fac1760f3f3d22a47a8e14e34a1d7440, type: 2}
   - {fileID: 11400000, guid: 93c389fe9d40638469bffd9de26d31ba, type: 2}
+  - {fileID: 11400000, guid: d99f1b8c7b1036641888510e7580deac, type: 2}
   - {fileID: 11400000, guid: b64f816f68b7d6a42b7d3857a4b5d931, type: 2}
   - {fileID: 11400000, guid: 0a439d3c316c36f4cae03a253c8839d4, type: 2}
-  - {fileID: 11400000, guid: 9bc44b8886e1083478dc1fd24943aff1, type: 2}
   itemCraftFormulas:
   - {fileID: 11400000, guid: 4fa8022457399b045aa759a2adf444be, type: 2}
   - {fileID: 11400000, guid: f3bf4536f24588043986c153c1e7e430, type: 2}
@@ -110,12 +112,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5d81a3e67ae68304c93a6f9e9447899b, type: 2}
   armorTypes:
   - {fileID: 11400000, guid: 0253737f3a4bc994cb0be8d992b59240, type: 2}
+  - {fileID: 11400000, guid: acacbce03b495b14c81834e5cdc2b3e8, type: 2}
   - {fileID: 11400000, guid: bea17275f6d55cb4b9e00d61decfaf95, type: 2}
   - {fileID: 11400000, guid: a1143a42e9d328c4988c7b1b33b11451, type: 2}
+  - {fileID: 11400000, guid: 0829b8372f9eb6a499e6b68766cd15e8, type: 2}
   - {fileID: 11400000, guid: 926f1d3f76315644784baae8e6482caf, type: 2}
   - {fileID: 11400000, guid: 745bc973ccf3f5640af5285026a87d5d, type: 2}
-  - {fileID: 11400000, guid: 0829b8372f9eb6a499e6b68766cd15e8, type: 2}
-  - {fileID: 11400000, guid: acacbce03b495b14c81834e5cdc2b3e8, type: 2}
   weaponTypes:
   - {fileID: 11400000, guid: dea0ff090cc71dd41ad5154120895633, type: 2}
   - {fileID: 11400000, guid: d433f880a1c9d6149bcbf3b5676ea6a0, type: 2}
@@ -195,6 +197,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: de8b0e4099f8d444692e88f92309e90d, type: 2}
   - {fileID: 11400000, guid: fbe2a93dfafee544cbeaf175d3491e33, type: 2}
   - {fileID: 11400000, guid: 7d05446271b4d8f459650ee3e2489a34, type: 2}
+  - {fileID: 11400000, guid: 086de608fd6fe2f40ad803d1d0e57eef, type: 2}
   quests:
   - {fileID: 11400000, guid: 35af53733329bea43ba4a13eab140778, type: 2}
   - {fileID: 11400000, guid: b07c2f59514e7aa45a8005d227e79954, type: 2}

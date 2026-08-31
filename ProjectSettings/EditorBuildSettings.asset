@@ -53,6 +53,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/UnityMultiplayerARPG/Demo2D/Scenes/Map002_2D.unity
     guid: 29a45180a2ba0d74c94bc7361da060cc
+  - enabled: 1
+    path: Assets/1. Data/Scenes/Prototype_World_01.unity
+    guid: e63f14d6fe1421f4199fd9bec34ebbc7
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: a843249840a594f4384acd2e05a99862,
       type: 2}
