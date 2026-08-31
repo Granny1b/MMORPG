@@ -122,6 +122,21 @@ InitTestScene*.unity*
 /[Aa]ssets/AnimationBaseLocomotion/
 /[Aa]ssets/AnimationBaseLocomotion.meta
 
+# --- Asset Store content (SFX / VFX) ---
+# Purchased audio and effect packs, ~505 MB, re-downloadable from the Asset Store.
+/[Aa]ssets/Action RPG SFX V2/
+/[Aa]ssets/Action RPG SFX V2.meta
+/[Aa]ssets/Hovl Studio/
+/[Aa]ssets/Hovl Studio.meta
+
+# --- Asset Store content (animations, weapon models) ---
+# Same deal: purchased, re-downloadable, and together ~1.4 GB. Delete these four
+# lines if you would rather have them tracked in the repo.
+/[Aa]ssets/Kevin Iglesias/
+/[Aa]ssets/Kevin Iglesias.meta
+/[Aa]ssets/Melee Weapons Pack 1/
+/[Aa]ssets/Melee Weapons Pack 1.meta
+
 # --- Asset Store content (BLINK icons) ---
 # Purchased icon pack, ~214 MB of PNG icons and PSD sources, re-downloadable.
 # Only the vendor folder is ignored, so your own art under "Assets/2. Art/" is

@@ -9,6 +9,14 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Changed
 
+- **Freshly imported Asset Store SFX/VFX/animation/model packs added to `.gitignore`** (2026-08-31) —
+  `Assets/Action RPG SFX V2/` (187 MB), `Assets/Hovl Studio/` (318 MB), `Assets/Kevin Iglesias/`
+  (338 MB) and `Assets/Melee Weapons Pack 1/` (1.1 GB), plus their `.meta` files. ~1.9 GB of
+  purchased, re-downloadable content that was still untracked, following the same convention as the
+  existing Synty and BLINK entries. Re-import these packages after a fresh clone or prefab/scene
+  references to them will show up as missing. The animation and model packs are in a separate block
+  in `.gitignore` so they are easy to un-ignore if they should be tracked after all.
+
 - **UI dialog chain forked out of the kit tree** (2026-08-30) — `CanvasGameplay_G` now uses
   `Assets/1. Data/Prefabs/UI Prefabs/UIDialogs_G.prefab`, a fork of `UIDialogs_Standalone` whose
   `UIItemsDialog` child points at `1. Data/Prefabs/UI Prefabs/UIItemsDialog.prefab`. No kit prefab
