@@ -229,6 +229,27 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Fixed
 
+- **Occasional huge inward jump when zooming the camera with the scroll wheel** (2026-08-31) —
+  `Assets/UnityMultiplayerARPG/Core/CameraAndInput/Scripts/Input/InputManager.cs`, `GetAxis`:
+  when an Input System action exists for an axis, the legacy Input Manager is no longer consulted
+  as a fallback for that axis.
+  - The project runs `activeInputHandler: 2` ("Both"), and `GetAxis` returned the Input System
+    action's value only when it was non-zero *that frame*, otherwise falling through to
+    `Input.GetAxis(name)`. Both backends see the same wheel notch at very different scales:
+    `<Mouse>/scroll/y` reports ±1 per notch here (not the 120 the kit's `Scale(factor=0.001)`
+    processor assumes) → **0.001**, while the legacy `Mouse ScrollWheel` axis has sensitivity
+    `0.1` → **0.1**. A 100x difference.
+  - `FollowCameraControls` multiplies that axis by `zoomSpeed`, which is `-100` on
+    `Assets/TopDownController/Demo/Prefabs/TopDownGameplayCamera.prefab` (the camera reached via
+    `GameInstance.defaultControllerPrefab` → `TopDownAimController`). So a normal frame moved the
+    camera 0.1 units while a fall-through frame moved it **10 units** — over half of the prefab's
+    `minZoomDistance 6` .. `maxZoomDistance 25` range, in one frame. Scrolling fast made
+    fall-through frames more likely, which is why it only happened sometimes. Zooming out leapt
+    just as far but clamped at `maxZoomDistance`, so it was much less visible.
+  - The mobile simulated-axis path is untouched; only the legacy branch is skipped, and only when
+    `TryGetInputAction` actually found an action. Side effect: an axis whose action exists but has
+    no binding for the player's device no longer silently borrows the legacy axis.
+  **This edits a stock kit script** — a kit reimport would revert it.
 - **Item duplication exploit** (2026-08-29, from upstream `13f341d`) — `CmdPickupItemFromContainer`
   did not clamp the requested amount to what the container actually held, so a modified client could
   duplicate items on pickup. Fixed by the Core update: `if (amount < 0)` → `if (amount < 0 || amount > pickingItem.amount)`.
