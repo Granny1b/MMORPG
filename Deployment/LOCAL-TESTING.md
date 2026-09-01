@@ -184,37 +184,61 @@ shape of your risk. Your risk is much narrower:
 
 Adopt these now and the year of content is genuinely low-risk.
 
-### 6.1 Pin the `id` field on every game data asset
+### 6.1 Know the ID rule; pin the IDs when your names are settled
 
-`BaseGameData.Id` falls back to the **asset file name** when `id` is blank
-(`BaseGameData.cs:30-33`), and `DataId` is a deterministic hash of it. **179 of
-your 183 game data assets have an empty `id`** — the only four that don't are
-the kit's own `Map001`/`Map002` and their Addressable variants, which share an
-explicit id on purpose.
+This one needs framing, because it is easy to overstate — including by me, in
+the previous commit.
 
-That's harmless today and destructive later: rename a sword after players own
-one and its DataId changes, leaving unresolvable rows in `characteritem`.
+**The kit is not missing a feature here.** `BaseGameData` has a settable `id`
+field whose tooltip reads *"Game data ID, if this is empty it will uses file's
+name as ID"*. Falling back to the file name is a deliberate default, and a
+sane one: one less field to fill in, and asset names are already
+unique-per-folder. The field's main purpose is the opposite of what a
+"give everything an ID" tool implies — it is an **alias** mechanism. The kit
+ships `Map001_AA` carrying an explicit `id: Map001` precisely so the
+Addressable variant and the direct-reference variant resolve to one DataId and
+only whichever one a given build includes gets registered.
 
-**Run `Tools → Game Data IDs → Freeze Empty IDs From Asset Names`** (added in
-this commit). It writes each asset's *current* name into its `id` field, which
-is a no-op for the hash — the same string reaches `GenerateHashId` either way —
-so nothing about existing saves changes. What changes is that renaming files
-afterwards becomes free, permanently.
+**The rule that actually matters**, and it is a rule, not a tool:
 
-Run `Report Unfrozen IDs` first: it changes nothing and lists any two assets
-that share an effective id, which is a live bug worth seeing (they collide on
-one DataId). The freezer skips those rather than making the collision
-permanent.
+> Once a DataId is written into a live database, the thing that produced it
+> must keep producing it. While `id` is blank that thing is the file name, so
+> renaming the asset changes the DataId and orphans every saved row that
+> referenced it.
 
-One gap it can't close: `BaseNpcDialog.Id` is hardcoded to `name` with no `id`
-field to write to, so NPC dialog nodes stay rename-fragile regardless.
+`DataId` is `Id.GenerateHashId()`, a plain deterministic string hash, and it is
+what sits in `characteritem`, `characterskill`, `charactersummon` and the rest.
 
-**What the kit does *not* do here.** `MMORPG KIT/Asset Tools/Validate Game Data
-And Prefabs` looks like it should cover this, but `BaseGameData.Validate()`
-only reconciles Addressable asset-reference hashes, and the
-`LiteNetLibIdentity` asset IDs it assigns to prefabs come from the prefab's
-**asset GUID** — already rename-safe, and a different system entirely. Worth
-running anyway; it just doesn't touch the `id` string.
+**When this bites:** only from the moment someone other than you owns a
+character. Today, renaming anything is completely free — wipe the database and
+carry on. That is why the honest advice is *not* "run the tool now":
+
+- **Now, and for the whole content year:** rename freely. Settle your naming
+  convention properly. Nothing is at risk.
+- **Before the first real player:** run
+  `Tools → Game Data IDs → Freeze Empty IDs From Asset Names`. It writes each
+  asset's *current* name into its `id` field, which is a no-op for every
+  DataId — the same string reaches `GenerateHashId` either way — so existing
+  data is untouched. From then on, renaming a file changes nothing, and
+  changing an ID requires deliberately editing the field.
+
+Pinning early would lock in names you have not finished choosing. Pinning late,
+once the names are good, converts a silent failure into one that takes intent.
+That is the whole value; it is real, but it is narrow.
+
+**`Report Unfrozen IDs` is useful any time.** It lists two assets in the same
+registry sharing an ID, which the kit handles by keeping the first one loaded
+and **silently dropping the rest** — `GameInstance.AddGameData` logs nothing at
+all. On this project today the report is clean: the only shared IDs are the two
+intentional `Map001`/`Map002` Addressable pairs. Nothing to fix.
+
+Grouping is per registry, reflected from `GameInstance`'s
+`Dictionary<int, T>` fields, because an `Item` and a `WeaponType` both named
+`Axe` are completely fine — they live in different dictionaries. (You have six
+such pairs; a naive whole-project check would have flagged all of them.)
+
+One gap nothing can close: `BaseNpcDialog.Id` is hardcoded to `name` with no
+`id` field to write to, so dialog nodes stay rename-fragile permanently.
 
 ### 6.2 Run Milestone 2 before every deploy, and after any big system
 

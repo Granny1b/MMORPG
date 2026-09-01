@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using MultiplayerARPG;
 using UnityEditor;
 using UnityEngine;
@@ -57,11 +59,25 @@ namespace MMORPGGranny.EditorTools
             public bool IsFrozen => !string.IsNullOrEmpty(ExplicitId);
         }
 
+        private readonly struct Collision
+        {
+            public readonly Type Family;
+            public readonly string Id;
+            public readonly List<Entry> Entries;
+
+            public Collision(Type family, string id, List<Entry> entries)
+            {
+                Family = family;
+                Id = id;
+                Entries = entries;
+            }
+        }
+
         [MenuItem(MenuRoot + "Report Unfrozen IDs", false, 0)]
         public static void Report()
         {
             List<Entry> entries = Collect();
-            Dictionary<string, List<Entry>> collisions = FindCollisions(entries);
+            List<Collision> collisions = FindCollisions(entries);
             int unfrozen = entries.Count(x => !x.IsFrozen);
 
             foreach (Entry entry in entries.Where(x => !x.IsFrozen).OrderBy(x => x.Path))
@@ -71,19 +87,19 @@ namespace MMORPGGranny.EditorTools
 
             Debug.Log($"[GameDataIdFreezer] {entries.Count} game data assets: " +
                       $"{entries.Count - unfrozen} already pinned, {unfrozen} still tracking their file name, " +
-                      $"{collisions.Count} colliding ID(s).");
+                      $"{collisions.Count} shared ID(s) within a registry.");
         }
 
         [MenuItem(MenuRoot + "Freeze Empty IDs From Asset Names", false, 1)]
         public static void Freeze()
         {
             List<Entry> entries = Collect();
-            Dictionary<string, List<Entry>> collisions = FindCollisions(entries);
+            List<Collision> collisions = FindCollisions(entries);
 
             // Assets sharing an effective ID already hash to the same DataId, so one of them is
             // being shadowed right now. Pinning them would make that permanent and take away the
             // one cheap fix - renaming a file - so they are left alone for a human to resolve.
-            HashSet<BaseGameData> colliding = new HashSet<BaseGameData>(collisions.SelectMany(x => x.Value).Select(x => x.Data));
+            HashSet<BaseGameData> colliding = new HashSet<BaseGameData>(collisions.SelectMany(x => x.Entries).Select(x => x.Data));
             List<Entry> toFreeze = entries.Where(x => !x.IsFrozen && !colliding.Contains(x.Data)).ToList();
 
             LogCollisions(collisions);
@@ -165,26 +181,71 @@ namespace MMORPGGranny.EditorTools
             return entries;
         }
 
-        private static Dictionary<string, List<Entry>> FindCollisions(List<Entry> entries)
+        /// <summary>
+        /// The registries game data actually lands in. <c>GameInstance</c> keeps one
+        /// <c>Dictionary&lt;int, T&gt;</c> per family, and <c>AddGameData</c> keeps the first entry
+        /// for a DataId and silently drops the rest - so two assets only shadow each other if they
+        /// share a family. An <c>Item</c> and a <c>WeaponType</c> may both be named "Axe" with no
+        /// problem at all, which is why grouping by ID alone over-reports.
+        ///
+        /// Reflected rather than hardcoded so this cannot drift out of step with a kit update.
+        /// </summary>
+        private static List<Type> GetRegistryFamilies()
         {
-            return entries
-                .GroupBy(x => x.EffectiveId)
-                .Where(x => x.Count() > 1)
-                .ToDictionary(x => x.Key, x => x.ToList());
+            List<Type> families = new List<Type>();
+            foreach (FieldInfo field in typeof(GameInstance).GetFields(BindingFlags.Public | BindingFlags.Static))
+            {
+                Type fieldType = field.FieldType;
+                if (!fieldType.IsGenericType || fieldType.GetGenericTypeDefinition() != typeof(Dictionary<,>))
+                    continue;
+
+                Type[] arguments = fieldType.GetGenericArguments();
+                if (arguments[0] != typeof(int) || !typeof(BaseGameData).IsAssignableFrom(arguments[1]))
+                    continue;
+
+                if (!families.Contains(arguments[1]))
+                    families.Add(arguments[1]);
+            }
+            return families;
         }
 
-        private static void LogCollisions(Dictionary<string, List<Entry>> collisions)
+        private static List<Collision> FindCollisions(List<Entry> entries)
         {
-            foreach (KeyValuePair<string, List<Entry>> collision in collisions)
+            List<Collision> collisions = new List<Collision>();
+            HashSet<string> alreadyReported = new HashSet<string>();
+
+            foreach (Type family in GetRegistryFamilies())
             {
-                // Deliberately an error: two assets resolving to one DataId is a live bug, whether
-                // or not this tool ever runs. Addressable variants are the intended exception -
-                // the kit ships Map001_AA sharing "Map001" on purpose - so read before renaming.
-                Debug.LogError(
-                    $"[GameDataIdFreezer] ID \"{collision.Key}\" is used by {collision.Value.Count} assets, " +
-                    $"which means they share one DataId:\n  " +
-                    string.Join("\n  ", collision.Value.Select(x => x.Path)),
-                    collision.Value[0].Data);
+                IEnumerable<IGrouping<string, Entry>> groups = entries
+                    .Where(x => family.IsInstanceOfType(x.Data))
+                    .GroupBy(x => x.EffectiveId)
+                    .Where(x => x.Count() > 1);
+
+                foreach (IGrouping<string, Entry> group in groups)
+                {
+                    // A PlayerCharacter is registered in both `Characters` and `PlayerCharacters`,
+                    // so the same set of assets can surface under two families. Report it once.
+                    string key = string.Join("|", group.Select(x => x.Path).OrderBy(x => x));
+                    if (!alreadyReported.Add(key))
+                        continue;
+                    collisions.Add(new Collision(family, group.Key, group.ToList()));
+                }
+            }
+            return collisions;
+        }
+
+        private static void LogCollisions(List<Collision> collisions)
+        {
+            foreach (Collision collision in collisions)
+            {
+                // A warning, not an error: sharing an ID within a family is sometimes deliberate.
+                // The kit ships Map001_AA aliased to "Map001" precisely so that only whichever
+                // variant a given build includes ends up registered. Read before renaming.
+                Debug.LogWarning(
+                    $"[GameDataIdFreezer] {collision.Family.Name} ID \"{collision.Id}\" is shared by " +
+                    $"{collision.Entries.Count} assets, so only the first one loaded will register:\n  " +
+                    string.Join("\n  ", collision.Entries.Select(x => x.Path)),
+                    collision.Entries[0].Data);
             }
         }
     }
