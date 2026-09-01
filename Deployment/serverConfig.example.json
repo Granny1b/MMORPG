@@ -25,10 +25,10 @@
   "mapPort": 6002,
   "mapMaxConnections": 200,
 
-  "//database": "The database manager is the only process that talks to MySQL. It has NO authentication on this port - keep it bound to the box and blocked at the firewall. databaseOptionIndex selects the entry in MMOServerInstance's database list (0 = MySQL, 1 = SQLite in the stock prefab - verify against your own prefab before trusting it).",
+  "//database": "The database manager is the only process that talks to MySQL. It has NO authentication on this port - keep it bound to the box and blocked at the firewall. databaseOptionIndex indexes MMOServerInstance -> DatabaseNetworkManager.databaseOptions, which in this project is [0] = SQLite, [1] = MySQL. The VPS needs 1: only Windows sqlite3.dll ships with the kit, so SQLite is not an option on Linux.",
   "databaseManagerAddress": "127.0.0.1",
   "databaseManagerPort": 6100,
-  "databaseOptionIndex": 0,
+  "databaseOptionIndex": 1,
   "useCustomDatabaseClient": false,
   "disableDatabaseCaching": false,
 

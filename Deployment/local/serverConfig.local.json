@@ -1,0 +1,29 @@
+{
+  "//": "Local loopback stack, for proving the online layer on your dev PC. Copy to <WindowsBuild>/Config/serverConfig.json. SQLite (databaseOptionIndex 0) needs no setup at all - the kit creates the tables on first run (SQLiteDatabase.cs:99). Switch to MySQL (index 1) once the loopback stack works, so local matches the VPS.",
+
+  "centralAddress": "127.0.0.1",
+  "centralPort": 7000,
+  "centralMaxConnections": 100,
+  "publicAddress": "127.0.0.1",
+
+  "clusterPort": 6010,
+  "defaultChannelMaxConnections": 50,
+  "mapSpawnMillisecondsTimeout": 30000,
+
+  "mapSpawnPort": 6001,
+  "spawnExePath": "",
+  "notSpawnInBatchMode": false,
+  "spawnStartPort": 8000,
+  "spawnMaps": ["Prototype_World_01"],
+
+  "mapPort": 6002,
+  "mapMaxConnections": 50,
+
+  "databaseManagerAddress": "127.0.0.1",
+  "databaseManagerPort": 6100,
+  "databaseOptionIndex": 0,
+  "useCustomDatabaseClient": false,
+  "disableDatabaseCaching": false,
+
+  "useWebSocket": false
+}

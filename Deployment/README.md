@@ -37,23 +37,22 @@ flag wins.
 
 ## 2. Before you touch the VPS: three things that will block you
 
-### 2.1 The MMO scene is not wired to your game
+### 2.1 The MMO scene wiring — fixed, but know what changed
 
-`GameDatabase_G` is referenced by exactly one scene — `00Init.unity`, the
-single-player demo init. The MMO path uses
-`MMO/Demo/Prefabs/GameInstance.prefab`, whose `gameDatabase` field still
-points at the kit's stock demo database (guid `78362f3a…`, not
-`038c79f8…`). Boot the MMO stack as-is and you get the kit's demo content,
-not yours.
+`MMO/Demo/Prefabs/GameInstance.prefab` pointed its `gameDatabase` at the kit's
+stock demo database (`78362f3a…`) rather than `GameDatabase_G`
+(`038c79f8…`), so the MMO path would have booted the kit's demo content
+instead of yours. That is now corrected in place, matching the convention
+already used for `Demo/GameData/.../TwoHandSword.asset`.
 
-So before deploying:
+The rest was already correct: `Prototype_World_01` is registered as a MapInfo
+in `GameDatabase_G`, it is set as `startMap` on the player characters, and both
+it and `00Init_MMO` are in Build Settings. Set the MMO init scene as scene
+index 0 for the **server** build and the data side is done.
 
-1. Duplicate `00Init_MMO.unity` and the MMO `GameInstance` prefab into
-   `Assets/1. Data/` (don't edit the kit copies you may want to update later).
-2. Point the copied prefab's `gameDatabase` at `GameDatabase_G`.
-3. Make sure `Prototype_World_01` is registered as a MapInfo in
-   `GameDatabase_G` and its scene is in Build Settings.
-4. Set the MMO init scene as scene index 0 for the **server** build.
+**Before deploying anywhere, work through `LOCAL-TESTING.md`** — it gets the
+same four processes running on loopback first, which is where you want to find
+problems.
 
 ### 2.2 Ignored asset packs
 
