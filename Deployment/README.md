@@ -73,6 +73,12 @@ You will produce **two builds from the same commit**: the Linux server build
 that goes to the VPS, and a Windows client build for players. They must come
 from the same commit — see §6.
 
+They also need different scripting defines, set from the `MMORPG KIT` menu:
+run **`Setup For MMO with Server Codes Build`** before the Linux server build
+(it removes `EXCLUDE_SERVER_CODES`) and **`Setup For MMO Build`** before the
+client build (it adds it). That menu only toggles defines — despite the name it
+does no other MMO preparation.
+
 ---
 
 ## 3. Is a basic one.com VPS enough?

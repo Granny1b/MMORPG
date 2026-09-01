@@ -89,11 +89,14 @@ than networking.
 Editor stays the server; two built clients connect to it.
 
 1. Keep the editor running Milestone 0.
-2. `File → Build Settings`, Windows x86_64, `00Init_MMO` as scene index 0.
+2. Run **`MMORPG KIT → Setup For MMO Build`** first. It adds the
+   `EXCLUDE_SERVER_CODES` define, which strips the server code out of the
+   client — see §4.1 for when you want the *other* one.
+3. `File → Build Settings`, Windows x86_64, `00Init_MMO` as scene index 0.
    Build to e.g. `D:\1. Unity projekt\Builds\Windows`.
-3. Run the exe **twice** (`local/launch-two-clients.bat` does this and keeps
+4. Run the exe **twice** (`local/launch-two-clients.bat` does this and keeps
    both windowed so they fit side by side).
-4. Register two different accounts, create a character on each, enter the
+5. Register two different accounts, create a character on each, enter the
    world with both.
 
 **Watch for:** does character B move smoothly on character A's screen, or does
@@ -109,6 +112,25 @@ after this is scale and deployment, not "does it work at all".
 
 Now stop using the editor as a server, and run the same four processes the VPS
 will run — just all on `127.0.0.1`.
+
+### 4.1 The build the servers need is not the build the clients need
+
+`MMORPG KIT` has three build-setup entries, and they only toggle scripting
+define symbols:
+
+| Menu item | Effect | Use for |
+|---|---|---|
+| `Setup For MMO Build` | adds `EXCLUDE_SERVER_CODES` | the **client** build |
+| `Setup For MMO with Server Codes Build` | removes it | the **server** build |
+| `Setup For Offline-Lan Build` | removes it | not MMO |
+
+Run the right one before each build. A client built with server codes included
+is merely bloated; a *server* built with them excluded will not serve. (A Unity
+**Dedicated Server** target defines `UNITY_SERVER`, which re-includes the code
+regardless — but the defines are per build-target-group, so pick the menu item
+that matches what you're about to build rather than relying on that.)
+
+### 4.2 Run it
 
 ```
 copy Deployment\local\serverConfig.local.json  <build>\Config\serverConfig.json
@@ -162,17 +184,37 @@ shape of your risk. Your risk is much narrower:
 
 Adopt these now and the year of content is genuinely low-risk.
 
-### 6.1 Fill in the `id` field on every game data asset
+### 6.1 Pin the `id` field on every game data asset
 
 `BaseGameData.Id` falls back to the **asset file name** when `id` is blank
-(`BaseGameData.cs:30-33`), and `DataId` is a hash of it. `Prototype_World_01`
-currently has an empty `id`, as do your items. That's harmless today and
-destructive later: rename a sword after players own one and its DataId
-changes, leaving unresolvable rows in `characteritem`.
+(`BaseGameData.cs:30-33`), and `DataId` is a deterministic hash of it. **179 of
+your 183 game data assets have an empty `id`** — the only four that don't are
+the kit's own `Map001`/`Map002` and their Addressable variants, which share an
+explicit id on purpose.
 
-Set `id` explicitly — `SWORD_DARK_FORTRESS_001`, `MAP_PROTOTYPE_WORLD_01` —
-and file names become free to change forever. This costs minutes now and is
-close to unfixable once you have live players.
+That's harmless today and destructive later: rename a sword after players own
+one and its DataId changes, leaving unresolvable rows in `characteritem`.
+
+**Run `Tools → Game Data IDs → Freeze Empty IDs From Asset Names`** (added in
+this commit). It writes each asset's *current* name into its `id` field, which
+is a no-op for the hash — the same string reaches `GenerateHashId` either way —
+so nothing about existing saves changes. What changes is that renaming files
+afterwards becomes free, permanently.
+
+Run `Report Unfrozen IDs` first: it changes nothing and lists any two assets
+that share an effective id, which is a live bug worth seeing (they collide on
+one DataId). The freezer skips those rather than making the collision
+permanent.
+
+One gap it can't close: `BaseNpcDialog.Id` is hardcoded to `name` with no `id`
+field to write to, so NPC dialog nodes stay rename-fragile regardless.
+
+**What the kit does *not* do here.** `MMORPG KIT/Asset Tools/Validate Game Data
+And Prefabs` looks like it should cover this, but `BaseGameData.Validate()`
+only reconciles Addressable asset-reference hashes, and the
+`LiteNetLibIdentity` asset IDs it assigns to prefabs come from the prefab's
+**asset GUID** — already rename-safe, and a different system entirely. Worth
+running anyway; it just doesn't touch the `id` string.
 
 ### 6.2 Run Milestone 2 before every deploy, and after any big system
 
