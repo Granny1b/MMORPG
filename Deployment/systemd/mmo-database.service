@@ -1,0 +1,23 @@
+# Database manager. Must be up before central and map-spawn: both open a
+# database client connection on start and will not retry forever.
+[Unit]
+Description=MMORPG Kit - Database Manager Server
+After=network-online.target mysql.service
+Wants=network-online.target
+Requires=mysql.service
+
+[Service]
+Type=simple
+User=mmo
+Group=mmo
+WorkingDirectory=/srv/mmo/server
+ExecStart=/srv/mmo/server/MMORPGServer -batchmode -nographics -startDatabaseServer -logFile /srv/mmo/logs/database.log
+Restart=always
+RestartSec=5
+# Unity writes crash dumps and PlayerPrefs under $HOME; give it a real one.
+Environment=HOME=/srv/mmo
+StandardOutput=append:/srv/mmo/logs/database.stdout.log
+StandardError=append:/srv/mmo/logs/database.stderr.log
+
+[Install]
+WantedBy=multi-user.target

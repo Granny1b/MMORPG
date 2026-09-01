@@ -1,0 +1,26 @@
+# Map spawn server. Launches one child process per map listed in
+# spawnMaps, each a full copy of this same binary with -startMapServer.
+# Those children are NOT separate systemd units - killing this unit with
+# KillMode=control-group takes them down with it, which is what we want.
+[Unit]
+Description=MMORPG Kit - Map Spawn Server
+After=network-online.target mmo-central.service
+Wants=network-online.target
+Requires=mmo-central.service
+
+[Service]
+Type=simple
+User=mmo
+Group=mmo
+WorkingDirectory=/srv/mmo/server
+ExecStart=/srv/mmo/server/MMORPGServer -batchmode -nographics -startMapSpawnServer -logFile /srv/mmo/logs/mapspawn.log
+Restart=always
+RestartSec=10
+KillMode=control-group
+TimeoutStopSec=30
+Environment=HOME=/srv/mmo
+StandardOutput=append:/srv/mmo/logs/mapspawn.stdout.log
+StandardError=append:/srv/mmo/logs/mapspawn.stderr.log
+
+[Install]
+WantedBy=multi-user.target

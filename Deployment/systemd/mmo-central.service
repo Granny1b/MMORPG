@@ -1,0 +1,22 @@
+# Central server: login, character list, party/guild/chat routing, and the
+# cluster bus that map servers register with.
+[Unit]
+Description=MMORPG Kit - Central Server
+After=network-online.target mmo-database.service
+Wants=network-online.target
+Requires=mmo-database.service
+
+[Service]
+Type=simple
+User=mmo
+Group=mmo
+WorkingDirectory=/srv/mmo/server
+ExecStart=/srv/mmo/server/MMORPGServer -batchmode -nographics -startCentralServer -logFile /srv/mmo/logs/central.log
+Restart=always
+RestartSec=5
+Environment=HOME=/srv/mmo
+StandardOutput=append:/srv/mmo/logs/central.stdout.log
+StandardError=append:/srv/mmo/logs/central.stderr.log
+
+[Install]
+WantedBy=multi-user.target
