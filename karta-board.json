@@ -1,0 +1,1319 @@
+{
+  "kartaVersion": 1,
+  "board": {
+    "title": "MMORPG — Top-Down Action Roadmap"
+  },
+  "statuses": [
+    {
+      "name": "Next Up",
+      "color": "blue",
+      "isDone": false
+    },
+    {
+      "name": "Building",
+      "color": "bronze",
+      "isDone": false
+    },
+    {
+      "name": "Blocked",
+      "color": "copper",
+      "isDone": false
+    },
+    {
+      "name": "Backlog",
+      "color": "slate",
+      "isDone": false
+    },
+    {
+      "name": "Parked",
+      "color": "purple",
+      "isDone": false
+    },
+    {
+      "name": "Done",
+      "color": "teal",
+      "isDone": true
+    }
+  ],
+  "labels": [
+    {
+      "name": "controller",
+      "color": "blue"
+    },
+    {
+      "name": "feel",
+      "color": "copper"
+    },
+    {
+      "name": "combat",
+      "color": "bronze"
+    },
+    {
+      "name": "enemies",
+      "color": "purple"
+    },
+    {
+      "name": "gear",
+      "color": "straw"
+    },
+    {
+      "name": "ui",
+      "color": "teal"
+    },
+    {
+      "name": "data",
+      "color": "slate"
+    },
+    {
+      "name": "world",
+      "color": "#5f7a52"
+    },
+    {
+      "name": "netcode",
+      "color": "#4a6b7a"
+    },
+    {
+      "name": "tooling",
+      "color": "#6b6357"
+    },
+    {
+      "name": "risk",
+      "color": "#9c4f42"
+    }
+  ],
+  "cards": [
+    {
+      "key": "ctl-controller-hygiene",
+      "title": "P1 · Close the controller bugs and smooth the camera",
+      "body": "Three small correctness bugs in files you own, all cheap, all worth closing before more code leans on them — plus two camera checkboxes pulled forward because they are free.\n\n1. **The prefab is out of sync.** `Assets/TopDownController/Demo/Prefabs/TopDownAimController.prefab` serializes `faceCursor`, `turnImmediately`, `strictCursorAim`, `faceCursorWhileDoingAction`, `ignoreWhileCursorOverUI`, `aimPlaneHeightOffset`, `minAimDistance` — but **not** `blockAttackWhenCursorOverUI` and **not** `strafeMovementStates`, both added to the .cs afterwards (lines 32 and 43). They run on their C# initialisers today. Any inspector touch silently rewrites the file.\n2. **Three RaycastAll passes per frame.** `UISceneGameplay.IsPointerOverUIObject()` (`UISceneGameplay.cs:670`) does a full `EventSystem.current.RaycastAll`. It runs **four** times a frame: `TopDownAimController.cs:79`, `PlayerCharacterController_Inputs.cs:48` (inside `base.UpdateInput`), `TopDownAimController.cs:177`, and `PlayerCharacterController_Inputs.cs:260` (inside the non-virtual `UpdatePointClickInput`). A subclass-local cache only fixes three of them — the fourth needs a field the base can read, or accept it.\n3. **`CurrentAimPosition` will NRE.** Its fallback branch dereferences `EntityTransform` with no null guard, unlike `UpdateTopDownAim` which does guard. The first consumer that reads it before `Setup()` completes throws.\n4. **The camera hard-snaps for no reason.** `Assets/TopDownController/Demo/Prefabs/TopDownGameplayCamera.prefab` has `smoothFollow: 0` with `followSmoothing: 10` sitting unused, and `smoothZoom: 0` with `zoomDeacceleration: 10` unused; `FollowCamera.UpdateCamera` lines 118-127 branch on `smoothFollow`. These two ticks were pulled forward from ctl-camera-lead-and-smoothing (P3) so a no-code quality lift is not gated behind the lead work — that card now owns the lead only. They are safe to author on the prefab: `DefaultGameplayCameraController.Update()` rewrites `target`, `targetOffset`, `fieldOfView`, near/far and `enableWallHitSpring` from the controller every frame, but it does **not** touch `smoothFollow`/`smoothZoom`.\n\nDone looks like: open the prefab, confirm both fields appear with the values you want, no null-ref on a cold boot, and a camera that eases instead of snapping.",
+      "status": "Next Up",
+      "labels": [
+        "controller",
+        "tooling",
+        "feel"
+      ],
+      "checklist": [
+        "Open TopDownAimController.prefab in the inspector, confirm blockAttackWhenCursorOverUI and strafeMovementStates now show, and re-save",
+        "Cache the pointer-over-UI test once per frame and read it in UpdateInput and UpdateTopDownAim; note the fourth call inside the non-virtual UpdatePointClickInput stays unless the cache lives where the base can read it",
+        "Null-guard the CurrentAimPosition fallback: return AimPosition.CreatePosition(Vector3.zero) or bail when PlayingCharacterEntity is null",
+        "Tick smoothFollow and smoothZoom on TopDownGameplayCamera.prefab and tune followSmoothing / zoomDeacceleration (both 10 and unused today)",
+        "Cold-boot 00Init and check the console is clean"
+      ],
+      "color": "blue"
+    },
+    {
+      "key": "ctl-cursor-aim-controller",
+      "title": "P1 · Cursor-aim top-down controller",
+      "body": "The controller that makes this a top-down action game already exists and works: `Assets/TopDownController/Scripts/TopDownAimController.cs` (226 lines), a subclass of `MultiplayerARPG.PlayerCharacterController` that overrides only `UpdateWASDInput()`, `UpdateInput()` and `ManagedUpdate()`. It is live — `Demo/Scenes/00Init.unity:796` points `defaultControllerPrefab` at `Assets/TopDownController/Demo/Prefabs/TopDownAimController.prefab`.\n\nWhat it does: projects the cursor through `CacheGameplayCameraController.Camera` onto a `Plane` at the character's feet (a plane, not a physics ray, so aiming still works over pits), calls `SetLookRotation(rot, true)`, re-sends `KeyMovement` with `GameplayUtils.GetMovementStateByDirection` for 8-way strafe, and redirects the kit's pending auto-turn via the `protected` `_turnToTargetPosition`. It also mutes the `Attack` InputAction while the cursor is over UI.\n\n**Load-bearing ordering:** the aim lands inside `UpdateWASDInput()` so it runs *before* the base's `UpdateWASDAttack()` and `UpdateTurnToTargetToDoAction()` in the same frame. Move it to `ManagedUpdate` and every attack fires one frame late. **Landmine:** `RedirectPendingActionToCursor` also fires for `TargetActionType.UseSkill`, overwriting the ground-snapped aim an area skill just set — turn direction only, but it looks wrong at long range.",
+      "status": "Done",
+      "labels": [
+        "controller",
+        "feel"
+      ],
+      "checklist": [
+        {
+          "text": "Aim plane projection and SetLookRotation",
+          "done": true
+        },
+        {
+          "text": "Strict cursor aim via _turnToTargetPosition redirect",
+          "done": true
+        },
+        {
+          "text": "8-way strafe movement states (all 8 clips filled on SyntyPlayerCharacter.prefab)",
+          "done": true
+        },
+        {
+          "text": "blockAttackWhenCursorOverUI Attack-action mute",
+          "done": true
+        },
+        "Exposes AimWorldPosition and CurrentAimPosition — done, but nothing consumes them yet (see ctl-cursor-aimed-skillshots)"
+      ],
+      "color": "blue"
+    },
+    {
+      "key": "ctl-rebind-dash-key",
+      "title": "P1 · Rebind dash off the equals key",
+      "body": "The dash is fully implemented end to end and is bound to a key nobody will ever press. `PlayerCharacterController_Inputs.cs:489` sets `MovementState.IsDash` on `GetButtonDown(\"Dash\")`; `BuiltInEntityMovementFunctions3D.cs:740` turns it into an `EntityMovementForceApplier`; `SyntyPlayerCharacter.prefab` line 77893 has `dashingForceApplier` speed 20 / deceleration 20, which `CalculateDistance()` resolves to a **10 m dash along `EntityTransform.forward`** — i.e. straight at the cursor. Verified: `Demo/InputActions.inputactions` line 1019 binds Dash to `<Keyboard>/equals` and nothing else, with no gamepad binding.\n\nThis is the only movement verb the fight has, and it costs one binding edit. Done looks like: press Space (or LeftShift) mid-fight and slide 10 m toward the cursor.\n\n**Landmine:** `InputActions.inputactions` lives in the kit Demo tree and is already hand-patched (Attack → leftButton). An Asset Store package reimport reverts it — log this edit in `Tools/KitPatches/README.md` in the same commit. Second landmine: `InputManager` caches found *and missed* action names in static dictionaries cleared only by the `[RuntimeInitializeOnLoadMethod]` at `InputManager.cs:57`, so a binding added during a play session is not picked up until you stop and re-enter play mode.",
+      "status": "Next Up",
+      "labels": [
+        "controller",
+        "feel"
+      ],
+      "checklist": [
+        "Open Assets/UnityMultiplayerARPG/Demo/InputActions.inputactions (guid b7b0acfa, bound as InputSettingManager.inputActionAsset at 00Init.unity:1035) — NOT the unreferenced Assets/InputSystem_Actions.inputactions at the project root, which is Unity's default template, has an Attack action but no Dash, and is bound to nothing. Player map, Dash action",
+        "Replace <Keyboard>/equals with Space or LeftShift, and add a gamepad face button (buttonEast is free; buttonSouth is Jump)",
+        "Exit and re-enter play mode so InputManager's static action cache is rebuilt",
+        "Test the 10 m dash toward the cursor against the training dummy",
+        "Add the row to Tools/KitPatches/README.md: InputActions.inputactions / Dash binding / equals / space"
+      ],
+      "color": "blue"
+    },
+    {
+      "key": "data-ids-and-registration-discipline",
+      "title": "P1 · Type explicit ids and fix registration rules",
+      "body": "`BaseGameData.Id` (Core/Scripts/GameData/BaseGameData.cs:31) returns `string.IsNullOrEmpty(id) ? name : id`, and `DataId = MakeDataId(Id)` (:153) is a pure string hash (:180). I confirmed all six project assets ship `id:` EMPTY — both swords, `Legs001_G`, `ArmorTypes/Legs`, `ArmorTypes/Cloak`, `MapInfos/Prototype_World_01`. Renaming any of them silently changes its runtime identity and orphans every saved inventory row. GUIDs survive a rename; DataIds do not.\n\n`Assets/1. Data/GameDatabase_G.asset` is an **explicit-list** database (60 items, 7 armorTypes at :113-120, 10 weaponTypes at :121-131, 4 attributes, 4 damageElements — all but three pointing into the kit Demo tree). An asset not in it, not in `NewCharacterSetting.startItems` and not on a registered PlayerCharacter simply does not exist at runtime, with no warning.\n\nRegistration cascades: `AddGameData` (GameInstance_Data.cs:1026-1037) calls `Validate()` then `PrepareRelatesData()`; `ArmorItem.PrepareRelatesData` (ArmorItem.cs:29-33) calls `AddArmorTypes(ArmorType)` and `WeaponItem` (WeaponItem.cs:565-569) pulls in its WeaponType and DamageElement. Register the ITEM and the types follow for free.\n\n**Landmine — that same cascade silently kills forks.** `GameDatabase.cs:115` runs `AddItems(items)` BEFORE `AddArmorTypes` (:117) and `AddWeaponTypes` (:118); `LoadReferredData` repeats the order at :146-149. The item re-registers the type its OWN GUID points at, and `AddGameData` writes only when the DataId key is absent, returning true with no log. Fork `OneHandSword` today and it is DISCARDED: both swords still reference the Demo original (guid `68fba38e…`, verified at DarkFortressSword001_G.asset:598 and SyntySword001_G.asset:598), so Demo claims the DataId at :115 and your fork loses at :118. You tune a file the game never loads and every symptom points at the tuning being wrong. **The rule: forking a WeaponType, ArmorType or DamageElement means repointing EVERY referencing item's GUID and swapping the Demo row out of GameDatabase_G in the SAME commit.** The Legs fork works today only because `Legs001_G.asset:603` already points at `1. Data/GameData/ArmorTypes/Legs.asset`. Attributes (:112) and DamageElements (:114) load before items, so those forks currently win on ordering alone — repoint them anyway rather than trusting a line number.\n\n**This overturns a recorded decision.** CHANGELOG.md:25-32 says `TwoHandSword.asset` was edited in place rather than forked because \"a fork would change the DataId and orphan the registered `TwoHandSword001` item\" and because \"the `Demo/` tree has no upstream repo\". The first is wrong — DataId is a hash of `id ?? filename`, so a fork keeping the filename (or typing `TwoHandSword` into `id`) is DataId-identical. The second is true for the GitHub mirror path only; the Asset Store update path overwrites `Demo/` wholesale. Write the reversal into the CHANGELOG once you have proven the rule.\n\n**Landmine:** `Legs001_G` is registered in BOTH `Assets/1. Data/GameDatabase_G.asset:70` and the stale kit `Demo/GameData/GameDatabase.asset:99`. Only the former is loaded, and the duplicate will confuse you at 1am. Note `GameDatabase_G.asset:99` is a different row entirely (SyntySword001_G) — always qualify the full path before deleting a line.\n\nDone: six typed ids, a conventions README carrying the repointing rule, one database owning project items, and a CHANGELOG that agrees with the board.",
+      "status": "Next Up",
+      "labels": [
+        "data",
+        "risk"
+      ],
+      "checklist": [
+        "Type `id:` into both swords, Legs001_G, ArmorTypes/Legs, ArmorTypes/Cloak and MapInfos/Prototype_World_01 — use the current filename verbatim so no DataId changes.",
+        "Write `Assets/1. Data/GameData/README.md`: `<Name>_G.asset` naming, `id:` always typed, folder mirrors the type name, every new asset registered in GameDatabase_G in the same commit, plus the silent-failure list (unregistered asset, duplicate DataId, empty id, missing equipSocket, null icon, null dropModel).",
+        "Record the fork-on-touch rule in that README WITH its repointing clause: forking a WeaponType, ArmorType or DamageElement means repointing every referencing item's GUID and swapping the Demo row out of GameDatabase_G in the same commit — AddItems runs at GameDatabase.cs:115, before AddArmorTypes/AddWeaponTypes at :117-118, and WeaponItem.PrepareRelatesData (WeaponItem.cs:565-569) re-registers the item's own referenced type, so the Demo original claims the DataId and your fork is dropped with no error.",
+        "Prove it once end to end: fork OneHandSword into `1. Data` with `id: OneHandSword`, repoint `weaponType` on DarkFortressSword001_G.asset:598 AND SyntySword001_G.asset:598, swap the GameDatabase_G row at :127, then enter Play and confirm the tuned value is LIVE. The game booting is not proof.",
+        "Amend the CHANGELOG's TwoHandSword entry (CHANGELOG.md:25-32) once that proof lands — the \"a fork would change the DataId\" reason is false, and \"no upstream repo\" holds for the GitHub mirror but not for the Asset Store update path.",
+        "Delete the stale `Legs001_G` row from `Assets/UnityMultiplayerARPG/Demo/GameData/GameDatabase.asset:99`, and the `.gitkeep` files under `Items/Weapons/`, `Items/Armors/Legs/` and `ArmorTypes/` — all three now hold real assets.",
+        "Enter Play once and confirm all three project items still resolve after the id edits.",
+        "Add ProjectSettings/EditorUserSettings.asset to .gitignore — SceneShortcutsWindow.cs stores its bookmarks there and its own doc comment assumes the file is untracked, but it is not ignored today"
+      ],
+      "color": "blue"
+    },
+    {
+      "key": "data-starter-gear-delivery",
+      "title": "P1 · Give starter gear a real delivery path",
+      "body": "I grepped all three project item GUIDs across every `.asset`, `.unity` and `.prefab`: `9aa1b9c4` (DarkFortressSword) and `d99f1b8c` (SyntySword) appear ONLY in `GameDatabase_G.asset`, and `9bc44b88` (Legs001_G) only there plus the stale Demo database. They are registered and obtainable by nobody, so every gear iteration needs a console cheat.\n\nThe live setting is the kit's `Demo/GameData/NewCharacterSetting.asset`, assigned on GameInstance at `Demo/Scenes/00Init.unity:952`. I counted its rows: `startGold: 2000` and 56 `- item:` entries dumped into every new character's bag.\n\n**This is hours, not days.** `NewCharacterSetting` is a plain ScriptableObject, not a `BaseGameData`, so it carries no DataId — nothing to preserve, no database row to swap, and none of the fork-repointing discipline applies. Better still, `GameInstance.cs:1813-1814` calls `AddItems(newCharacterSetting.startItems)`, so the fork auto-registers whatever you put in it and needs no GameDatabase_G edit at all.\n\nScope here is the delivery mechanism ONLY: fork the asset, trim it to the items that already exist, repoint one scene field, log the Demo edit. Choosing numbers so the first orc drop feels like an upgrade is a separate card once there is an orc to drop anything — do not hold this behind that.\n\n**Landmine:** `PlayerCharacter.Validate()` (PlayerCharacter.cs:157-215) NULLS OUT equip slots that fail its checks on OnValidate, with only a `Debug.LogWarning`. Re-open the asset after saving and confirm the references survived.\n\nDone: create a character, land in Prototype_World_01, open the bag, and find only the items you authored.",
+      "status": "Next Up",
+      "labels": [
+        "gear",
+        "data"
+      ],
+      "checklist": [
+        "Copy `Demo/GameData/NewCharacterSetting.asset` to `Assets/1. Data/GameData/NewCharacterSetting_G.asset` — there is no `id:` to type, it has no DataId.",
+        "Trim the 56 demo `startItems` rows down to a deliberate two-or-three-item kit: `DarkFortressSword001_G` plus `Legs001_G`, and set `startGold` to a number you actually chose instead of the kit's 2000.",
+        "Repoint `newCharacterSetting` on GameInstance at `Demo/Scenes/00Init.unity:952` to the fork, and log that Demo-tree edit as a row in `Tools/KitPatches/README.md`.",
+        "Decide equipped versus in-bag: `PlayerCharacter.rightHandEquipItem`/`armorItems` equip on spawn, `startItems` only fill the inventory.",
+        "Landmine check — re-open the character asset after saving and confirm `PlayerCharacter.Validate()` (PlayerCharacter.cs:157-215) has not silently nulled an equip slot it rejected.",
+        "Create a fresh character and verify the bag matches exactly what you authored: no demo items, no console cheat."
+      ],
+      "color": "blue"
+    },
+    {
+      "key": "feel-swing-audio-layers",
+      "title": "P1 · Random swing SFX through genericAudioSource",
+      "body": "**Shipped 2026-08-30.** Five clips from `Melee Weapons Pack 1/Designed/Weapon Swing/Design 1` play at random per swing via `ActionAnimation.GetRandomAudioClip()`. Wired through a `weaponAnimations` entry keyed to `OneHandSword` (not `defaultAnimations`), so the swoosh only plays with a sword equipped and never while unarmed. `TwoHandSword` carries the same five clips at trigger rate 0.350.\n\n`genericAudioSource` had to be created from scratch on the character root (`Assets/1. Data/Prefabs/SyntyPlayerCharacter.prefab` line 74614) — `PlayActionAnimationAudioClip` routes through `AudioManager.PlaySfxClipAtAudioSource`, which returns early on a null source and drops the audio with nothing in the console. The kit's own `Male_CC` leaves it null and uses animation events instead, so there was no in-project example. It is 3D (`spatialBlend 1`), `playOnAwake` off, rolloff 2-30 m.\n\n**Known limitation, deliberately carried forward:** `PlayableCharacterModel.cs:630` fires this audio *before* `Behaviour.PlayAction`, i.e. ~317 ms before the blade arrives at the measured trigger rate. Treat what is here as anticipation. The heavy contact transient belongs on `WeaponItem.launchClipSettings` — see the impact VFX/SFX card.",
+      "status": "Done",
+      "labels": [
+        "feel",
+        "combat"
+      ],
+      "checklist": [
+        "DONE: added a 3D AudioSource on the character root and bound it to genericAudioSource",
+        "DONE: five swoosh clips on the OneHandSword weaponAnimations entry, randomised per swing",
+        "DONE: same five clips mirrored onto the TwoHandSword WeaponType at rate 0.350",
+        "MAINTENANCE: when the contact transient lands on launchClipSettings, drop these to 2-3 quieter clips so anticipation and impact do not fight"
+      ],
+      "color": "blue"
+    },
+    {
+      "key": "feel-training-dummy",
+      "title": "P1 · Put a training dummy in Prototype_World_01",
+      "body": "Every number below this card — trigger rate, hitstop budget, shake magnitude, knockback distance — is unmeasurable without a target that stands still and never hits back. `Assets/1. Data/Scenes/Prototype_World_01.unity` currently contains zero spawn areas (`grep -c b6420796500f2444ba4683925d87b4b1` returns 0 against 8 in `Demo/Scenes/Map001.unity`).\n\nCopy `Assets/UnityMultiplayerARPG/Demo/GameData/Resources/MonsterCharacters/OrcWarrior.asset` to `Assets/1. Data/GameData/MonsterCharacters/TrainingDummy_G.asset`: `characteristic: 0` (Normal — never aggros), `damageAmount` 0, `moveSpeed` 0, a large HP pool, and an explicit `id: TrainingDummy_G` typed in. Register it in `GameDatabase_G` — that database is an explicit list, so an unregistered asset simply does not exist at runtime with no warning. Then a second `MonsterSpawnArea` near the `SpawnPoint`, `minAmount`/`maxAmount` 1-3, `groundFindingType` NavMesh, and press **Bake Random Positions** so the test is identical every launch.\n\n**Ownership:** this card is the sole owner of the dummy — the asset *and* its own spawn area. `world-first-spawn-area` owns only the OrcWarrior area, its bake and the startMap edits, and deliberately does not fork a dummy. Author it in exactly one place under exactly one filename: `BaseGameData.Id` falls back to the filename (`BaseGameData.cs:31`), so `TrainingDummy.asset` and `TrainingDummy_G.asset` are two different DataIds. `_G` is the project convention; the explicit `id:` is what makes the identity survive a later rename.\n\n**Landmine:** `ItemDropManager.RandomItems` re-rolls until it produces `targetRandomDropCount` items, so `dropRate` decides *which* item drops, never *whether*. Set `minDropItems`/`maxDropItems` to 0 on the dummy or every test kill rains loot.\n\n**Landmine:** do not copy Map001's authored `minAmount: 10 / maxAmount: 1` — it only works because `GetRandomedSpawnAmount` silently clamps.\n\nDone = you press Play, walk two metres, and swing at something that takes damage forever.",
+      "status": "Next Up",
+      "labels": [
+        "feel",
+        "enemies",
+        "combat"
+      ],
+      "checklist": [
+        "Copy OrcWarrior.asset to Assets/1. Data/GameData/MonsterCharacters/TrainingDummy_G.asset and type an explicit id: TrainingDummy_G",
+        "Set characteristic 0, damageAmount 0, moveSpeed 0, a large HP pool, minDropItems/maxDropItems 0",
+        "Register TrainingDummy_G in Assets/1. Data/GameDatabase_G.asset in the same commit",
+        "Add a MonsterSpawnArea near the SpawnPoint in Prototype_World_01, Radius type, groundFindingType NavMesh, amount 1-3",
+        "Press Bake Random Positions and confirm the cyan gizmos land on the terrain",
+        "Play and confirm damage numbers appear over the dummy from a normal swing"
+      ],
+      "color": "blue"
+    },
+    {
+      "key": "feel-upper-body-attack-mask",
+      "title": "P1 · Upper-body attack mask + mid-swing mask fix",
+      "body": "**Shipped 2026-08-30.** Attacks play on the torso while the legs keep strafing: `Assets/1. Data/AvatarMasks/SyntyUpperBody.mask` is set as `avatarMaskWhileMoving` on the attack `ActionAnimation`s. Standing still is left unmasked on purpose, so the swing's own footwork still reads.\n\n`Assets/Scripts/Gameplay/ActionLayerMaskUpdater.cs` closes a real kit hole: `AnimationPlayableBehaviour.PlayAction` resolves the action mask **once** at swing start (`avatarMaskWhileMoving` -> `actionState.avatarMask` -> `CharacterModel.actionAvatarMask` -> `EmptyMask`) and never revisits it. Start an attack standing still, then walk, and the legs stay welded to the attack clip while the character slides. The component re-evaluates the same condition each LateUpdate against `LayerMixer` / `ACTION_LAYER` / `EmptyMask` and writes only on a state change.\n\n**Landmine:** it touches no kit file but reads `PlayableCharacterModel.Behaviour`, `LayerMixer`, `ACTION_LAYER` and `EmptyMask` as public API. A Core mirror update that renames or hides any of them breaks the *build*, not quietly — re-check this file after every kit update.\n\n**Landmine:** the kit's own `TopMask.mask` cannot be reused — its humanoid flags are fine but its transform paths are the demo rig's (`Root_M/Hip_L/...`), which do not exist on the Synty hierarchy.",
+      "status": "Done",
+      "labels": [
+        "feel",
+        "combat"
+      ],
+      "checklist": [
+        "DONE: authored SyntyUpperBody.mask against the Synty FixedScale rig",
+        "DONE: assigned it as avatarMaskWhileMoving on the 1H and 2H attack states",
+        "DONE: wrote ActionLayerMaskUpdater.cs and added it to SyntyPlayerCharacter.prefab",
+        "MAINTENANCE: after any Core mirror update, confirm ActionLayerMaskUpdater still compiles before touching anything else"
+      ],
+      "color": "blue"
+    },
+    {
+      "key": "world-first-spawn-area",
+      "title": "P1 · Put the finished orc in your own world",
+      "body": "`Assets/1. Data/Scenes/Prototype_World_01.unity` is 7 GameObjects and **zero spawn areas** — the `MonsterSpawnArea` script guid `b6420796500f2444ba4683925d87b4b1` returns 0 hits there against 8 in `Demo/Scenes/Map001.unity`. Meanwhile the enemy you have already paid for is finished and standing in no scene.\n\n`OrcWarrior.prefab` is already registered in `GameDatabase_G` and is fully authored: `hurtState` at line 2586 and `deadState` at 2602 are both filled (your own player's are null in five places), `OrcWarrior.asset` lists `Bash` at `useRate: 0.75` against `Bash.asset`'s `castDuration: 0.5` telegraph, 4-8 melee damage, gold as a ground pickup and a 14-item drop list. `BaseGameNetworkManager.RegisterEntities()` finds every spawn area in a loaded scene and calls `SpawnFirstTime()` on it — so **one empty GameObject with one component** buys the whole chase-hit-die-loot exchange, with no code and no new art.\n\nThat is why this is the highest-value hour on the board. Until an orc is chasing you, you cannot tune an aggro range you cannot see, cannot judge a 0.317 trigger rate against nothing, and cannot know whether the camera should lead the cursor.\n\nThe training dummy is **not** this card. `feel-training-dummy` owns `TrainingDummy_G.asset` and its own spawn area. This card owns the orc area, the bake, the three `startMap` edits and `defaultTitle`.\n\n**Landmine:** do not copy Map001's authored `minAmount: 10 / maxAmount: 1`. `GetRandomedSpawnAmount()` silently clamps when max < min, and the multi-prefab `SpawnPrefabData` path uses an exclusive `Random.Range` while the base class uses `maxAmount + 1` — the two spawn routes differ by one.\n\n**Landmine:** `NavMeshSurface` bakes relative to its own transform inside the `3. Map` group. Nudge that group after baking and `SpawnInternal` logs \"cannot find grounded position\" and re-queues forever.\n\n**Done:** press Play as any class, land in Prototype_World_01, and an orc walks over and starts hitting you.",
+      "status": "Next Up",
+      "labels": [
+        "enemies",
+        "world"
+      ],
+      "checklist": [
+        "Add an empty GameObject under the scene's `1. Map` group with a MonsterSpawnArea: prefab = Assets/UnityMultiplayerARPG/Demo/Prefabs/Gameplay/CharacterEntities/OrcWarrior.prefab, type 0 (Radius), randomRadius 20, groundFindingType 0 (NavMesh), minLevel/maxLevel 1, minAmount 5, maxAmount 5",
+        "Press Bake Random Positions (the GameArea [InspectorButton]) and check the cyan gizmo spheres sit on the terrain",
+        "Set startMap to guid 086de608fd6fe2f40ad803d1d0e57eef on Novice.asset, Archer.asset and Mage.asset (Warrior already has it) so class choice stops deciding which world you test in",
+        "Set defaultTitle on Assets/1. Data/GameData/MapInfos/Prototype_World_01.asset — it is empty, so the map name renders blank in every UI that shows it",
+        "If the orc reads as blind at normal zoom, raise visualRange on the Demo OrcWarrior.asset from 5 to ~14 as an explicitly throwaway test edit and log the row in Tools/KitPatches/README.md — world-own-the-orc replaces it with the forked version",
+        "Play as two different classes and confirm both land in the prototype world with the orc present and hostile"
+      ],
+      "color": "blue"
+    },
+    {
+      "key": "world-kit-patch-ledger",
+      "title": "P1 · Start the kit-patch ledger",
+      "body": "Thirteen kit-owned files carry deliberate edits and nothing in the repo records them — the CHANGELOG names five. Worse, \"reimport the kit\" means two different things with very different blast radii. The **GitHub Core/MMO mirror** reverts only two of your patches: `Core/CameraAndInput/Scripts/Camera/FollowCameraControls.cs` (SaveCameraPrefs, line 131) and `Core/CameraAndInput/Scripts/Input/InputManager.cs` (the `if (!hasInputAction)` guard at line 211 — reverting it brings back the 100x scroll-zoom spike). The **Asset Store package** overwrites the whole `Demo/` tree and reverts eleven more, including `00Init.unity`, the scene the game boots from.\nThe sixth patch the CHANGELOG omits: `Demo/GameData/Resources/PlayerCharacters/Warrior.asset`'s `startMap`, set in commit `b1e5964` — which is currently the only route into your own world.\nThis card is ten seconds of typing per edit and it is the difference between a thirty-minute replay and a lost weekend. Almost every other card on this board adds a row to it.\n**Done:** `Tools/KitPatches/README.md` exists, is seeded with the known thirteen, and every later Demo-tree edit lands its row in the same commit as the edit.",
+      "status": "Next Up",
+      "labels": [
+        "tooling",
+        "risk"
+      ],
+      "checklist": [
+        "Create Tools/KitPatches/README.md as a markdown table: file | field | old value | new value | why",
+        "Head it with the two reimport paths and which group each one reverts",
+        "Seed the two Core script patches (FollowCameraControls SaveCameraPrefs; InputManager GetAxis legacy-fallback guard)",
+        "Seed the Demo asset edits: 00Init.unity's three GameInstance references, InputActions Attack->leftButton, MinimapRenderTexture depth, TwoHandSword animations, Warrior.asset startMap, the stray Legs001_G row in the kit's own GameDatabase.asset",
+        "Add a standing rule at the top: a Demo-tree edit without a ledger row is unfinished work"
+      ],
+      "color": "blue"
+    },
+    {
+      "key": "world-setup-doc",
+      "title": "P1 · Write SETUP.md so a fresh clone works",
+      "body": "Your working copy is fine — the packs are on the Windows machine at `D:\\1. Unity projekt\\MMORPG Granny`, and the `.gitignore` entries were written while using them. This card is about the **next** machine: a Windows reinstall, a laptop, a collaborator, or a clone made in a hurry two years from now. The repo root holds only `CHANGELOG.md` — no README — and the recovery instructions exist nowhere except as prose scattered through 529 changelog lines.\n\nThree things silently break a fresh clone. **(1)** `.gitignore:108-146` excludes nine vendor paths — `Assets/Synty/`, `Assets/Polygon*/`, `Assets/Interface*/`, `Assets/AnimationBaseLocomotion/`, `Assets/Action RPG SFX V2/`, `Assets/Hovl Studio/`, `Assets/Kevin Iglesias/`, `Assets/Melee Weapons Pack 1/` and `Assets/2. Art/Blink/` — roughly 1.9 GB of purchased, re-downloadable content. **(2)** `.gitattributes` routes `*.fbx *.png *.wav *.tga *.psd *.ogg *.exr` through Git LFS and **349 tracked files are pointers**; Unity never says \"this is an LFS pointer\", it says the texture is broken, so the symptom does not name its cause. **(3)** Import order matters — open the project before the packs land and Unity re-resolves references against nothing.\n\nThe good news, and the line that makes the doc worth writing: the GUIDs reconnect on their own. Unity packages carry their own `.meta` files, so re-importing a pack to the same path restores the same GUIDs. That is why `SyntyPlayerCharacter.prefab`'s 39 unresolvable references, `UIItemsDialog.prefab`'s 14, `Prototype_World_01.unity`'s 5 and `Legs001_G.asset`'s 1 all come back without hand-reassignment — but only if the path is exact. BLINK must land at `Assets/2. Art/Blink/` or 600+ icon GUIDs need reassigning by hand.\n\n**Landmine:** a clone shows `Assets/2. Art.meta` with no `2. Art` folder beside it. Decide once whether that is an orphan to delete or a folder to restore, and say which in the doc rather than leaving the next person to guess.\n\nTen minutes of typing against a lost afternoon on the next machine.\n\n**Done:** `SETUP.md` at the repo root takes someone from `git clone` to a clean Play-mode session with no missing references and no guessing.",
+      "status": "Next Up",
+      "labels": [
+        "tooling",
+        "risk"
+      ],
+      "checklist": [
+        "Write SETUP.md at the repo root ordered as commands: `git lfs install` first, then clone (or `git lfs pull` in an existing clone), then import the packs, then open Unity",
+        "List all nine gitignored vendor paths from .gitignore:108-146 with the exact folder each package must land in, calling out `Assets/2. Art/Blink/` explicitly",
+        "State plainly that 349 tracked files are LFS pointers and that Unity reports them as broken textures rather than as pointers",
+        "Record that re-importing to the same path restores the same GUIDs, so SyntyPlayerCharacter.prefab's 39 references reconnect by themselves and nothing needs reassigning by hand",
+        "Record the Unity version, the pinned MMORPG KIT version, and where each pack was bought (Asset Store vs Synty Store) so the right versions can be re-downloaded",
+        "Confirm on the working machine that all nine vendor paths are present and SyntyPlayerCharacter.prefab shows no missing references — every clip, VFX, SFX and icon card on this board assumes it, and BLINK must sit at exactly Assets/2. Art/Blink/",
+        "Resolve the `Assets/2. Art.meta` orphan and write down which way you resolved it",
+        "Prove the doc: clone into a scratch folder on the same machine, follow it top to bottom, and fix whatever step you had to improvise"
+      ],
+      "color": "blue"
+    },
+    {
+      "key": "data-repair-synty-wardrobe",
+      "title": "P2 · Repair the Synty wardrobe and pick a look",
+      "body": "I resolved every container on `Assets/1. Data/Prefabs/SyntyPlayerCharacter.prefab`. Of 20 sockets, only SIX carry authored `instantiatedObjectGroups`: Body (29 groups), Gloves (18), Legs (29), Shoulders (22), Elbows (7), Knees (12). **Head, Eyebrows, FacialHair, Hair, Helmet, Cloak, all three HeadCovering_* sockets, HipsAttachment and Extra all serialize `instantiatedObjectGroups: []` with an empty `defaultInstantiatedObjectGroup`** — so a Head, Helmet or Cloak item can never select a mesh, even though a Cloak ArmorType and a Cloak UI slot both exist.\n\nThe appearance problem is the same prefab. Resolving the child meshes: `All_01_Hair` has 38 children with **0 active**, `Helmet` 13/0, `All_04_Back_Attachment` 15/0, and torso/hips show only `Chr_Torso_Male_00` / `Chr_Hips_Male_00`. The character is a bald mannequin in underwear — that is what \"appearance reset after the rig swap\" means concretely.\n\nBoth halves are one editor window: `Assets/Scripts/Editor/SyntyEquipmentContainerBuilder.cs`, which derives the variant index from the trailing number in the mesh name so an item's `instantiatedObjectIndex` reads the same as Synty's own numbering.\n\n**Landmine:** an out-of-range `instantiatedObjectIndex` does not error — `BaseCharacterModel.cs:605-625` falls back to the DEFAULT body part. With an empty default group it renders nothing, and you blame the item.\n\nDone: every socket the UI can equip has groups, and the character has hair, a face and clothed defaults you would screenshot.",
+      "status": "Next Up",
+      "labels": [
+        "gear",
+        "tooling"
+      ],
+      "checklist": [
+        "Re-run Tools > Synty Equipment Container Builder against SyntyPlayerCharacter.prefab and confirm Head, Hair, FacialHair, Eyebrows, Helmet, Cloak, HipsAttachment and Extra come back with non-empty `instantiatedObjectGroups`.",
+        "Pick a default look: activate one hair mesh under `All_01_Hair`, keep `Male_Head_All_Elements`, and choose clothed torso and hips variants instead of `Chr_Torso_Male_00` / `Chr_Hips_Male_00`.",
+        "Write those choices into each container's `defaultInstantiatedObjectGroup` so unequipping returns to the look rather than to bare skin.",
+        "Copy the 20 socket names into the GameData README — `equipSocket` is matched by `TryGetValue` and a typo `continue`s silently (BaseCharacterModel.cs:594).",
+        "Record in the README that this rig has NO Shoes/Feet socket, so a Shoes item equips, applies stats and renders nothing.",
+        "Enter Play, equip and unequip Legs001_G, and confirm the legs swap and return to the new default correctly."
+      ],
+      "color": "copper"
+    },
+    {
+      "key": "feel-damage-numbers",
+      "title": "P2 · Fix the damage-number throttle and gaps",
+      "body": "Correction to the changelog: floating combat text is **already wired**. `Assets/1. Data/Prefabs/UI Prefabs/CanvasGameplay_G.prefab` lines 138-166 assign 8 `UICombatText` prefabs (Miss, Normal, Critical, Blocked, Hp/Mp recovery, Hp/Mp leech) from `Demo/Prefabs/UI/_Gameplay/CombatText/`, and `combatTextTransform` is bound on the player at prefab line 77993. What is wrong is the pacing and the gaps.\n\n**Ownership:** this card owns the combat-text pass exclusively — the `BaseUISceneGameplay` dequeue-interval patch and the `uiCombatTextImmune` / `uiCombatTextFallDamage` assignments in `CanvasGameplay_G`. `world-readable-enemy-hud` deliberately does **not** own any of it; it stays on nameplate visibility, `smoothTransition` and `uiCharacterBuffs`, and only relates here because both passes open the same gameplay canvas.\n\n`BaseUISceneGameplay.cs:118` dequeues exactly **one** combat text per damageable entity per 0.1 s. A four-target cleave or a fast combo trickles out over half a second instead of bursting. Drop the interval to ~0.03 s or drain the whole queue each frame.\n\n`uiCombatTextImmune`, `uiCombatTextFallDamage`, the Stamina and Hp/Mp *Decrease* slots are all `{fileID: 0}`, and `SpawnCombatText` returns silently on a null prefab — those events print nothing at all today.\n\n**Landmine:** `instantiateCombatTextToWorldTransform: 1` (line 138) selects the fixed-world-position branch and skips the `UIFollowWorldObject` attachment, so numbers stay put for their full 2 s lifetime while the target moves. Flipping the flag is not enough — the combat text prefabs are world-space canvases (`m_RenderMode: 2`) with `Billboard` and `DistanceToCameraBasedScaling` and would need re-authoring.\n\n**Landmine:** the `BaseUISceneGameplay` change is a **Core** patch, reverted by the GitHub mirror update rather than by the Asset Store one. Log it in `Tools/KitPatches/README.md` with a `.patch` file.",
+      "status": "Next Up",
+      "labels": [
+        "feel",
+        "ui",
+        "combat"
+      ],
+      "checklist": [
+        "Drop the 0.1f dequeue interval in BaseUISceneGameplay.Update() to ~0.03f and save the diff as a .patch in Tools/KitPatches/",
+        "Assign uiCombatTextImmune and uiCombatTextFallDamage in CanvasGameplay_G from the existing Demo CombatText prefabs",
+        "Hit the dummy with a cleave and confirm the numbers read as a burst, not a queue",
+        "Decide whether numbers should follow the target; if yes, budget a re-author of the CombatText prefabs as screen-space children",
+        "Check the numbers are still legible at the 25-unit end of the camera zoom range"
+      ],
+      "color": "copper"
+    },
+    {
+      "key": "feel-hurt-and-dead-states",
+      "title": "P2 · Fill hurtState and deadState on the player",
+      "body": "Nothing on the player acknowledges being hit, and a dead player keeps playing idle. Verified `clip: {fileID: 0}` at **five** sites in `Assets/1. Data/Prefabs/SyntyPlayerCharacter.prefab`: 76049 (`hurtState`) and 76065 (`deadState`) in the defaults, 76855/76871 in the weapon-specific set, and 77693. Filling only the defaults leaves you flinching unarmed and not while holding a sword.\n\n`PlayableCharacterModel.PlayHitAnimation` (line 768) only calls `Behaviour.PlayAction` when the clip is non-null, so it silently no-ops. Death is worse: `AnimationPlayableBehaviour.SetBaseState` returns early on a null clip, so `CLIP_DEAD` is never registered and the corpse plays locomotion forever. Working references with both filled: `Demo/Prefabs/.../Male_CC.prefab` lines 2325/2341 and `OrcWarrior.prefab` 2586/2602.\n\nSource clips: the Synty `AnimationSwordCombat` Hit/HitReact and Death set, or the Kevin Iglesias pack. Both are plain `AnimationClip` fields on an existing serialized struct — no code, no database registration.\n\n**Landmine:** receiving damage does **not** interrupt an attack (`BaseCharacterEntity_DamageFunctions.cs:216` interrupts skill casting, and cancels everything only on death). A full-body hurt clip fired mid-swing will fight the action layer, so prefer a short upper-body or additive hurt, or accept that stagger has to be built deliberately later.\n\nDone = you take an orc hit and visibly flinch; you die and fall over instead of standing there idling.",
+      "status": "Next Up",
+      "labels": [
+        "feel",
+        "combat"
+      ],
+      "checklist": [
+        "Audition Hit/HitReact and Death clips against the Synty FixedScale rig for hip drift",
+        "Fill hurtState.clip and deadState.clip at all five sites in SyntyPlayerCharacter.prefab (76049, 76065, 76855, 76871, 77693)",
+        "Set transitionDuration on hurtState short enough that it reads as a flinch, not a pose",
+        "Play, let an orc hit you mid-swing, and check the hurt clip does not fight the attack layer",
+        "Die on purpose and confirm the corpse holds the death pose instead of returning to idle"
+      ],
+      "color": "copper"
+    },
+    {
+      "key": "feel-impact-vfx-and-contact-sfx",
+      "title": "P2 · Melee cleave, impact VFX and contact SFX",
+      "body": "**(0) The cleave — do this first, it is the largest feel change per keystroke in the repo.** `hitOnlySelectedTarget: 1` is still live at `Demo/GameData/Resources/WeaponTypes/OneHandSword.asset:32` and `Unarmed.asset:20`, while `TwoHandSword.asset:28` is already `0`. With cursor aiming there is no click-selected target, so a one-hand swing damages exactly **one arbitrary body** inside its 1.5 m / 90-degree arc while the two-hander already cleaves the whole arc — two weapons behaving differently for no authored reason. Set it to 0 on the fork before touching any VFX. **data-ids-and-registration-discipline (P1) owns creating that fork and repointing the two swords at it** — this card only flips the flag on it.\n\n**(a) Sockets.** `effectContainers: []` at `SyntyPlayerCharacter.prefab` line 74615. `GameEntityModel.InstantiateEffect` `continue`s past any effect whose `effectSocket` is missing from the dictionary — no log, no warning. `WhiteHitEffect` (socket `Body`) is already the project-wide `defaultDamageHitEffects` in `00Init.unity:842` and starts appearing the moment `Body` and `Floor` exist. Copy the arrangement from `Male_CC.prefab:1362` or use the `SetEffectContainersBySetters` context menu.\n\n**(b) Contact-point VFX.** `damageInfo.impactEffects` is `{fileID: 0}` on both `OneHandSword.asset` and `TwoHandSword.asset`. `MeleeDamageInfo.PlayMeleeImpactEffect` computes a position along the hit direction — this is the only channel that fires at the actual contact point rather than on the victim's torso. Author `Assets/1. Data/GameData/Effects/ImpactEffects_Melee.asset` (tag-keyed, with a `defaultImpactEffect` fallback) pointing at a Hovl Studio slash/spark.\n\n**(c) Impact SFX.** Each `ImpactEffect.effect` is a `GameEffect` carrying its own `randomSoundEffects` — that is the correct home for Action RPG SFX V2 flesh and metal hits, distinct from the anticipation swoosh. Optionally add a per-weapon transient on `DarkFortressSword001_G.launchClipSettings`, which fires inside `AttackRoutine`'s trigger loop.\n\n**(d) The weapon prefab cannot receive a launch event at all.** `Assets/1. Data/Prefabs/Weapons/SM_Wep_Sword_01_G.prefab` is a bare variant: `m_AddedComponents: []`, no `BaseEquipmentEntity` anywhere on it. `BaseCharacterModel.PlayEquippedWeaponLaunch` (`BaseCharacterModel.cs:997`) only calls `PlayLaunch()` when `CacheRightHandEquipmentEntity != null`, and that cache is filled from a `BaseEquipmentEntity` found on the instantiated weapon model — so today the trigger-frame event never fires and a blade trail has nowhere to hang. Add the component as a variant override and put the trail on `weaponLaunchEffects`. While in there: `m_RemovedComponents: []`, so the two **inherited MeshColliders** ride a hand bone through every swing and must be removed as overrides, not by editing the file the changelog describes.\n\n**Landmine:** `WeaponItem.LaunchClip` reads **only** `launchClipSettings` (`launchClip` and `launchClips` are dead) and does `Random.Range(0, Length - 1)` — max-exclusive, so with five clips the fifth never plays. Pad the list.\n\n**Landmine — forking a type is not enough on its own.** Fork the WeaponType into `1. Data` with its `id` typed verbatim (or an Asset Store reimport reverts it), **and repoint every item that references it by GUID in the SAME commit**. `GameDatabase.cs:115-118` runs `AddItems` *before* `AddWeaponTypes`/`AddArmorTypes`, and `WeaponItem.PrepareRelatesData` re-registers the item's own referenced type — so while `DarkFortressSword001_G.asset:598` still points at the Demo GUID `68fba38efbfdced49a5d1e2ae95c0026`, the Demo original wins the DataId and your fork is dropped **silently**. The same trap applies to ArmorTypes and DamageElements.",
+      "status": "Next Up",
+      "labels": [
+        "feel",
+        "combat",
+        "gear"
+      ],
+      "checklist": [
+        "On the OneHandSword fork that data-ids-and-registration-discipline creates, set hitOnlySelectedTarget: 0 (and on Unarmed), then Play and confirm one swing cleaves 2+ bodies",
+        "Add Body and Floor entries to effectContainers on SyntyPlayerCharacter.prefab and confirm WhiteHitEffect now appears on you",
+        "Author ImpactEffects_Melee.asset with a Hovl slash as defaultImpactEffect and assign it to damageInfo.impactEffects on both sword types",
+        "Put 3-4 Action RPG SFX V2 flesh-hit clips on that GameEffect's randomSoundEffects, and pad any launchClipSettings list so the last entry can actually play",
+        "Add a BaseEquipmentEntity to SM_Wep_Sword_01_G.prefab as a variant override, hang a blade trail on weaponLaunchEffects, and remove the two inherited MeshColliders as overrides",
+        "Swing at the dummy, confirm the spark lands at the blade rather than the navel, and log every Demo-tree edit in Tools/KitPatches/README.md"
+      ],
+      "color": "copper"
+    },
+    {
+      "key": "ui-death-escape-guard",
+      "title": "P2 · Stop Escape hiding the respawn button",
+      "body": "Phase 1's done-condition is \"an orc walks across the screen and starts hitting you\", so you **will** die in phase 1 — and the first thing you meet is a softlock-shaped defect that had been parked four phases away.\n\n`CanvasGameplay_G.prefab` lines 231-284: `onCharacterDead` calls `Show()` on the UISystemDialog instance and `SetActive(true)` on its `ButtonRespawn` child. That same UISystemDialog is `UIEscapeWindowsHandler.uiSystemMenu` at `CanvasGameplay_G:332`. So the Escape pass that closes the pause menu also hides the only respawn button on the screen while you are dead.\n\nThis card is the one-line guard and nothing else: add `UISystemDialog` to `UIEscapeWindowsHandler.excludingWindows` for the dead state, or prove the respawn button survives the Escape pass as authored. The presentation work — dim overlay, \"You died\", a dedicated panel, repointing `onCharacterDead` — stays on `world-death-screen` at P5.\n\nRespawn itself already works: `UISceneGameplay.OnClickRespawn()` (`UISceneGameplay.cs:507`) sends `RequestRespawnMessage{option:0}`. Nothing here is netcode.\n\n**Landmine:** verify against a real death, not against opening the dialog by hand. The dead path activates `ButtonRespawn` separately from `Show()`, so a dialog you opened with Escape yourself looks correct and proves nothing.\n\n**Done:** you die to an orc, mash Escape, and the respawn button is still on screen and still works.",
+      "status": "Next Up",
+      "labels": [
+        "ui",
+        "risk"
+      ],
+      "checklist": [
+        "Die to an orc in Prototype_World_01 and press Escape — reproduce the disappearing respawn button before changing anything",
+        "Confirm the UISystemDialog instance that onCharacterDead shows (CanvasGameplay_G:231-284) is the same one wired as UIEscapeWindowsHandler.uiSystemMenu at line 332",
+        "Add UISystemDialog to excludingWindows while dead, or gate the Escape pass on the dead state — whichever is one edit rather than a forked prefab",
+        "Re-die, mash Escape, click Respawn, and confirm you come back at the map's startPosition",
+        "If the fix lands as an override inside a nested Demo prefab instance rather than on CanvasGameplay_G itself, add the row to Tools/KitPatches/README.md"
+      ],
+      "color": "copper"
+    },
+    {
+      "key": "world-readable-enemy-hud",
+      "title": "P2 · Make enemy health and damage readable",
+      "body": "Enemy nameplates are `visibility: 0` (VisibleWhenSelected) on `Demo/Prefabs/Gameplay/RelatesObjects/MonsterCharacter/CanvasMonsterCharacterUI.prefab:467` with `visibleDurationAfterHit: 2` — so an orc's health bar exists for two seconds after you hit it and never otherwise. `uiCharacterBuffs` on the same prefab (line 526) is `{fileID: 0}`, so enemy debuffs are invisible. Every gage in the chain has `smoothTransition: 0` (lines 475/507), so bars snap instead of draining.\nThe enemy cast bar is the same class of free win and is currently missing: `Demo/Prefabs/UI/_Gameplay/Share/UITargetCharacterHp.prefab:657` has `uiSkillCastContainer: {fileID: 0}`, so the target frame shows HP, level and buffs but never a cast. `UICharacterEntity` already drives `uiSkillCastContainer` / `uiTextSkillCast` / `imageSkillCastGage` every frame from `Data.CastingSkillCountDown` and `Data.CastingSkillDuration` (`BaseCharacterEntity.cs:121-122`), and `CanvasOwningCharacterUI.prefab` already has a working SkillCastContainer subtree — so this is a copy-paste plus two assignments, no code.\nThe combat-text pass lives on `feel-damage-numbers` (the `BaseUISceneGameplay` dequeue-interval Core patch and the unassigned `uiCombatText*` slots). Deliberately not repeated here — one Core patch, one owner, one ledger row.\n**Landmine:** `PlayerCharacterController_Inputs.cs:549` already writes `SelectedEntity` on every swing, explicitly commented \"to show character hp/mp UIs\". Nameplates therefore already flicker in on contact; any later hover system has to coexist with that write, not assume it owns the field.\n**Landmine:** AlwaysVisible costs a `Vector3.Distance` plus an enabled world-space Canvas per entity per `updateUIRepeatRate` tick (0.05s here). VisibleWhenNearby with a tuned `visibleDistance` is the cheap version.\n**Done:** you can watch an orc's bar drain smoothly from across the screen, see its debuffs, and see the Bash cast fill before it lands.",
+      "status": "Next Up",
+      "labels": [
+        "ui",
+        "enemies",
+        "feel"
+      ],
+      "checklist": [
+        "Set visibility 1 (VisibleWhenNearby) on CanvasMonsterCharacterUI.prefab and tune visibleDistance down from 30",
+        "Tick UIGageValue.smoothTransition on the monster HP gage and on the player HP/MP gages in UIGenericLayout.prefab, and tune smoothingSpeed",
+        "Assign uiCharacterBuffs on CanvasMonsterCharacterUI.prefab (line 526) to a UICharacterBuffs using Demo/Prefabs/UI/Player/UIBuffIcon.prefab",
+        "Copy the SkillCastContainer subtree from CanvasOwningCharacterUI.prefab into UITargetCharacterHp.prefab and assign uiSkillCastContainer and imageSkillCastGage (both {fileID: 0} at line 657)",
+        "Fight the orc and confirm bars drain and debuff icons appear over its head",
+        "Let the orc start Bash and confirm the target frame shows the 0.5s cast filling, then log every Demo-prefab edit in Tools/KitPatches/README.md"
+      ],
+      "color": "copper"
+    },
+    {
+      "key": "ctl-buffer-and-dash-weight",
+      "title": "P3 · Give the dash a body and a cooldown",
+      "body": "The dash moves you 10 m and looks like an ice-slide: no animation, no cooldown, no sound under the feet. This card gives it a body. **Scope note:** the ~200 ms attack buffer, `CancelAttack()` and the cancel-on-dash rule moved to feel-input-buffer-and-combo — that card is the sole owner now, and it calls into the dash this card builds.\n\n**Dash body.** `dashStartState` / `dashLoopState` / `dashEndState` are all `clip: {fileID: 0}` on `Assets/1. Data/Prefabs/SyntyPlayerCharacter.prefab` at **three sites: 76072, 76878, 77709** — verified, each site carries all three fields, so phase 3's \"76072-76092\" names only the first block. Fill all three or the dash animates in one movement mode and snaps in the others.\n\n**Cooldown.** There is none anywhere: `CharacterControllerEntityMovement.AllowToDash()` only checks grounded and is not virtual, so it is not yours to patch. Gate it in `TopDownAimController` by muting the `Dash` InputAction the same way `blockAttackWhenCursorOverUI` already mutes Attack. Start at 3 s.\n\n**Footsteps.** `CharacterFootstepSoundComponent` (`Core/Scripts/Gameplay/CharacterSystems/CharacterFootstepSoundComponent.cs`) is simply absent from `SyntyPlayerCharacter.prefab`, and the survey calls it out twice as doing a surprising amount of work for melee weight. Fill `moveFootstepSettings.soundData.randomAudioClips` from Action RPG SFX V2 — that is the branch the top-down WASD path lands on (`ManagedUpdate` switches on `Entity.ExtraMovementState` and `default:` is `moveFootstepSettings`; walk/sprint/crouch/crawl/swim are separate settings you can leave empty). Leave `audioSource` unassigned if you like: `Start()` builds a 3D `_FootstepAudioSource` child itself. It plays only while a Forward/Backward/Left/Right movement flag is set and `IsGrounded`, on `stepDelay / Entity.MoveAnimationSpeedMultiplier`.\n\n**Landmines:** the InputAction mute trick disables the action *globally* for the frame and resets its press state — keyboard and gamepad bindings go with it, and a held button dragged across the boundary can drop the hold. And the footstep component fails silently: `GetRandomedAudioClip()` returns null on an empty array and `PlayOneShot(null)` is a no-op, so an unfilled `randomAudioClips` looks exactly like the component not being there. Do not fill the `[HideInInspector]` legacy `soundData` field — it only exists to migrate old prefabs.",
+      "status": "Backlog",
+      "labels": [
+        "controller",
+        "feel",
+        "combat"
+      ],
+      "checklist": [
+        "Fill dashStartState / dashLoopState / dashEndState on SyntyPlayerCharacter.prefab at all three sites (76072, 76878, 77709) from the Kevin Iglesias or Synty roll clips",
+        "Add a serialized dashCooldown (start at 3 s) and enforce it by disabling the Dash InputAction, mirroring SetAttackInputEnabled",
+        "Hold Dash across the cooldown boundary and confirm the mute does not drop or stick the press state",
+        "Add CharacterFootstepSoundComponent to SyntyPlayerCharacter.prefab and fill moveFootstepSettings.soundData.randomAudioClips from Action RPG SFX V2",
+        "Tune stepDelay (0.35 default) against the run cycle so steps land on the foot plants, remembering it is divided by MoveAnimationSpeedMultiplier",
+        "Test against the training dummy: dash toward the cursor with a start/loop/end pose, hear the footsteps stop for the dash, and confirm the second dash is blocked for 3 s"
+      ],
+      "color": "bronze"
+    },
+    {
+      "key": "ctl-camera-lead-and-smoothing",
+      "title": "P3 · Lead the camera toward the cursor",
+      "body": "The camera shows you nothing you are aiming at. Verified on `Assets/TopDownController/Demo/Prefabs/TopDownGameplayCamera.prefab`: `targetOffset (0, 0.75, 0)` fixed, `smoothRotateX/Y: 0`, zoom 6..20. Every game in the reference set biases the view toward the aim point.\n\n**Scope note:** the two free checkboxes that used to sit on this card — `smoothFollow` and `smoothZoom`, both 0 today with `followSmoothing 10` / `zoomDeacceleration 10` unused — were **pulled forward onto ctl-controller-hygiene at P1**. Do not tick them here; the two cards must not collide on the same prefab.\n\nThe lead is a subclass job: override `CameraTargetOffset` (verified `public virtual Vector3` at `BasePlayerCharacterController.cs:81`) and return `base + lead`, where lead is ~20% of cursor distance clamped to ~3 m and smoothed over ~0.15 s. `FollowCamera.UpdateCamera:153` applies targetOffset in **camera space**, so this is a true screen-space pan. The same channel is where an additive decaying shake belongs later.\n\n**This card consumes no hit events.** It reads `AimWorldPosition` and nothing else. The `AddCameraShake` hook below is *provided by* this card for feel-hitstop-shake-knockback to call — that card already carries `depends --> feel-combat-feedback-bus` and `relates --> ctl-camera-lead-and-smoothing`, which is the whole of the real coupling.\n\n**Landmines:** (a) `DefaultGameplayCameraController.Update()` rewrites `CameraControls.target`, `targetOffset`, `fieldOfView`, near/far and `enableWallHitSpring` from the controller *every frame* — authoring those on the prefab does nothing at runtime, go through `AssignedCamera*` or the `Override*` layer. `smoothFollow`/`smoothZoom` are NOT overwritten, which is why they are safe to tick on the prefab (see ctl-controller-hygiene). (b) Never write to `Camera.transform` — `FollowCamera.UpdateCamera` erases it the same frame. (c) `FollowCameraControls.Recoil()` is euler-only and lerps with `Time.fixedDeltaTime` inside LateUpdate, so its ramp is framerate-coupled — do not make it the primary channel. (d) `FollowCamera` declares `private void OnDestroy()`; declaring one in any subclass hides it and leaks a `_CameraTargetFollower` GameObject per camera.",
+      "status": "Backlog",
+      "labels": [
+        "controller",
+        "feel"
+      ],
+      "checklist": [
+        "Add serialized cameraLeadEnabled + cameraLeadFactor + cameraLeadMaxDistance to TopDownAimController",
+        "Override CameraTargetOffset to return base + a SmoothDamped lead vector derived from AimWorldPosition",
+        "Verify at both zoom extremes (6 and 20) that the character never leaves the safe area of the screen",
+        "Leave a public hook (e.g. AddCameraShake(Vector3, float)) that adds decaying noise into the same offset, for CombatFeedback to call"
+      ],
+      "color": "bronze"
+    },
+    {
+      "key": "feel-combat-feedback-bus",
+      "title": "P3 · Build one CombatFeedback event bus",
+      "body": "Hitstop, camera shake, knockback and hit-flash all need the same trigger: *a hit landed on this client, right now, on this target*. The kit already broadcasts it and **nothing under `Assets/Scripts/` subscribes to any of it**. Build the bus first or every feel item re-derives its own trigger and they drift apart.\n\nWrite `Assets/Scripts/Gameplay/CombatFeedback.cs`.\n\n**Attacker side** — `Core/Scripts/Gameplay/CharacterSystems/CharacterActionsSystem/DefaultCharacterAttackComponent.cs` exposes `OnAttackStart` (line 36), `OnAttackTrigger(int)` (37) and `OnAttackEnd` (38) as settable `System.Action` properties.\n\n**Victim side, every client** — `DamageableEntity.onNormalDamageHit` / `onCriticalDamageHit` / `onBlockedDamageHit` / `onDamageMissed` (lines 40-43) are parameterless `UnityEvent`s invoked inside the `[AllRpc] RpcAppendCombatText` (line 237). **Server only** — `DamageableEntity.onReceivedDamage` (line 46) carries position, instigator, amount and weapon; anything authoritative (knockback) hangs off this one, not the RPC.\n\n**Coalesce per swing from day one.** A four-target cleave must produce one shake and one impact sound with magnitude scaled by target count, never four stacked. Build the coalescing window into the bus, not into each consumer.\n\n**Landmine:** the attack component is added at runtime (`BaseCharacterEntity.cs:215` `GetOrAddComponent<ICharacterAttackComponent, DefaultCharacterAttackComponent>()`), so subscribe after Setup, not in Awake, or you bind to nothing.",
+      "status": "Backlog",
+      "labels": [
+        "feel",
+        "combat",
+        "tooling"
+      ],
+      "checklist": [
+        "Create Assets/Scripts/Gameplay/CombatFeedback.cs with a single OnHitLanded(target, amountType, targetCount) entry point",
+        "Subscribe to DefaultCharacterAttackComponent.OnAttackTrigger after Setup, never in Awake",
+        "Subscribe to DamageableEntity.onNormalDamageHit / onCriticalDamageHit for client-side feedback",
+        "Subscribe separately to onReceivedDamage on the server for anything authoritative",
+        "Add a per-swing coalescing window so a cleave fires one event with a target count, not N events",
+        "Prove it with a Debug.Log against the dummy before wiring a single visual consumer"
+      ],
+      "color": "bronze"
+    },
+    {
+      "key": "feel-hitstop-shake-knockback",
+      "title": "P3 · Add hitstop, camera shake and knockback",
+      "body": "The 200 ms that turns a swing into a hit. None of it exists — a case-insensitive grep for `shake` across all of `Assets/UnityMultiplayerARPG` returns one unrelated WebSocket enum. All three consume the CombatFeedback bus.\n\n**Hitstop.** `Time.timeScale` does literally nothing in this kit: `BaseCharacterEntity.EntityUpdate:281` uses `Time.unscaledDeltaTime`, the PlayableGraph is `DirectorUpdateMode.Manual` fed that same delta, `GenericUtils.FrameBasedDelay` counts unscaled, and `PlayActionAnimationRoutine` waits on `WaitForSecondsRealtime`. A timeScale hitstop freezes particles and physics while the swing keeps going. Subclass `PlayableCharacterModel` and scale the delta forwarded by `UpdateAnimation(float)` (`PlayableCharacterModel.cs:113`). Budget 50-70 ms normal, 90-110 crit, 150 kill; take the max on a cleave, never sum.\n\n**Landmine:** `AnimationPlayableBehaviour.IsFreeze` looks like the switch and is not — `PlayMoveAnimation()` reassigns it every single frame from `CachedData.FreezeAnimation`.\n\n**Shake.** Never write to `Camera.transform` — `FollowCamera.UpdateCamera` rewrites it every LateUpdate. Call `TopDownAimController.AddCameraShake(direction, magnitude)` — the hook **ctl-camera-lead-and-smoothing provides**, layered onto its `CameraTargetOffset` override. Do not write a second override here: 0.06-0.10 units for ~120 ms, 2x on crit, 3x with a longer tail on a kill. `FollowCameraControls.Recoil` is euler-only and lerps with `Time.fixedDeltaTime` inside LateUpdate, so its ramp is framerate-coupled — not the primary channel.\n\n**Knockback.** `BaseGameEntity.ApplyForce` (`BaseGameEntity_MoveFunctions.cs:385`) is public and implemented on `NavMeshEntityMovement` too; copy the direction math from `SkillKnockback.ApplyKnockback`. 0.3-0.5 m over ~0.1 s — more than that fights the NavMesh. Apply it **server-side from `onReceivedDamage`**, never from the `[AllRpc]` client event, or host and client disagree about where the monster is standing.",
+      "status": "Backlog",
+      "labels": [
+        "feel",
+        "combat",
+        "controller"
+      ],
+      "checklist": [
+        "Subclass PlayableCharacterModel, override UpdateAnimation(float) and scale the forwarded delta; swap it onto SyntyPlayerCharacter.prefab",
+        "Drive the freeze from the bus at 50-70ms, taking the max across a cleave rather than summing",
+        "Call the AddCameraShake hook ctl-camera-lead-and-smoothing provides — do not write a second CameraTargetOffset override",
+        "Scale shake by crit and kill, and confirm it composes with any camera lead the controller section adds",
+        "Add knockback via BaseGameEntity.ApplyForce from the server-side onReceivedDamage, 0.3-0.5m over 0.1s",
+        "Add a short emission or colour pulse on the victim's renderers from the same bus — it reads better than VFX in a top-down camera",
+        "Re-measure ActionAnimation.triggerDurationRates against the dummy: 0.317 was measured in a game with no freeze"
+      ],
+      "color": "bronze"
+    },
+    {
+      "key": "feel-input-buffer-and-combo",
+      "title": "P3 · Buffer attack input, then cancel and combo",
+      "body": "A click during a swing is discarded outright — `PlayerCharacterController_Inputs.cs:506` bails at `if (PlayingCharacterEntity.IsPlayingActionAnimation()) return;` before it even reads the button, with no queue anywhere. This is the largest responsiveness win available and it needs no kit patch. This card owns the buffer, the cancel rule and the combo; `ctl-buffer-and-dash-weight` owns only the dash's own body and cooldown.\n\n**Buffer.** `UpdateWASDAttack` is not virtual, but `RequestAttack()` is public (`PlayerCharacterController.cs:428`) and handles hand alternation itself. Record Attack presses into a ~200 ms buffer inside `Assets/TopDownController/Scripts/TopDownAimController.cs` and call `RequestAttack()` on the first frame `IsPlayingActionAnimation()` goes false. Roughly thirty lines in a file you own.\n\n**Cancel.** `AttackComponent.CancelAttack()` is `public virtual` at `DefaultCharacterAttackComponent.cs:456` and the controller never calls it. The rule that feels fair rather than exploitable: uncancellable until `OnAttackTrigger` fires, freely cancellable after. Wire cancel-on-dash first, then cancel-into-next-attack once the buffer is in.\n\n**Combo.** `DefaultCharacterAttackComponent` walks `_lastAttackAnimationIndex` in sequence only when `doNotRandomAnimation` is true (line 113), resetting to 0 after `animationResetDelay` (2 s, line 45). The component is **never on the prefab** — `BaseCharacterEntity.cs:215` adds it at runtime via `GetOrAddComponent`, so a runtime instance takes the C# default of `false`. Pre-place it on `SyntyPlayerCharacter.prefab` with the flag ticked, and restore 3 right-hand clips (currently reduced to one; `01_R`/`04_R`/`05_R` measured at 0.267 / 0.317 / 0.283).\n\n**Landmine:** attack arrays do not fall back — `GetRightHandAttackAnimations` tests `!= null` and an empty array is not null, so any weapon type given an entry must carry at least one clip or its attacks resolve to a zero-length action.",
+      "status": "Backlog",
+      "labels": [
+        "feel",
+        "combat",
+        "controller"
+      ],
+      "checklist": [
+        "Add a ~200ms Attack press buffer to TopDownAimController and fire RequestAttack() on the first frame IsPlayingActionAnimation() goes false",
+        "Pre-place DefaultCharacterAttackComponent on SyntyPlayerCharacter.prefab and tick doNotRandomAnimation",
+        "Restore 01_R and 05_R alongside 04_R with their measured trigger rates so the sequence has three beats",
+        "Tune animationResetDelay down from 2s so the chain resets at a pace that matches the clip lengths",
+        "Call AttackComponent.CancelAttack() on dash, gated so the swing is uncancellable until OnAttackTrigger fires",
+        "Add cancel-into-next-attack once the buffer is proven, and check it does not let you skip the trigger frame entirely"
+      ],
+      "color": "bronze"
+    },
+    {
+      "key": "data-author-starter-outfit",
+      "title": "P4 · Author a head-to-toe starter outfit",
+      "body": "`Legs001_G` is the only armor in the project — `Items/Armors/{Body,Gloves,Head,Rings,Shoes,Cloak}/` hold nothing but `.gitkeep`. One leg item is not a gear set, and an inventory with seven empty slots reads as broken rather than empty.\n\nThe good news is that the Synty workflow is index-based, not prefab-based. `Legs001_G` sets `useInstantiatedObject: 1, instantiatedObjectIndex: 1` and simply selects group 1 in the Legs container — so each new armor piece is three fields, not a mesh export. Weapons take the other branch (`useInstantiatedObject: 0` plus a `meshPrefab`); both live in the same `EquipmentModel` struct.\n\nFix the placeholders while you are in there: `Legs001_G.defaultTitle` is literally `Legs001_G` and its `defaultDescription` is `Test legs` — both show in the tooltip.\n\n**Landmine:** an out-of-range `instantiatedObjectIndex` does not error; `BaseCharacterModel.cs:605-625` falls back to the default body part, so you see the character's default legs and blame the item rather than the index.\n\nDone: a Body, Head, Gloves and Cloak item beside Legs001_G, each with a real title, a real description, a non-zero armor value and a mesh you can see on the character.",
+      "status": "Backlog",
+      "labels": [
+        "gear",
+        "data"
+      ],
+      "checklist": [
+        "Confirm the Head and Cloak containers actually have `instantiatedObjectGroups` now — they were empty — before authoring anything that targets them.",
+        "Author Body001_G, Head001_G, Gloves001_G and Cloak001_G by copying Legs001_G and changing `armorType`, `equipSocket` and `instantiatedObjectIndex`.",
+        "Give every piece a real `defaultTitle`, `defaultDescription` and a non-zero `armorAmount.baseAmount`; fix Legs001_G's placeholder title and \"Test legs\" description in the same pass.",
+        "Register all four in `GameDatabase_G.items` in the same commit — the armor types cascade in via PrepareRelatesData, so only the items need rows.",
+        "Equip the full set in Play and screenshot it. This is the first time the character has an authored look.",
+        "Note any socket that renders nothing and check the equipSocket string against the container list before assuming the mesh is wrong."
+      ],
+      "color": "purple"
+    },
+    {
+      "key": "data-fix-or-retire-syntysword",
+      "title": "P4 · Fix or retire SyntySword001_G",
+      "body": "Verified still broken in `Assets/1. Data/GameData/Items/Weapons/SyntySword001_G.asset`: `moveSpeedRateWhileAttacking: 0` at line 628 (multiplied straight into move speed at BaseCharacterEntity_MoveFunctions.cs:38 — a hard movement freeze for the entire swing), `icon: {fileID: 0}`, `localPosition` and `localEulerAngles` all zero versus DarkFortress's fitted `0.103, 0.02, -0.004` / `-57.98, 247.95, -245.48`, and a `meshPrefab` guid `0c14f3ea…` that resolves to nothing *in a bare checkout* — but the vendor packs are gitignored, so confirm it on the machine with Melee Weapons Pack 1 imported before treating that as breakage. Its `damageAmount` is byte-identical to DarkFortressSword001_G, so it is not even a different weapon.\n\n**Not a bug:** its `localScale {0,0,0}` — `BaseCharacterModel.cs:651-652` coerces zero to `Vector3.one`. Do not waste an evening on that one.\n\nIt is the second of only two project weapons and the file the next weapon will be copied from, so leaving it teaches every future weapon to freeze the player mid-swing. `moveSpeedRateWhileAttacking` defaults to `0f` in `WeaponItem.cs:118-120`, which means EVERY new weapon starts broken this way.\n\nIt also sits on the fork-repoint list. Its `weaponType` at line 598 is the Demo `OneHandSword.asset` (guid `68fba38e…`), byte-identical to DarkFortressSword001_G:598. `GameDatabase.cs:115` registers items BEFORE weaponTypes at :118 and `WeaponItem.PrepareRelatesData` (WeaponItem.cs:565-569) re-registers whatever GUID the item holds — so the moment OneHandSword is forked, an unrepointed file here claims the Demo DataId and kills the fork with no log. Deleting this asset shortens that list by one.\n\nDone: either it is fixed and genuinely A/B-comparable against DarkFortress, or it is deleted from disk and from `Assets/1. Data/GameDatabase_G.asset:99`, with DarkFortressSword001_G named in the README as the copy-me template.",
+      "status": "Next Up",
+      "labels": [
+        "gear",
+        "data"
+      ],
+      "checklist": [
+        "Tonight, regardless of the larger decision: set `moveSpeedRateWhileAttacking: 1`. One field, removes a full-swing movement freeze.",
+        "Open the asset with the vendor packs imported and confirm whether meshPrefab actually resolves — a bare clone reports every gitignored pack reference as missing",
+        "Decide fix or delete. If deleting, remove the `.asset` AND its row from `Assets/1. Data/GameDatabase_G.asset:99` — re-verify that line number first, because `Demo/GameData/GameDatabase.asset:99` is a different stale row (Legs001_G) and deleting any earlier row shifts it.",
+        "If OneHandSword is forked, repoint this file's `weaponType` (line 598) at the fork in that same commit — or delete the file, so it cannot silently reclaim the Demo DataId at load.",
+        "If keeping: assign an icon, fit the grip `localPosition`/`localEulerAngles` in the WeaponR socket against the real Synty mesh, and give it damage numbers that differ from DarkFortress so the comparison means something.",
+        "Name DarkFortressSword001_G the documented weapon template in `Assets/1. Data/GameData/README.md`.",
+        "List in that README the five WeaponItem fields that default to wrong values: `moveSpeedRateWhileAttacking` (0), `icon`, `dropModel`, `damageAmount.damageElement`, and the grip offsets."
+      ],
+      "color": "purple"
+    },
+    {
+      "key": "data-fork-armortypes-missing-slots",
+      "title": "P4 · Fork the five missing ArmorTypes",
+      "body": "`Assets/1. Data/GameData/ArmorTypes/` holds only `Legs.asset` and `Cloak.asset`. The other five the UI shows — Head, Body, Gloves, Shoes, Ring — are still kit assets, sitting at `GameDatabase_G.asset:114, :116, :117, :119, :120` and pointing into `Demo/GameData/Resources/ArmorTypes/`, so every armor piece you author points at a file an Asset Store reimport overwrites.\n\n**Landmine, confirmed by reading the file:** Demo `Ring.asset` has `equipPosition:` EMPTY and survives only on `ArmorType.EquipPosition`'s fallback to `Id.ToUpper()` (Core/Scripts/GameData/Item/Equipments/ArmorType.cs:19-22). Rename that asset and every equipped ring stops resolving. Its `equippableSlots: 2` is correct and must be preserved, because `UIEquipItems.cs:52` skips any equip position already in the cache and the two Ring rows in `UIItemsDialog.prefab:17975` need distinct `equipSlotIndex` values (0 and 1).\n\n**Landmine, the fork-killer:** copying the ArmorType is not enough. `GameDatabase.cs:115` calls `AddItems` BEFORE `AddArmorTypes` at `:117`, and `ArmorItem.PrepareRelatesData` (ArmorItem.cs:29-33) re-registers the type the ITEM's GUID points at — so a Demo-pointing armor claims the shared DataId first and your fork is discarded with no error. Repoint every item's `armorType` in the same commit. `Legs001_G.asset:603` already points at `1. Data/GameData/ArmorTypes/Legs.asset`, which is exactly why that one fork works today.\n\n**Landmine:** there is no Shoes or Feet socket on the Synty rig (I listed all 20 containers). A Shoes item equips, applies its stats and renders nothing — `BaseCharacterModel.cs:594` `continue`s on the socket miss with no log. Decide now: add the socket, or delete the Shoes row from the UI.\n\nDone: all seven armor types live in `1. Data`, each with an explicit `id` and an explicit `equipPosition`, every armor item repointed, and GameDatabase_G listing no Demo ArmorType at all.",
+      "status": "Backlog",
+      "labels": [
+        "data",
+        "gear"
+      ],
+      "checklist": [
+        "Copy Head, Body, Gloves, Shoes and Ring into `Assets/1. Data/GameData/ArmorTypes/`, keeping the filenames so the DataId is unchanged.",
+        "Type an explicit `id` AND an explicit `equipPosition` into each — especially Ring, whose `equipPosition` is empty today and lives only on the Id fallback.",
+        "Preserve `equippableSlots: 2` on Ring, then re-check the two Ring rows in UIItemsDialog still bind to distinct equipSlotIndex 0 and 1.",
+        "Repoint `armorType` on every armor item at the fork in the same commit — items register at GameDatabase.cs:115, ahead of armorTypes at :117, and ArmorItem.PrepareRelatesData re-registers whatever GUID the item holds, so an unrepointed item silently kills the fork.",
+        "Swap the five Demo rows in `GameDatabase_G.armorTypes` (`:113-120`; Cloak at `:115` and Legs at `:118` are already forks) for the new ones in the same edit — two assets sharing a DataId means the first wins and the second is dropped with no log.",
+        "Decide Shoes: add a Feet socket to SyntyPlayerCharacter, or delete the Shoes row from `UIItemsDialog.prefab`. Write the decision into the GameData README either way.",
+        "Enter Play, equip a piece from each forked type, and confirm the FORK's values are live — not just that the game boots."
+      ],
+      "color": "purple"
+    },
+    {
+      "key": "data-fork-elements-and-attributes",
+      "title": "P4 · Own the damage elements and attributes",
+      "body": "Every stat number the game has is borrowed. `GameDatabase_G` registers the four kit attributes (`:30-33`) and four damage elements (`:37-40`) from `Assets/UnityMultiplayerARPG/Demo/GameData/Resources/`. I read `Str.asset`: its whole `statsIncreaseEachLevel` block is zero except `weightLimit: 2` — Strength grants carry weight and literally nothing else, so there is no reason to spend a stat point.\n\n`GameInstance.defaultDamageElement` is `{fileID: 0}` in `Demo/Scenes/00Init.unity:841`, so the kit synthesises an untunable element at boot (`DamageElement.GenerateDefaultDamageElement`, GameInstance.cs:1512-1521) and both swords fall through to it — `damageAmount.damageElement: {fileID: 0}` on each. There is no project-owned damage number anywhere.\n\nFork rather than edit in place. **Landmine:** a Demo asset re-serialized under August Core silently loses data — `git diff a1c59de b1e5964` shows `Warrior.asset` dropping its entire `addressableIcon` block and splitting `ammoCapacity` into `ammoCapacityModifier`/`ammoCapacityRate` purely from being opened and saved. Every value happened to be zero that time.\n\nFork safely: keep the filename so the DataId is unchanged, AND swap the Demo row out of `GameDatabase_G` in the same edit. Attributes (`GameDatabase.cs:112`) and DamageElements (`:114`) are registered BEFORE `AddItems` (`:115`), so these two forks win on load order — unlike ArmorType (`:117`) and WeaponType (`:118`), which lose to the item's own GUID. Do not lean on that: `BaseEquipmentItem.PrepareRelatesData` (BaseEquipmentItem.cs:233-239) re-registers attributes and damage elements from every item too, so leave a stale Demo row in the list and whichever loads first wins with no log.\n\nDone: a project Physical DamageElement assigned on GameInstance and named on both swords, and four forked attributes where Str, Dex, Int and Vit each change something you can feel in a fight.",
+      "status": "Backlog",
+      "labels": [
+        "data",
+        "combat"
+      ],
+      "checklist": [
+        "Author `Assets/1. Data/GameData/DamageElements/Physical.asset` and assign it to `GameInstance.defaultDamageElement` in 00Init.unity; log that Demo-tree edit in Tools/KitPatches.",
+        "Set `damageAmount.damageElement` explicitly on DarkFortressSword001_G and SyntySword001_G instead of relying on the synthesised default — this IS the repoint step, since an item holding a Demo GUID re-registers the Demo asset through PrepareRelatesData.",
+        "Fork Str, Dex, Int and Vit into `Assets/1. Data/GameData/Attributes/` keeping the filenames so the DataId is unchanged, and swap the four Demo rows at `GameDatabase_G.asset:30-33` for the forks in the same edit — leaving both rows listed means the first one loaded wins silently.",
+        "Give each attribute real `statsIncreaseEachLevel` / `increaseDamages` entries — Str should move damage, Vit should move hp, not just weightLimit.",
+        "Enter Play, open the character sheet (C) and confirm the numbers move when you spend a point — that proves the FORK is live, not just that the game boots."
+      ],
+      "color": "purple"
+    },
+    {
+      "key": "data-icons-and-drop-models",
+      "title": "P4 · Give every item an icon and a drop model",
+      "body": "An item with a null icon is INVISIBLE, not broken-looking. `UIComponentExtensions.SetImageSprite` (line 62-68) does `image.gameObject.SetActive(!deactivateIfNoContent || !isNull)` and `UICharacterItem.cs:922` passes `deactivateIfNoContent: true`, so the slot renders as an empty square and you cannot tell a bugged item from an empty bag. `SyntySword001_G` is in exactly that state right now, which is why it reads as a bug rather than as an item.\n\nAll three project items also have `dropModel: {fileID: 0}`, and `ItemDropEntity.cs:306-308` returns before instantiating anything — loot is lootable but invisible on the ground. Every Demo item has one; none of yours do.\n\n**Landmine:** the BLINK pack (608 icons) is gitignored at `Assets/2. Art/Blink/` and is absent from this checkout — there is only an orphan `Assets/2. Art.meta` with no folder beside it. Even the two icon GUIDs that ARE assigned (`0c6e3d0f…` on DarkFortress, `f0d0b678…` on Legs001_G) resolve to nothing until the pack is re-imported to that exact path. Import it anywhere else and you reassign 600 references by hand.\n\nDone: every project item shows an icon in the bag and a mesh on the ground.",
+      "status": "Backlog",
+      "labels": [
+        "gear",
+        "ui"
+      ],
+      "checklist": [
+        "Re-import BLINK to exactly `Assets/2. Art/Blink/` so the two already-assigned icon GUIDs resolve instead of needing reassignment.",
+        "Assign an icon to SyntySword001_G, and to every armor piece as you author it — never leave one for later.",
+        "Author or reuse a `dropModel` for all project items; for weapons the existing weapon mesh prefab is fine.",
+        "Add \"icon and dropModel are never optional\" to the GameData README's silent-failure list.",
+        "Kill an orc, confirm the drop is visible on the ground, pick it up and confirm the bag slot shows the icon."
+      ],
+      "color": "purple"
+    },
+    {
+      "key": "data-starter-kit-reward-gradient",
+      "title": "P4 · Tune the starter kit against the orc drop",
+      "body": "The delivery path is already built by then — `NewCharacterSetting_G` forked and repointed at `Demo/Scenes/00Init.unity:952`. This card is the other half of that work: choosing WHAT goes in the kit so the loop has a reward gradient on its very first run.\n\nStart the player deliberately weak — unarmed, or with a plain weapon whose numbers you have set below the orc's drop on purpose. Today that gradient cannot exist: `SyntySword001_G.damageAmount` is byte-identical to `DarkFortressSword001_G`'s, so whatever falls off the orc is a sidegrade.\n\nArmor contributes nothing either — `Legs001_G.armorAmount.baseAmount` is 0. Give the starter piece a real number and the dropped piece a visibly bigger one, so the first upgrade reads on the character sheet as well as in the fight.\n\nThe comparison is against `OrcWarrior`'s authored drop table, so this can only be judged once that table exists and the orc is standing in `Prototype_World_01`. Kill it, pick the drop up, equip it, and notice the difference — that is the whole test, and it is a feel test, not a spreadsheet test.\n\nDone: a first kill hands you something clearly better than what you spawned with, and you can tell without opening an asset.",
+      "status": "Backlog",
+      "labels": [
+        "gear",
+        "combat"
+      ],
+      "checklist": [
+        "Set the starter weapon's `damageAmount` deliberately below the orc's drop instead of leaving both project swords byte-identical.",
+        "Re-tune `Legs001_G`'s armorAmount.baseAmount (set by data-author-starter-outfit) DOWN relative to the orc's dropped piece, so the first upgrade reads on the character sheet.",
+        "Re-trim `NewCharacterSetting_G.startItems` to match the gradient you chose, and re-check `startGold` against it.",
+        "Create a fresh character, kill an orc, equip the drop, and confirm the fight changes noticeably.",
+        "If it does not, tune the STARTER kit down before tuning the drop table up — a weak start is one asset, a drop table is fourteen entries."
+      ],
+      "color": "purple"
+    },
+    {
+      "key": "world-own-the-orc",
+      "title": "P4 · Fork the orc, widen it, give it a drop table",
+      "body": "Every enemy stat the game has is a February-era Demo asset an Asset Store update reverts, and its engagement envelope was authored for a shoulder camera: `OrcWarrior.asset` has `visualRange: 5`, the prefab has `maxDistanceFromSpawnPoint: 5` and `followTargetDuration: 5`, against a camera that zooms 6..25. You see a dozen blind orcs, walk into melee before one notices, and it gives up after five metres.\nFork the asset into `Assets/1. Data/GameData/MonsterCharacters/` with `id:` typed in verbatim — `GenerateHashId` hashes `id ?? filename`, so the DataId survives the move and every registration keeps resolving — make a prefab variant under `Assets/1. Data/Prefabs/Monsters/` repointing `characterDatabase`, register both in `GameDatabase_G`, remove the Demo rows and repoint the spawn area.\nLoot lives on the nested `itemDropManager`. `MonsterCharacter.randomItems` / `.itemDropTables` / `.maxDropItems` are `[HideInInspector]` under `#region Being deprecated` (MonsterCharacter.cs:92-127) and an older tutorial will send you straight into them.\n**Landmine:** `ItemDropManager.RandomItems` re-rolls until it has produced `targetRandomDropCount` items, so `dropRate` decides *which* item drops, never *whether*. Quantity comes only from `minDropItems`/`maxDropItems`. And if a map's `exclude*` flags rule out every uncertain item, the do/while spins forever on the server inside `Killed()` — leave Prototype_World_01's exclude flags at 0.\n**Landmine:** items appearing only in `certainItemRandomByWeightTables` are never registered by `PrepareRelatesData`, so they drop and then fail to resolve on pickup.\n**Done:** killing your forked orc drops your own item from your own table and no Demo asset is in the chain.",
+      "status": "Backlog",
+      "labels": [
+        "enemies",
+        "data",
+        "gear"
+      ],
+      "checklist": [
+        "Copy OrcWarrior.asset into Assets/1. Data/GameData/MonsterCharacters/ with the original id typed in; register it in GameDatabase_G and remove the Demo row in the same edit",
+        "Make a prefab variant of OrcWarrior.prefab under Assets/1. Data/Prefabs/Monsters/, repoint characterDatabase at the fork, register it and point the spawn area at the variant",
+        "Widen the envelope on the fork: visualRange 5 → ~14, maxDistanceFromSpawnPoint → ~25, followTargetDuration → ~12",
+        "Tighten damageInfo.hitFov from 90 to ~45 so sidestepping is legible (findEnemyDelayMax is dead — MonsterActivityComponent does Random.Range(findEnemyDelayMin, findEnemyDelayMin) — raise Min if you want a slower poll)",
+        "Author Assets/1. Data/GameData/DropTables/OrcWarrior_Drops.asset and wire it through itemDropManager.itemDropTables, never the deprecated top-level fields",
+        "Set minDropItems/maxDropItems deliberately (1/2, not the Demo's 5) and use ItemRandomByWeightTable's noDropWeight plus its Proceed Drop Test button",
+        "Kill ten orcs and confirm both the drop mix and the drop count match what you authored"
+      ],
+      "color": "purple"
+    },
+    {
+      "key": "ctl-cursor-aimed-skillshots",
+      "title": "P5 · Feed the cursor into UseHotkey for skillshots",
+      "body": "`CurrentAimPosition` has existed since the controller was written and **nothing consumes it**. Today every non-area skill reaches `UpdateQueuedSkill` with `aimPosition.type == None`, because `UICharacterHotkey.OnClickUse` (line 417-425) calls `Use(default)` whenever `HasCustomAimControls()` is false — and `BaseSkill.cs:511` returns false for everything except `BaseAreaSkill`. That drops the cast into the `FindNearestAliveEntity` branch: a cursor-aimed game casting at whoever happens to be closest.\n\nThe fix is one override. `UseHotkey` is verified `public override bool UseHotkey(HotkeyType, string, AimPosition)` at `PlayerCharacterController_Inputs.cs:1034`, so this is a subclass change with no kit patch: intercept, and when the incoming `aimPosition.type` is None, substitute `CurrentAimPosition` (already a ready `AimPosition.CreatePosition(AimWorldPosition)`).\n\nDone looks like: put any demo skill on a hotkey, aim at empty ground past an orc, fire, and watch it go where the cursor is rather than at the orc.\n\n**Landmine:** area skills take the other path entirely — `DefaultAreaSkillAimController.UpdateAimControls_PC` already does cursor→ground aiming with a live reticle, and `UICharacterHotkeys.cs:249` waits for a second `GetMouseButtonDown(0)` to confirm. Do not double-aim those; check `HasCustomAimControls()` before substituting. Also null-guard first — see ctl-controller-hygiene, `CurrentAimPosition` currently NREs before Setup completes.",
+      "status": "Backlog",
+      "labels": [
+        "controller",
+        "combat"
+      ],
+      "checklist": [
+        "Override UseHotkey in TopDownAimController; when aimPosition.type is None, pass CurrentAimPosition instead",
+        "Skip the substitution for skills where HasCustomAimControls() is true, so area skills keep their own reticle path",
+        "Put a demo projectile skill (from the 24 already registered in GameDatabase_G) on a hotkey and confirm it fires at the cursor, not the nearest orc",
+        "Check the queued-skill path too: RedirectPendingActionToCursor already fires for TargetActionType.UseSkill and will fight a long-range area cast's turn direction",
+        "Decide whether an out-of-range cursor should clamp to castDistance or refuse the cast, and write the choice into the card"
+      ],
+      "color": "teal"
+    },
+    {
+      "key": "ui-cast-bars",
+      "title": "P5 · Add a screen-space player cast bar",
+      "body": "The player's own cast bar exists only as a world-space sliver above their head on `Demo/Prefabs/Gameplay/RelatesObjects/OwningCharacter/CanvasOwningCharacterUI.prefab`. At a top-down camera that zooms 6..25 that is unreadable, and nothing on the main HUD shows cast progress at all.\n\nThe cause is a class split, not a missing assignment. `UIGenericLayout.prefab` uses `UICharacter`, and `Core/Scripts/UI/Character/UICharacter.cs` has **no cast fields whatsoever** — only gages, stats, attributes and damages. The cast fields (`uiSkillCastContainer`, `uiTextSkillCast`, `imageSkillCastGage`, `sliderSkillCastGage`) live on `UICharacterEntity`, which is instantiated per-entity in world space. `UIUpdateCurrentCharacter.cs` binds a `UICharacter` to the playing character; nothing equivalent exists for `UICharacterEntity`.\n\nSo this is a ~15-line binder under `Assets/Scripts/UI/`: read `PlayingCharacterEntity.CastingSkillCountDown` and `CastingSkillDuration` (`BaseCharacterEntity.cs:121-122`) each frame, drive a fill image and a label, and hide the container when the duration is 0. No kit patch, no forked prefab, no new UI framework.\n\nDo the enemy half first — `uiSkillCastContainer` / `imageSkillCastGage` on `UITargetCharacterHp.prefab:657`, owned by `world-readable-enemy-hud`. It is zero-code and it tells you whether a cast bar reads at all at this camera distance before you write a binder for the player's.\n\n**Landmine:** `CastingSkillCountDown` counts **down**, not up. Fill from `1 - (CountDown / Duration)` or your bar drains as the cast progresses, which reads as exactly the opposite of what is happening.\n\n**Done:** you start a cast and a bar fills on the HUD where you are already looking, not forty pixels above a character in a zoomed-out scene.",
+      "status": "Backlog",
+      "labels": [
+        "ui",
+        "combat"
+      ],
+      "checklist": [
+        "Add a UICastBar component under Assets/Scripts/UI/ reading PlayingCharacterEntity.CastingSkillCountDown / CastingSkillDuration",
+        "Build the widget in CanvasGameplay_G near the player HP/MP gages: fill image, skill-name label, container hidden while Duration is 0",
+        "Fill from 1 - (CountDown / Duration) and verify the direction against a real 0.5s cast rather than by reading the code",
+        "Handle interruption — confirm the bar clears when a cast is cancelled instead of freezing mid-fill",
+        "Check it at both zoom extremes (6 and 25) alongside the enemy cast bar on UITargetCharacterHp so the two read as one system"
+      ],
+      "color": "teal"
+    },
+    {
+      "key": "world-action-bar-rebind",
+      "title": "P5 · Rebind the action bar to M1/M2/QWER",
+      "body": "`Demo/Prefabs/UI/_Gameplay/Standalone/UIHotkeys_Standalone.prefab` is ten `UICharacterHotkey` instances with `key: 48..57` (Alpha0..Alpha9) and `buttonName:` empty on all ten, plus ten `TextKey` children hardcoded to \"1\"..\"0\". Nothing derives a label from its binding, so rebinding without retyping them leaves the bar lying to the player.\nThe plumbing is already there: `UICharacterHotkey` polls `InputManager.GetKeyDown(key) || InputManager.GetButtonDown(buttonName)`, and `GetButtonDown` resolves the name through `inputActionAsset.FindAction`, so a mouse-bound ability only needs a named action in `InputActions.inputactions`. Cooldown sweeps already work — `UISkillIcon_Hotkey.prefab` has a Radial360 filled image driven by `UICharacterSkill.cs:225`.\nBind the gamepad in the same pass rather than later: give Ability1/Ability2 pad bindings alongside the mouse ones (`buttonEast` is free, `buttonSouth` is Jump), because a named action that exists only on a mouse button silently makes half the bar keyboard-only forever.\nThe out-of-range rule (cursor past a skill's `castDistance` — clamp to range or refuse?) is decided once on **ctl-cursor-aimed-skillshots**, where the substitution actually happens. Honour whatever it recorded here rather than deciding it twice.\nThree live collisions to resolve in the same pass: **Q** toggles a dialog in CanvasGameplay_G's `toggleUis`, **R** is bound to Reload, **RMB** is CameraRotate (harmless today only because yaw is clamped 0..0).\n**Landmine:** `UICharacterHotkey.ManagedUpdate:110` checks only `GenericUtils.IsFocusInputField()` — there is no `IsPointerOverUIObject()` call anywhere in the hotkey classes — so an M2 ability fires on every inventory, shop and hotkey-bar click until you gate it. TopDownAimController's existing guard only mutes the action literally named \"Attack\", and that mute is global for the frame (keyboard V and gamepad buttonWest go with it).\n**Landmine:** `UICharacterHotkeys.UpdateHotkeyInputs:249` waits for `GetMouseButtonDown(0)` to confirm an area-skill cast — the same physical button as Attack. Once M1 carries an ability the two fight. Both `UICharacterHotkeys.Update` and `UICharacterHotkey.OnClickUse` are non-virtual, so removing the confirm means swapping the script on your forked prefabs or patching the kit and logging it.\n**Done:** Q/E/R and M1/M2 fire abilities with visible cooldown sweeps, the same abilities fire from a pad, and clicking your bag casts nothing.",
+      "status": "Backlog",
+      "labels": [
+        "ui",
+        "controller",
+        "combat"
+      ],
+      "checklist": [
+        "Add named Ability1/Ability2 actions in Demo/InputActions.inputactions bound to leftButton/rightButton plus gamepad equivalents (buttonEast is free, buttonSouth is Jump), and split CameraRotate off <Mouse>/rightButton",
+        "Gate hotkey polling on UISceneGameplay.IsPointerOverUIObject() before anything is bound to a mouse button",
+        "Rebind the ten UICharacterHotkey entries to M1/M2 via buttonName and Q/E/R/Space via key, retiring the Alpha row",
+        "Retype the ten TextKey labels in UIHotkeys_Standalone.prefab to match the new bindings",
+        "Move the Q dialog toggle in CanvasGameplay_G's toggleUis and unbind Reload from R",
+        "Remove or bypass the area-skill click-to-confirm, and log whichever route you take in Tools/KitPatches/README.md",
+        "Honour the clamp-or-refuse rule ctl-cursor-aimed-skillshots recorded, confirm it holds for the M1/M2-bound abilities too, and verify the radial cooldown sweep and TextCoolDownDurationRemains still animate on a real cast"
+      ],
+      "color": "teal"
+    },
+    {
+      "key": "world-death-screen",
+      "title": "P5 · Build a real death screen",
+      "body": "The Escape defect is no longer this card — `ui-death-escape-guard` owns that one-line guard at P2, because phase 1's done-condition guarantees you meet it in the first session. What is left here is presentation, and all of it is missing.\n\n`CanvasGameplay_G.prefab` lines 231-284: `onCharacterDead` calls `Show()` on the UISystemDialog instance and `SetActive(true)` on its `ButtonRespawn` child; `onCharacterRespawn` reverses both. There is no fade, no \"You died\", no timer and no death camera. Dying opens the pause menu.\n\nRespawn itself already works — `UISceneGameplay.OnClickRespawn()` at `UISceneGameplay.cs:507` sends `RequestRespawnMessage{option:0}` — so nothing here is netcode. It is a panel and two event rewires.\n\n**Landmine:** with `deadState.clip` still null, `AnimationPlayableBehaviour.SetBaseState` returns early, `CLIP_DEAD` is never registered and the corpse plays locomotion under your new overlay. Fill it first (`feel-hurt-and-dead-states`, all five sites) or the screen looks broken for the wrong reason.\n\n**Landmine, and it is the good outcome:** a panel built outside UISystemDialog escapes `UIEscapeWindowsHandler`'s collected set entirely, which lets the P2 guard be retired rather than carried forever. Check that before adding a second exclusion on top of the first.\n\n**Done:** you die, the screen dims with a readable message and a respawn button, and respawning drops you at the map's startPosition.",
+      "status": "Backlog",
+      "labels": [
+        "ui",
+        "risk"
+      ],
+      "checklist": [
+        "Build a dedicated death panel in CanvasGameplay_G: dim overlay, \"You died\", respawn button wired to UISceneGameplay.OnClickRespawn()",
+        "Repoint onCharacterDead / onCharacterRespawn (CanvasGameplay_G lines 231-284) at that panel instead of UISystemDialog + ButtonRespawn",
+        "Confirm the new panel sits outside UIEscapeWindowsHandler's collected set, so the P2 guard can be retired rather than duplicated",
+        "Confirm deadState.clip is filled at all five sites on SyntyPlayerCharacter.prefab so the corpse is not standing up under the overlay",
+        "Add the respawn timer or death-camera beat you actually want, then die on purpose and watch the whole sequence once",
+        "Respawn and confirm you land at the map's startPosition with the overlay fully cleared"
+      ],
+      "color": "teal"
+    },
+    {
+      "key": "world-enemy-telegraphs",
+      "title": "P5 · Give the orc a telegraph worth dodging",
+      "body": "The mechanism exists and is invisible. `OrcWarrior.asset` lists Bash at `useRate: 0.75`; `Demo/GameData/Resources/Skills/Bash.asset` has `castDuration: 0.5` and `coolDownDuration: 5`, chosen by `MonsterCharacter.RandomSkill` inside `MonsterActivityComponent.UpdateAttackEnemy`. But there is no wind-up pose, no ground marker and a 90-degree cone, so half a second of cast reads as nothing happening.\nMonsters cannot charge — `DefaultCharacterChargeComponent.StartCharge` is reached only from `ShooterPlayerCharacterController.cs:2007` — so telegraph shape has to be built on the skill cast path: `SkillAnimations.castState` plus `skillActivateAnimation` on the model, `SkillCastEffects` (instantiated at `DefaultCharacterUseSkillComponent.cs:230`), and `AreaDamageEntity` for a ground marker. `BaseSkill.canBeInterruptedWhileCasting` decides whether hitting it mid-cast cancels the swing.\n**Landmine:** `RedirectPendingActionToCursor` in TopDownAimController also fires for `TargetActionType.UseSkill` and overwrites the `_turnToTargetPosition` an area skill just set from its clamped ground-snapped aim point. Only the turn direction is affected, but it looks wrong on long-range casts — fix or scope it here.\n**Done:** you can see the orc wind up, dash out of the marked area on purpose, and watch the hit land where you were standing.",
+      "status": "Backlog",
+      "labels": [
+        "enemies",
+        "combat",
+        "feel"
+      ],
+      "checklist": [
+        "Fork Bash.asset into Assets/1. Data/GameData/Skills/ with its id preserved; lengthen castDuration to ~0.8-1.0s and set canBeInterruptedWhileCasting deliberately",
+        "Fill castState / skillActivateAnimation on the forked monster prefab's PlayableCharacterModel with a visible wind-up pose",
+        "Assign a Hovl ground decal or ring to the skill's skillCastEffects so the danger zone is on the floor, not just over the head",
+        "Match the marker geometry to the actual damage shape — the tightened hitFov from the fork card, not the demo's 90 degrees",
+        "Scope RedirectPendingActionToCursor so it stops overwriting an area skill's aim turn",
+        "Stand in the marker once and dash out of it once, and confirm both outcomes read correctly on screen"
+      ],
+      "color": "teal"
+    },
+    {
+      "key": "world-hover-targeting",
+      "title": "P5 · Add hover soft-targeting and an [E] prompt",
+      "body": "Nothing in the project knows what is under the cursor: `TopDownAimController.TryGetCursorWorldPosition` raycasts a mathematical `Plane`, never physics, and `UIBaseGameEntity`'s Visibility enum has no hover mode. There is also no desktop interaction prompt at all — `ActivateButtonActivator` is referenced by exactly one prefab (the mobile layout) and it only shows and hides, never naming the target or the key.\nThe hooks all exist. `FindClickObjects(out Vector3)` is public at `PlayerCharacterController_Inputs.cs:30` and wraps `_physicFunctions.RaycastPickObjects` with `GetTargetLayerMask()`; `_physicFunctions` is protected and `SelectedEntity` has a protected setter. Writing it lights up both the world nameplate and the `UITargetCharacterHp` frame for free, because `PlayerCharacterController.cs:280` already pushes `UISceneGameplay.SetTargetEntity(SelectedGameEntity)` every frame. `ShouldShowActivateButtons()` is virtual and walks `ActivatableEntityDetector.activatableEntities`, a `readonly List<IActivatableEntity>` on a detector created at `PlayerCharacterController.cs:210`.\n**Landmine:** `PlayerCharacterController_Inputs.cs:549` sets `SelectedEntity = FindNearestAliveEntity(...)` on every swing. Hover has to coexist with that write frame to frame — decide explicitly whether hover or the swing wins while attacking, or the two will fight.\n**Done:** hovering an orc shows its name and health without hitting it, and standing near an NPC or a ground drop shows \"[E] Talk to <Title>\".",
+      "status": "Backlog",
+      "labels": [
+        "ui",
+        "controller"
+      ],
+      "checklist": [
+        "Add a throttled hover raycast in TopDownAimController using the protected _physicFunctions / FindClickObjects with GetTargetLayerMask()",
+        "Write the hover result into SelectedEntity and write down the precedence rule against the swing-time write at line 549",
+        "Confirm the world nameplate and the UITargetCharacterHp frame light up with no extra wiring",
+        "Add a small component reading ActivatableEntityDetector.activatableEntities[0] and BaseGameEntity.Title",
+        "Render \"[E] <verb> <Title>\" near the character, hidden when the list is empty",
+        "Test against an orc, a ground item drop and an NPC in turn"
+      ],
+      "color": "teal"
+    },
+    {
+      "key": "data-authoring-checklist-and-validator",
+      "title": "P6 · Build a game-data validator window",
+      "body": "There are at least seven ways to author a game-data asset that fails silently, and by phase 6 there will be dozens of assets rather than six. The project already has the right precedent for this kind of tooling — `Assets/Scripts/Editor/SceneShortcutsWindow.cs` and `SyntyEquipmentContainerBuilder.cs` show that a small EditorWindow fits how you work.\n\nThe checks worth automating, all confirmed in code: an asset under `1. Data/GameData` that is not in `GameDatabase_G` (explicit-list database, no warning ever); two assets whose Id hashes to the same DataId (`AddGameData`, GameInstance_Data.cs:1031, keeps the first and logs nothing); an empty `id:` (BaseGameData.cs:31 falls back to the filename); a `WeaponItem` with `moveSpeedRateWhileAttacking: 0`, which is the C# default and a full-swing movement freeze; a null `icon` or `dropModel`; an `equipSocket` string absent from SyntyPlayerCharacter's container list; and an `instantiatedObjectIndex` past the end of its container's groups.\n\nThe highest-value check is the fork-repoint one: any item in `1. Data` whose `weaponType` or `armorType` GUID still resolves into `Demo/`, while a same-DataId fork exists in `1. Data`. That is the failure `GameDatabase.cs:115-118` causes silently, and it is trivial to detect statically.\n\nBuild the checklist before the tool — the tool is only worth writing once the manual list has caught you out two or three times and you know which checks actually fire.\n\nDone: one menu item that lists every offending asset with a click-to-select row, run before each commit that adds game data.",
+      "status": "Backlog",
+      "labels": [
+        "tooling",
+        "data"
+      ],
+      "checklist": [
+        "Write the manual checklist into `Assets/1. Data/GameData/README.md` first and use it for a few authoring sessions before writing any code.",
+        "Add `Assets/Scripts/Editor/GameDataValidatorWindow.cs` following the SceneShortcutsWindow pattern (menu item, scrollable list, click to select the asset).",
+        "Implement the registration check: every BaseGameData under `1. Data/GameData` must appear in GameDatabase_G or in NewCharacterSetting_G.startItems.",
+        "Implement the identity checks: empty `id`, and duplicate DataId across every registered asset.",
+        "Implement the fork-repoint check: flag any item whose `weaponType`/`armorType` GUID resolves into `Demo/` when a same-named fork exists under `1. Data/GameData`.",
+        "Implement the equipment checks: unknown `equipSocket`, out-of-range `instantiatedObjectIndex`, null icon, null dropModel, and `moveSpeedRateWhileAttacking == 0` on any WeaponItem.",
+        "Run it once across the whole project and fix everything it finds."
+      ],
+      "color": "straw"
+    },
+    {
+      "key": "world-cut-loose-from-demo",
+      "title": "P6 · Cut the project loose from the Demo tree",
+      "body": "Every playable session boots `Assets/UnityMultiplayerARPG/Demo/Scenes/00Init.unity`, and the project's entire identity lives as three edits inside it: `gameDatabase` → GameDatabase_G (line 834), `uiSceneGameplayPrefab` → CanvasGameplay_G (line 790), `defaultControllerPrefab` → TopDownAimController.prefab (line 796). That tree is exactly what an Asset Store package update overwrites — so today, the fix for the February/August drift destroys the project's configuration.\nThe drift is **not** a compile risk (only 9 .cs files exist across all Demo trees, all in DevExt, all already fixed). It is silent field remapping, and it has already fired: `Warrior.asset` lost its whole `addressableIcon` block and had `ammoCapacity` split into `ammoCapacityModifier`/`ammoCapacityRate` purely from being saved. Treat any Feb-era demo prefab that behaves oddly as data loss, not a bug.\n**What this card does not sever:** `CanvasGameplay_G.prefab` nests **18 Demo prefab instances** — `UIDialogs`, `UISystemDialog`, `UISettingDialog`, `UIGenericLayout` (the entire player HUD), `UIHotkeys_Standalone`, `UIChat`, `UIPartyAndQuest` — plus the 8 `CombatText` prefabs it points at, plus `OrcWarrior.prefab` until the orc fork lands. Creating `00Init_G.unity` re-points three references; it does not detach that tree. Believing otherwise means believing a reimport is safe when it would still overwrite the live HUD.\n**Landmine:** `Demo/Scripts/DevExt/DevExtDemo_CharacterStats.cs` injects `public float testStat1` into the CharacterStats **struct** via a partial declaration, and it is now serialized into 112 assets including SyntyPlayerCharacter.prefab and all three gear items. Deleting DevExt is correct and produces a 112-file diff — do it in a commit of its own, never mid-feature.\n**Done:** an Asset Store reimport of `Demo/` can no longer change which database, controller or canvas the game boots with — and whatever still lives inside `Demo/` is written down rather than assumed gone.",
+      "status": "Backlog",
+      "labels": [
+        "risk",
+        "tooling",
+        "data"
+      ],
+      "checklist": [
+        "Create Assets/1. Data/Scenes/00Init_G.unity with its own GameInstance and LanRpgNetworkManager carrying the three project references",
+        "Make it scene 0 in ProjectSettings/EditorBuildSettings.asset and trim the list from 17 scenes to it plus Prototype_World_01",
+        "Finish the fork-on-touch pass on the Demo ScriptableObjects you still depend on (remaining ArmorTypes, DamageElements, the four PlayerCharacters, StatusEffects) with ids preserved and Demo rows removed from GameDatabase_G",
+        "Delete the stray kit-tree files — Demo/Scenes/Map001_G.unity, Demo/Prefabs/UI/Item/1. Backups/, the two orphan Armors metas, Assets/2. Art.meta, the unreferenced Assets/InputSystem_Actions.inputactions — and remove the inert STEAMWORKS_NET define in the same pass",
+        "Delete Demo/Scripts/DevExt in a commit of its own and expect roughly 112 changed assets",
+        "Enumerate what still lives in Demo/ afterwards — the 18 prefab instances nested inside CanvasGameplay_G, the 8 CombatText prefabs, OrcWarrior.prefab, UIHotkeys_Standalone — and record in Tools/KitPatches/README.md that a reimport still reverts any edit made inside them",
+        "Turn Tools/KitPatches/README.md into real .patch files for the Core scripts, pin the upstream kit commits in KIT_VERSIONS.json, pin com.coplaydev.unity-mcp to a commit instead of #main, and add an editor menu item that opens 00Init_G, enters play mode and asserts an error count"
+      ],
+      "color": "straw"
+    },
+    {
+      "key": "world-lan-coop-session",
+      "title": "P6 · Play the loop with a friend over LAN",
+      "body": "\"Playable with a friend\" has two answers and picking late is expensive. LAN needs zero code today: the NetworkManager in 00Init.unity is `LanRpgNetworkManager` (guid ee13c7c5...), networkAddress localhost / port 7770, already implementing `StartHost(withDiscovery)`, `StartClient` and a `LiteNetLibDiscovery` broadcast, with `UILanConnection` as the join UI and `DefaultGameSaveSystem` persisting the host's world to local files. Over Tailscale or ZeroTier the client just types the host's address.\nThe MMO module is complete and unmodified: `MMOServerInstance` reads `-startDatabaseServer` / `-startCentralServer` / `-startMapSpawnServer` / `-startMapServer`, and `SQLiteDatabase` self-creates 34 tables at `./mmorpgtemplate.sqlite3` with no external server. Half a day proves whether it boots, before there is content to migrate.\n**Landmine:** `MMO/Demo/Prefabs/GameInstance.prefab` points at the stock CanvasGameplay (line 73), the stock PlayerCharacterController (line 78) and the kit GameDatabase (line 182). Under MMO netcode you silently get tab-target combat with none of this work unless those three are re-pointed.\n**Landmine for the feel layer:** shake and hitstop are client-side by design, but knockback must be applied server-side off `onReceivedDamage`, never from the `[AllRpc]` client event, or host and client disagree about where the monster is standing.\n**Done:** two people fight the same orc, both see damage numbers and drops, and nothing desyncs — and the LAN-vs-MMO decision is written down in the CHANGELOG.",
+      "status": "Backlog",
+      "labels": [
+        "netcode",
+        "tooling"
+      ],
+      "checklist": [
+        "Build a standalone player, host from it, and join from the editor on the same subnet via discovery",
+        "Repeat with a typed address over Tailscale or ZeroTier to prove the remote case",
+        "Fight the same orc together and watch specifically for knockback and death-position desync",
+        "Boot the four MMO server roles against SQLite from the command line and confirm the 34 tables get created",
+        "If MMO is the target, re-point the three references on MMO/Demo/Prefabs/GameInstance.prefab and retest the top-down controller under it",
+        "Write the decision and its reasons into CHANGELOG.md so it stops being re-litigated"
+      ],
+      "color": "straw"
+    },
+    {
+      "key": "world-second-archetype",
+      "title": "P6 · Build a Synty-rigged second enemy",
+      "body": "Phase 6's done-condition is \"the arena has shape\", and today it is reachable with exactly one enemy type forever: `world-own-the-orc` forks the demo orc and nothing on the board builds a second archetype. This card is the only path to an enemy that is not a kit demo orc.\n\nThe cheapest first monster is a humanoid on the **same Synty FixedScale modular rig as `SyntyPlayerCharacter`**, because everything expensive about it is already proven: the avatar, the retargeting, `Assets/1. Data/AvatarMasks/SyntyUpperBody.mask`, the measured trigger rates (0.317 / 0.267 / 0.283 for the 1H clips, 0.350 for 2H) and `Assets/Scripts/Editor/SyntyEquipmentContainerBuilder.cs`. A bandit or a cultist costs a prefab and an appearance pass, not a new animation pipeline.\n\nCopy the component list verbatim from `Demo/Prefabs/Gameplay/CharacterEntities/OrcWarrior.prefab`: `MonsterCharacterEntity`, `MonsterActivityComponent`, `NavMeshAgent` + `NavMeshEntityMovement`, `CharacterModelManager`, `PlayableCharacterModel`, `DefaultCharacterAttackComponent`, `CharacterRecoveryComponent`, `CharacterSkillAndBuffComponent` — plus the `_TpsCamTarget` / `_CombatText` / `_MeleeDamage` / characterUi / miniMapUi child transforms, which are as load-bearing as the components and are the ones people forget.\n\nRe-run the container builder against the new model for armed and unarmed variety: the same tool that repairs the player's wardrobe (`data-repair-synty-wardrobe`) gives this monster its silhouette for free, and the variant index still reads the same as Synty's own mesh numbering.\n\n**Landmine:** null model states do not fall back the way you expect. `SetBaseState` skips null clips so locomotion falls back, but attack arrays do **not** — `GetRightHandAttackAnimations` tests `!= null` and an empty array is not null, so an empty entry resolves to a zero-length action and the monster swings at nothing.\n\n**Landmine:** register both the MonsterCharacter asset and the prefab in `GameDatabase_G` with an explicit `id:` typed in, in the same commit. An unregistered asset does not exist at runtime and logs nothing at all.\n\n**Done:** two visibly different enemies fight you with different reach and timing, and neither one is a Demo prefab.",
+      "status": "Backlog",
+      "labels": [
+        "enemies",
+        "world"
+      ],
+      "checklist": [
+        "Build Assets/1. Data/Prefabs/Monsters/<Name>.prefab on the Synty FixedScale rig, copying the component list and the five child transforms from OrcWarrior.prefab",
+        "Author Assets/1. Data/GameData/MonsterCharacters/<Name>_G.asset using your forked orc as the template, with an explicit id: typed in",
+        "Run Tools > Synty Equipment Container Builder on the new model and pick an armed silhouette clearly distinct from the player's",
+        "Fill idleState, moveStates, hurtState, deadState and at least one rightHandAttackAnimations entry — an empty array is not a fallback",
+        "Register the asset and the prefab in GameDatabase_G and give it its own drop table rather than reusing the orc's",
+        "Add a spawn area for it in Prototype_World_01, press Bake Random Positions, and confirm it paths and leashes like the orc",
+        "Fight both archetypes at once and check you can tell which one is winding up at a glance"
+      ],
+      "color": "straw"
+    },
+    {
+      "key": "world-shape-the-arena",
+      "title": "P6 · Sculpt the arena into a real space",
+      "body": "`Assets/New Terrain.asset` is 1.96 MB that gzips to 5.4 KB — 81.9% zero bytes: a dead-flat, untextured, propless 500x500 plane centred on the origin. Every fight in it is identical, the camera's 6..25 zoom range buys nothing, and the NavMesh bake is currently meaningless because there is nothing to path around, so obstacle avoidance and leash behaviour have never actually been tested.\nIt also sits at the Assets root, outside the `1. Data` convention, unnamed. `AssetDatabase.MoveAsset` preserves the GUID, so moving and renaming it keeps the scene reference intact — do that first, before more scenes reference it.\nTop-down action combat reads through spatial contrast: a chokepoint to kite around, cover that breaks line of sight, elevation to frame the camera, a landmark so you know where you are.\n**Landmine:** the NavMeshSurface bakes relative to its own transform inside the `3. Map` group, and `m_CollectObjects: 0` (All) means it bakes the whole scene regardless of its 10x10x10 size field. Sculpt, move or reparent anything and you must rebake, or `SpawnInternal` logs \"cannot find grounded position\" and re-queues forever.\n**Done:** there is a chokepoint you can kite an orc around, cover that breaks line of sight, and at least one landmark you can navigate by.",
+      "status": "Backlog",
+      "labels": [
+        "world"
+      ],
+      "checklist": [
+        "Move the terrain under Assets/1. Data/ with a real name via AssetDatabase.MoveAsset so the GUID and scene reference survive",
+        "Sculpt until an orc chasing you must break line of sight at least once — verify by watching MonsterActivityComponent leash at the forked maxDistanceFromSpawnPoint (~25) and followTargetDuration (~12)",
+        "Place two obstacles closer together than twice the 0.5 NavMeshAgent radius and confirm the orc routes around them rather than clipping through, then paint two terrain layers so slope and distance read at the top-down angle",
+        "Re-bake the NavMesh Surface, then re-bake every spawn area's random positions",
+        "Fight an orc around the new geometry and confirm it paths, leashes and never gets stuck",
+        "Give the training dummy a permanent, obvious home in the new layout"
+      ],
+      "color": "straw"
+    },
+    {
+      "key": "ctl-audit-official-addon",
+      "title": "P7 · Audit the official AimAtCursor addon",
+      "body": "The kit creator pushed `UnityMultiplayerARPG_AimAtCursorController` on 2026-05-20, after `TopDownAimController.cs` was hand-written. It is not in this checkout (`Assets/TopDownController/` contains only `Demo/` and `Scripts/`, and a project-wide search for `*AimAtCursor*` returns nothing), so nobody has compared them. It may cover the same ground, cover it better, or — more likely — solve two or three edge cases the hand-built version has not hit yet.\n\nThis is deliberately parked, not forgotten. The hand-built controller works, its ordering is understood and documented, and replacing a working controller mid-combat-tuning would invalidate every timing measurement taken against it. Revisit after phase 5, when the aim surface has stopped changing.\n\nWhat to look for specifically: how it handles gamepad (ours reads `InputManager.MousePosition()` unconditionally at `TryGetCursorWorldPosition`, so on a pad the character never turns); whether it uses a physics raycast or a mathematical plane (ours uses a plane on purpose, so aiming works over pits and gaps); whether it redirects `_turnToTargetPosition` the same way or patches `UpdateWASDAttack`; and whether it solves the area-skill turn conflict our `RedirectPendingActionToCursor` creates.\n\nDone looks like: a short verdict written into CHANGELOG.md — adopt, cherry-pick named behaviours, or close the item permanently. Do not half-migrate.",
+      "status": "Parked",
+      "labels": [
+        "controller",
+        "risk"
+      ],
+      "checklist": [
+        "Download the addon into a scratch clone, not this project",
+        "Diff its aim projection, turn-to-target redirect and strafe handling against TopDownAimController.cs",
+        "Check whether it handles gamepad aiming and area-skill turn conflicts, our two known gaps",
+        "Write a one-paragraph verdict into CHANGELOG.md: adopt, cherry-pick specific behaviours, or close",
+        "If cherry-picking, port behaviours one at a time and re-verify the UpdateWASDInput ordering after each"
+      ],
+      "color": "slate"
+    },
+    {
+      "key": "ctl-parked-longtail",
+      "title": "P7 · Park movement acceleration and gamepad aim",
+      "body": "Two controller items are deferred on purpose. The reasoning is the park — without it written down, someone starts them.\n\n**PARKED WITH PREJUDICE — movement acceleration and stop damping.** The survey rates it 'a few days, high impact'; I think it is a trap. Battlerite and Diablo both have near-instant acceleration, the weightlessness in this build comes from the missing dash, hitstop and footsteps that phase 3 fixes, and `CalculateCurrentMoveSpeed` is private inside a set of non-virtual functions behind `CharacterControllerEntityMovement` — so it is a kit patch you re-apply after every Core mirror update, forever. Evidence: `BuiltInEntityMovementFunctions3D.cs:1097` — `CalculateCurrentMoveSpeed` is `private` and contains only the `_lagMoveSpeedRate` lag-compensation ramp; line 942 is `tempMoveVelocity = tempHorizontalMoveDirection * CurrentMoveSpeed`, one frame from zero to full speed and back.\n\n**REVISIT TRIGGER:** re-read this card after feel-hitstop-shake-knockback ships. If the character still reads floaty with dash, hitstop and footsteps in, unpark acceleration. That is the only condition — not a hunch, not a spare afternoon.\n\n**Gamepad aiming.** `TopDownAimController` reads `InputManager.MousePosition()` unconditionally with no device branch, so a pad half-works today (movement, camera and six hotkey buttons are already bound in `Demo/InputActions.inputactions`). It is a day's work and changes nothing about how the game feels on the machine you develop on. Evidence: `TryGetCursorWorldPosition` line 216 has no device branch; `InputManager.MousePosition()` (`InputManager.cs:582`) returns `Mouse.current.position` or the primary touch, never a stick. `DefaultAreaSkillAimController`'s `_Mobile`/`_Console` branches are the template when you want it.\n\nRevisit trigger for this one is external: the first time someone other than Sam plays with a pad.",
+      "status": "Parked",
+      "labels": [
+        "controller",
+        "feel",
+        "risk"
+      ],
+      "checklist": [
+        "Do not start either item before feel-hitstop-shake-knockback ships — note the date it does, here",
+        "After it ships, play five minutes with dash, hitstop and footsteps in and write one line on whether the character still reads floaty",
+        "If it does, price acceleration as a permanent kit patch first (a Tools/KitPatches/README.md row re-applied after every Core mirror update) before unparking it",
+        "Leave gamepad aiming parked until someone actually plays on a pad",
+        "When gamepad aiming is unparked, copy DefaultAreaSkillAimController's _Console branch rather than adding a device check inside TryGetCursorWorldPosition",
+        "If either item is unparked, split it out as its own card — do not work it inside this one"
+      ],
+      "color": "slate"
+    },
+    {
+      "key": "world-parked-longtail",
+      "title": "P7 · Park the minimap, harvestables and factions",
+      "body": "Deliberately deferred — each with the reason written down **and** a trigger that says when to look again. A park without both is just forgetting.\n\n**Minimap markers.** `Core/Scripts/UI/Minimap/UIMinimapRenderer.cs` ships a full marker system (playingCharacterMarker, ally/party/guild prefabs, MinimapMode, MapMarkerPrefabData) and a GUID search finds **zero** references to it anywhere in the project. The current minimap is a raw camera feed into `MapRenderTexture`. *Trigger:* after `world-shape-the-arena`, and only if you have actually got lost.\n\n**Harvestables.** The only two registered are DemoSurvival's Stone and Tree, keyed to `Axe` and `StonePick` weapon types no project item uses, and there is no Harvestables folder in the GameData skeleton. *Trigger:* the day a gathering verb is genuinely on the design. Otherwise drop the two rows from `GameDatabase_G` so the database reflects the actual game — dead weight either way until then.\n\n**Factions.** `MapInfo.useMonsterFactionAsAlliance` is on and three factions are registered, but with `FactionId == 0` every faction branch is dead code — correct for one enemy type, blocking for neutral or hostile camps. *Trigger:* a second hostile camp or a friendly guard exists. Note `MapInfo.cs:169` reads `GameInstance.MonsterCharacters[DataId]` with a raw indexer and throws `KeyNotFoundException` on an unregistered monster.\n\n**HUD polish.** Buff/debuff splitting (`UICharacterBuffsUtils.GetFilteredList` returns one flat list) and hostility-coloured nameplates (`DefaultGameplayRule.GetEntityNameColor:1126` branches on level difference and PK flags, never on `IsAlly`). Both are small subclass jobs. *Trigger:* 3+ enemy types and 3+ debuffs in play — they disambiguate nothing before that.\n\n**Camera rotation and edge-pan policy.** Both axes are clamped to a single value today, which is an accident of the addon prefab's defaults rather than a decision; Diablo and Last Epoch both offer at least a limited yaw or a peek. *Trigger:* immediately after the phase-3 camera work, when the lead and the shake have told you what the view actually wants. Make it an explicit call then, even if the call is \"stay clamped\".\n\n**Quests, NPCs, currencies, guild skills, gachas, vehicles and the Addressables path** (`DemoAddressable`/`MMO_AA` exist, `DISABLE_ADDRESSABLES` is set for Standalone only). Real kit surface, none of it on the path to a combat loop that feels good. *Trigger:* once the GameData conventions from the phase-1 README have a few dozen assets behind them.\n\n**Parked elsewhere, on purpose:** movement acceleration (parked with prejudice) and gamepad aiming are controller-shaped and live on the controller section's own long-tail card with their own revisit trigger. Do not re-park them here — and do not let them fall between the two cards.",
+      "status": "Parked",
+      "labels": [
+        "ui",
+        "world",
+        "tooling"
+      ],
+      "checklist": [
+        "Re-read this card after the terrain pass and promote minimap markers only if you have actually got lost",
+        "Decide harvestables one way or the other: build project-owned assets keyed to real weapon types, or delete the two DemoSurvival rows from GameDatabase_G",
+        "Promote factions the day a second hostile camp or a friendly guard exists — not before",
+        "Promote buff splitting and hostility nameplate colours once there are 3+ enemy types and 3+ debuffs in play",
+        "Make the camera rotation / edge-pan call explicitly right after the phase-3 camera work, and write the decision down even if it is \"leave both clamped\"",
+        "Leave quests, NPCs, currencies and Addressables until the GameData conventions have a few dozen assets behind them",
+        "Before closing this card, check every phase-7 item has a reason and a trigger either here or on the controller long-tail card — no item may be on neither"
+      ],
+      "color": "slate"
+    }
+  ],
+  "notes": [
+    {
+      "key": "n-legend",
+      "color": "slate",
+      "text": "HOW TO READ THIS BOARD\n\nTitle prefix and card colour are the phase: P1 blue, P2 copper, P3 bronze, P4 purple, P5 teal, P6 straw, P7 slate.\n\nAn arrow means \"needs this first\" — it points from the work at the dependent card to the thing it is waiting on. Follow the arrows backwards from anything you want, and you get its build order.\n\nLabels are the subsystem: controller, feel, combat, enemies, gear, ui, data, world, netcode, tooling, risk.\n\nEvery card body names real files and real kit classes. The **Landmine** notes are the expensive part — they are the traps found by reading the Core source, not guesses."
+    },
+    {
+      "key": "n-start",
+      "color": "copper",
+      "text": "START HERE — THE FIRST THREE\n\n1. Put an orc in your own world. Add a MonsterSpawnArea to Prototype_World_01 pointing at OrcWarrior.prefab, bake it, and set startMap on Novice/Archer/Mage so any class lands there. OrcWarrior is ALREADY registered in GameDatabase_G with a hurt animation, a death animation, a 0.5s Bash telegraph and a 14-item drop list. It is standing in no scene. This is inspector work, not content work.\n\n2. Set hitOnlySelectedTarget: 0 on OneHandSword and Unarmed. They are still 1; TwoHandSword is already 0. With cursor aiming there is no click-selected target, so a one-hand swing hits exactly one arbitrary body in its arc while the two-hander cleaves. One boolean.\n\n3. Fork NewCharacterSetting so you start with YOUR gear. It is a plain ScriptableObject with no DataId and its startItems auto-register — hours, not days."
+    },
+    {
+      "key": "n-rule",
+      "color": "straw",
+      "text": "THE ONE PROJECT RULE\n\nFORK ON TOUCH — never edit a Demo asset in place. Copy it into `1. Data`, keep the filename (or type the original name into `id`), and swap the Demo row out of GameDatabase_G in the SAME commit.\n\nDataId is a plain hash of `id ?? filename`, so a fork keeping its name is DataId-identical. The CHANGELOG's TwoHandSword entry says otherwise and is wrong — see data-ids-and-registration-discipline.\n\nTHE CATCH: forking a WeaponType, ArmorType or DamageElement also means repointing every item that references it by GUID, in that same commit. GameDatabase.cs runs AddItems (:115) BEFORE AddArmorTypes (:117) and AddWeaponTypes (:118), and PrepareRelatesData re-registers the item's own referenced type — so the Demo original claims the DataId and your fork is dropped SILENTLY. No error, no log."
+    },
+    {
+      "key": "n-phases",
+      "color": "teal",
+      "text": "THE SEVEN PHASES\n\nP1 · Boot the machine — You press Play as any class, land in Prototype_World_01, an orc walks across the screen and starts hitting you, a training dummy stands nearby, and every Demo-tree edit you have made is written down in one file.\nP2 · Make contact legible — Every hit, in both directions, produces something you can see and hear at the moment the blade arrives rather than nothing at all — and you can watch an orc's health bar drain while it staggers.\nP3 · Weight and responsiveness — A landed hit freezes, kicks the camera and pushes the target; a click during a swing is never dropped; the dash is a real move with a start, a slide and a recovery — and you have re-measured the trigger rates against all of it.\nP4 · Close the loop — You kill an orc, an item you authored falls visibly on the ground, you walk over it, equip it, and the way you fight changes — with no console cheat anywhere in the chain.\nP5 · The second verb — One cursor-aimed ability fires from a mouse button at the exact point under your cursor, and one enemy wind-up is readable enough that you dash out of it on purpose.\nP6 · Survive the kit and share the game — A kit reimport is a thirty-minute replay rather than a lost week, you and a friend have played the loop together over a network, and the arena has shape.\nP7 · Later / parked — Each of these has been consciously deferred with a reason written down, so none of them is silently forgotten and none of them is accidentally started."
+    }
+  ],
+  "edges": [
+    {
+      "from": "ctl-camera-lead-and-smoothing",
+      "to": "ctl-cursor-aim-controller",
+      "semantic": "depends",
+      "label": "extends the aim controller"
+    },
+    {
+      "from": "ctl-buffer-and-dash-weight",
+      "to": "ctl-rebind-dash-key",
+      "semantic": "depends",
+      "label": "needs reachable dash key"
+    },
+    {
+      "from": "ctl-buffer-and-dash-weight",
+      "to": "feel-training-dummy",
+      "semantic": "depends",
+      "label": "measures against dummy"
+    },
+    {
+      "from": "ctl-cursor-aimed-skillshots",
+      "to": "ctl-cursor-aim-controller",
+      "semantic": "depends",
+      "label": "overrides aim controller"
+    },
+    {
+      "from": "ctl-cursor-aimed-skillshots",
+      "to": "ctl-controller-hygiene",
+      "semantic": "depends",
+      "label": "needs clean serialisation"
+    },
+    {
+      "from": "ctl-audit-official-addon",
+      "to": "ctl-cursor-aim-controller",
+      "semantic": "derives",
+      "label": "audits the replaced addon"
+    },
+    {
+      "from": "ctl-rebind-dash-key",
+      "to": "world-kit-patch-ledger",
+      "semantic": "depends",
+      "label": "logged as kit patch"
+    },
+    {
+      "from": "ctl-rebind-dash-key",
+      "to": "world-first-spawn-area",
+      "semantic": "relates",
+      "label": "needs something to dash around"
+    },
+    {
+      "from": "feel-training-dummy",
+      "to": "world-first-spawn-area",
+      "semantic": "depends",
+      "label": "second spawn area"
+    },
+    {
+      "from": "feel-hurt-and-dead-states",
+      "to": "feel-training-dummy",
+      "semantic": "depends",
+      "label": "needs damage to test"
+    },
+    {
+      "from": "feel-impact-vfx-and-contact-sfx",
+      "to": "feel-training-dummy",
+      "semantic": "depends",
+      "label": "needs a target"
+    },
+    {
+      "from": "feel-impact-vfx-and-contact-sfx",
+      "to": "feel-swing-audio-layers",
+      "semantic": "depends",
+      "label": "layers onto swing audio"
+    },
+    {
+      "from": "feel-impact-vfx-and-contact-sfx",
+      "to": "data-ids-and-registration-discipline",
+      "semantic": "depends",
+      "label": "needs fork-on-touch rule"
+    },
+    {
+      "from": "feel-damage-numbers",
+      "to": "feel-training-dummy",
+      "semantic": "depends",
+      "label": "needs repeatable hits"
+    },
+    {
+      "from": "feel-combat-feedback-bus",
+      "to": "feel-training-dummy",
+      "semantic": "depends",
+      "label": "needs a target"
+    },
+    {
+      "from": "feel-hitstop-shake-knockback",
+      "to": "feel-combat-feedback-bus",
+      "semantic": "depends",
+      "label": "driven by the bus"
+    },
+    {
+      "from": "feel-hitstop-shake-knockback",
+      "to": "feel-hurt-and-dead-states",
+      "semantic": "depends",
+      "label": "needs hit reaction"
+    },
+    {
+      "from": "feel-hitstop-shake-knockback",
+      "to": "ctl-camera-lead-and-smoothing",
+      "semantic": "relates",
+      "label": "shares camera channel"
+    },
+    {
+      "from": "feel-input-buffer-and-combo",
+      "to": "feel-training-dummy",
+      "semantic": "depends",
+      "label": "measures responsiveness"
+    },
+    {
+      "from": "feel-input-buffer-and-combo",
+      "to": "feel-upper-body-attack-mask",
+      "semantic": "depends",
+      "label": "builds on attack mask"
+    },
+    {
+      "from": "data-fix-or-retire-syntysword",
+      "to": "data-ids-and-registration-discipline",
+      "semantic": "depends",
+      "label": "needs id discipline"
+    },
+    {
+      "from": "data-fork-elements-and-attributes",
+      "to": "data-ids-and-registration-discipline",
+      "semantic": "depends",
+      "label": "needs fork rules"
+    },
+    {
+      "from": "data-fork-elements-and-attributes",
+      "to": "world-first-spawn-area",
+      "semantic": "depends",
+      "label": "needs something to fight"
+    },
+    {
+      "from": "data-fork-armortypes-missing-slots",
+      "to": "data-ids-and-registration-discipline",
+      "semantic": "depends",
+      "label": "needs fork rules"
+    },
+    {
+      "from": "data-author-starter-outfit",
+      "to": "data-fork-armortypes-missing-slots",
+      "semantic": "depends",
+      "label": "needs the slots"
+    },
+    {
+      "from": "data-author-starter-outfit",
+      "to": "data-repair-synty-wardrobe",
+      "semantic": "depends",
+      "label": "needs a working wardrobe"
+    },
+    {
+      "from": "data-icons-and-drop-models",
+      "to": "world-own-the-orc",
+      "semantic": "depends",
+      "label": "needs a dropper"
+    },
+    {
+      "from": "data-authoring-checklist-and-validator",
+      "to": "data-ids-and-registration-discipline",
+      "semantic": "depends",
+      "label": "encodes the conventions"
+    },
+    {
+      "from": "data-authoring-checklist-and-validator",
+      "to": "data-repair-synty-wardrobe",
+      "semantic": "depends",
+      "label": "validates wardrobe rules"
+    },
+    {
+      "from": "world-readable-enemy-hud",
+      "to": "world-first-spawn-area",
+      "semantic": "depends",
+      "label": "needs enemies to read"
+    },
+    {
+      "from": "world-own-the-orc",
+      "to": "world-first-spawn-area",
+      "semantic": "depends",
+      "label": "repoints the spawn area"
+    },
+    {
+      "from": "world-own-the-orc",
+      "to": "world-kit-patch-ledger",
+      "semantic": "depends",
+      "label": "logs the fork"
+    },
+    {
+      "from": "world-own-the-orc",
+      "to": "data-ids-and-registration-discipline",
+      "semantic": "depends",
+      "label": "preserves ids on fork"
+    },
+    {
+      "from": "world-enemy-telegraphs",
+      "to": "world-own-the-orc",
+      "semantic": "depends",
+      "label": "tunes the forked orc"
+    },
+    {
+      "from": "world-enemy-telegraphs",
+      "to": "ctl-buffer-and-dash-weight",
+      "semantic": "depends",
+      "label": "needs a real dodge"
+    },
+    {
+      "from": "world-action-bar-rebind",
+      "to": "ctl-cursor-aimed-skillshots",
+      "semantic": "depends",
+      "label": "needs cursor-aimed casts"
+    },
+    {
+      "from": "world-hover-targeting",
+      "to": "world-readable-enemy-hud",
+      "semantic": "depends",
+      "label": "lights up nameplates"
+    },
+    {
+      "from": "world-death-screen",
+      "to": "feel-hurt-and-dead-states",
+      "semantic": "depends",
+      "label": "needs death clip"
+    },
+    {
+      "from": "world-cut-loose-from-demo",
+      "to": "world-kit-patch-ledger",
+      "semantic": "depends",
+      "label": "grows from the ledger"
+    },
+    {
+      "from": "world-lan-coop-session",
+      "to": "world-cut-loose-from-demo",
+      "semantic": "depends",
+      "label": "needs project entry scene"
+    },
+    {
+      "from": "world-lan-coop-session",
+      "to": "data-starter-gear-delivery",
+      "semantic": "depends",
+      "label": "needs the closed loop"
+    },
+    {
+      "from": "world-shape-the-arena",
+      "to": "world-first-spawn-area",
+      "semantic": "depends",
+      "label": "rebakes around spawns"
+    },
+    {
+      "from": "world-parked-longtail",
+      "to": "world-shape-the-arena",
+      "semantic": "relates",
+      "label": "revisit after terrain"
+    },
+    {
+      "from": "world-readable-enemy-hud",
+      "to": "feel-damage-numbers",
+      "semantic": "relates",
+      "label": "shares the combat-text pass"
+    },
+    {
+      "from": "feel-input-buffer-and-combo",
+      "to": "ctl-controller-hygiene",
+      "semantic": "depends",
+      "label": "needs clean serialisation"
+    },
+    {
+      "from": "feel-input-buffer-and-combo",
+      "to": "ctl-buffer-and-dash-weight",
+      "semantic": "relates",
+      "label": "cancel-on-dash calls into the dash"
+    },
+    {
+      "from": "ctl-camera-lead-and-smoothing",
+      "to": "ctl-controller-hygiene",
+      "semantic": "relates",
+      "label": "smoothing ticks pulled forward there"
+    },
+    {
+      "from": "ctl-parked-longtail",
+      "to": "feel-hitstop-shake-knockback",
+      "semantic": "relates",
+      "label": "revisit trigger fires when this ships"
+    },
+    {
+      "from": "ctl-parked-longtail",
+      "to": "ctl-cursor-aim-controller",
+      "semantic": "relates",
+      "label": "both parked items live in this controller"
+    },
+    {
+      "from": "data-starter-gear-delivery",
+      "to": "world-own-the-orc",
+      "semantic": "relates",
+      "label": "the drop is the upgrade"
+    },
+    {
+      "from": "data-starter-gear-delivery",
+      "to": "data-ids-and-registration-discipline",
+      "semantic": "depends",
+      "label": "_G convention and the kit-patch ledger"
+    },
+    {
+      "from": "data-starter-kit-reward-gradient",
+      "to": "data-starter-gear-delivery",
+      "semantic": "depends",
+      "label": "needs the delivery path first"
+    },
+    {
+      "from": "data-starter-kit-reward-gradient",
+      "to": "world-own-the-orc",
+      "semantic": "depends",
+      "label": "needs a drop table to measure against"
+    },
+    {
+      "from": "data-starter-kit-reward-gradient",
+      "to": "data-fork-elements-and-attributes",
+      "semantic": "relates",
+      "label": "shares the damage and armor numbers"
+    },
+    {
+      "from": "world-death-screen",
+      "to": "ui-death-escape-guard",
+      "semantic": "depends",
+      "label": "guard lands first"
+    },
+    {
+      "from": "ui-death-escape-guard",
+      "to": "world-first-spawn-area",
+      "semantic": "depends",
+      "label": "needs something that kills you"
+    },
+    {
+      "from": "world-enemy-telegraphs",
+      "to": "ui-cast-bars",
+      "semantic": "depends",
+      "label": "needs a visible cast"
+    },
+    {
+      "from": "world-second-archetype",
+      "to": "world-own-the-orc",
+      "semantic": "depends",
+      "label": "tuning template"
+    },
+    {
+      "from": "world-second-archetype",
+      "to": "data-repair-synty-wardrobe",
+      "semantic": "depends",
+      "label": "container builder"
+    },
+    {
+      "from": "feel-hurt-and-dead-states",
+      "to": "world-setup-doc",
+      "semantic": "depends",
+      "label": "needs the clip packs"
+    },
+    {
+      "from": "data-icons-and-drop-models",
+      "to": "world-setup-doc",
+      "semantic": "depends",
+      "label": "needs BLINK at its exact path"
+    },
+    {
+      "from": "data-starter-kit-reward-gradient",
+      "to": "data-author-starter-outfit",
+      "semantic": "relates",
+      "label": "re-tunes the starter armor"
+    }
+  ]
+}
