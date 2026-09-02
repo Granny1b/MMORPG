@@ -946,374 +946,312 @@
     {
       "from": "ctl-camera-lead-and-smoothing",
       "to": "ctl-cursor-aim-controller",
-      "semantic": "depends",
-      "label": "extends the aim controller"
+      "semantic": "depends"
     },
     {
       "from": "ctl-buffer-and-dash-weight",
       "to": "ctl-rebind-dash-key",
-      "semantic": "depends",
-      "label": "needs reachable dash key"
+      "semantic": "depends"
     },
     {
       "from": "ctl-buffer-and-dash-weight",
       "to": "feel-training-dummy",
-      "semantic": "depends",
-      "label": "measures against dummy"
+      "semantic": "depends"
     },
     {
       "from": "ctl-cursor-aimed-skillshots",
       "to": "ctl-cursor-aim-controller",
-      "semantic": "depends",
-      "label": "overrides aim controller"
+      "semantic": "depends"
     },
     {
       "from": "ctl-cursor-aimed-skillshots",
       "to": "ctl-controller-hygiene",
-      "semantic": "depends",
-      "label": "needs clean serialisation"
+      "semantic": "depends"
     },
     {
       "from": "ctl-audit-official-addon",
       "to": "ctl-cursor-aim-controller",
-      "semantic": "derives",
-      "label": "audits the replaced addon"
+      "semantic": "derives"
     },
     {
       "from": "ctl-rebind-dash-key",
       "to": "world-kit-patch-ledger",
-      "semantic": "depends",
-      "label": "logged as kit patch"
+      "semantic": "depends"
     },
     {
       "from": "ctl-rebind-dash-key",
       "to": "world-first-spawn-area",
-      "semantic": "relates",
-      "label": "needs something to dash around"
+      "semantic": "relates"
     },
     {
       "from": "feel-training-dummy",
       "to": "world-first-spawn-area",
-      "semantic": "depends",
-      "label": "second spawn area"
+      "semantic": "depends"
     },
     {
       "from": "feel-hurt-and-dead-states",
       "to": "feel-training-dummy",
-      "semantic": "depends",
-      "label": "needs damage to test"
+      "semantic": "depends"
     },
     {
       "from": "feel-impact-vfx-and-contact-sfx",
       "to": "feel-training-dummy",
-      "semantic": "depends",
-      "label": "needs a target"
+      "semantic": "depends"
     },
     {
       "from": "feel-impact-vfx-and-contact-sfx",
       "to": "feel-swing-audio-layers",
-      "semantic": "depends",
-      "label": "layers onto swing audio"
+      "semantic": "depends"
     },
     {
       "from": "feel-impact-vfx-and-contact-sfx",
       "to": "data-ids-and-registration-discipline",
-      "semantic": "depends",
-      "label": "needs fork-on-touch rule"
+      "semantic": "depends"
     },
     {
       "from": "feel-damage-numbers",
       "to": "feel-training-dummy",
-      "semantic": "depends",
-      "label": "needs repeatable hits"
+      "semantic": "depends"
     },
     {
       "from": "feel-combat-feedback-bus",
       "to": "feel-training-dummy",
-      "semantic": "depends",
-      "label": "needs a target"
+      "semantic": "depends"
     },
     {
       "from": "feel-hitstop-shake-knockback",
       "to": "feel-combat-feedback-bus",
-      "semantic": "depends",
-      "label": "driven by the bus"
+      "semantic": "depends"
     },
     {
       "from": "feel-hitstop-shake-knockback",
       "to": "feel-hurt-and-dead-states",
-      "semantic": "depends",
-      "label": "needs hit reaction"
+      "semantic": "depends"
     },
     {
       "from": "feel-hitstop-shake-knockback",
       "to": "ctl-camera-lead-and-smoothing",
-      "semantic": "relates",
-      "label": "shares camera channel"
+      "semantic": "relates"
     },
     {
       "from": "feel-input-buffer-and-combo",
       "to": "feel-training-dummy",
-      "semantic": "depends",
-      "label": "measures responsiveness"
+      "semantic": "depends"
     },
     {
       "from": "feel-input-buffer-and-combo",
       "to": "feel-upper-body-attack-mask",
-      "semantic": "depends",
-      "label": "builds on attack mask"
+      "semantic": "depends"
     },
     {
       "from": "data-fix-or-retire-syntysword",
       "to": "data-ids-and-registration-discipline",
-      "semantic": "depends",
-      "label": "needs id discipline"
+      "semantic": "depends"
     },
     {
       "from": "data-fork-elements-and-attributes",
       "to": "data-ids-and-registration-discipline",
-      "semantic": "depends",
-      "label": "needs fork rules"
+      "semantic": "depends"
     },
     {
       "from": "data-fork-elements-and-attributes",
       "to": "world-first-spawn-area",
-      "semantic": "depends",
-      "label": "needs something to fight"
+      "semantic": "depends"
     },
     {
       "from": "data-fork-armortypes-missing-slots",
       "to": "data-ids-and-registration-discipline",
-      "semantic": "depends",
-      "label": "needs fork rules"
+      "semantic": "depends"
     },
     {
       "from": "data-author-starter-outfit",
       "to": "data-fork-armortypes-missing-slots",
-      "semantic": "depends",
-      "label": "needs the slots"
+      "semantic": "depends"
     },
     {
       "from": "data-author-starter-outfit",
       "to": "data-repair-synty-wardrobe",
-      "semantic": "depends",
-      "label": "needs a working wardrobe"
+      "semantic": "depends"
     },
     {
       "from": "data-icons-and-drop-models",
       "to": "world-own-the-orc",
-      "semantic": "depends",
-      "label": "needs a dropper"
+      "semantic": "depends"
     },
     {
       "from": "data-authoring-checklist-and-validator",
       "to": "data-ids-and-registration-discipline",
-      "semantic": "depends",
-      "label": "encodes the conventions"
+      "semantic": "depends"
     },
     {
       "from": "data-authoring-checklist-and-validator",
       "to": "data-repair-synty-wardrobe",
-      "semantic": "depends",
-      "label": "validates wardrobe rules"
+      "semantic": "depends"
     },
     {
       "from": "world-readable-enemy-hud",
       "to": "world-first-spawn-area",
-      "semantic": "depends",
-      "label": "needs enemies to read"
+      "semantic": "depends"
     },
     {
       "from": "world-own-the-orc",
       "to": "world-first-spawn-area",
-      "semantic": "depends",
-      "label": "repoints the spawn area"
+      "semantic": "depends"
     },
     {
       "from": "world-own-the-orc",
       "to": "world-kit-patch-ledger",
-      "semantic": "depends",
-      "label": "logs the fork"
+      "semantic": "depends"
     },
     {
       "from": "world-own-the-orc",
       "to": "data-ids-and-registration-discipline",
-      "semantic": "depends",
-      "label": "preserves ids on fork"
+      "semantic": "depends"
     },
     {
       "from": "world-enemy-telegraphs",
       "to": "world-own-the-orc",
-      "semantic": "depends",
-      "label": "tunes the forked orc"
+      "semantic": "depends"
     },
     {
       "from": "world-enemy-telegraphs",
       "to": "ctl-buffer-and-dash-weight",
-      "semantic": "depends",
-      "label": "needs a real dodge"
+      "semantic": "depends"
     },
     {
       "from": "world-action-bar-rebind",
       "to": "ctl-cursor-aimed-skillshots",
-      "semantic": "depends",
-      "label": "needs cursor-aimed casts"
+      "semantic": "depends"
     },
     {
       "from": "world-hover-targeting",
       "to": "world-readable-enemy-hud",
-      "semantic": "depends",
-      "label": "lights up nameplates"
+      "semantic": "depends"
     },
     {
       "from": "world-death-screen",
       "to": "feel-hurt-and-dead-states",
-      "semantic": "depends",
-      "label": "needs death clip"
+      "semantic": "depends"
     },
     {
       "from": "world-cut-loose-from-demo",
       "to": "world-kit-patch-ledger",
-      "semantic": "depends",
-      "label": "grows from the ledger"
+      "semantic": "depends"
     },
     {
       "from": "world-lan-coop-session",
       "to": "world-cut-loose-from-demo",
-      "semantic": "depends",
-      "label": "needs project entry scene"
+      "semantic": "depends"
     },
     {
       "from": "world-lan-coop-session",
       "to": "data-starter-gear-delivery",
-      "semantic": "depends",
-      "label": "needs the closed loop"
+      "semantic": "depends"
     },
     {
       "from": "world-shape-the-arena",
       "to": "world-first-spawn-area",
-      "semantic": "depends",
-      "label": "rebakes around spawns"
+      "semantic": "depends"
     },
     {
       "from": "world-parked-longtail",
       "to": "world-shape-the-arena",
-      "semantic": "relates",
-      "label": "revisit after terrain"
+      "semantic": "relates"
     },
     {
       "from": "world-readable-enemy-hud",
       "to": "feel-damage-numbers",
-      "semantic": "relates",
-      "label": "shares the combat-text pass"
+      "semantic": "relates"
     },
     {
       "from": "feel-input-buffer-and-combo",
       "to": "ctl-controller-hygiene",
-      "semantic": "depends",
-      "label": "needs clean serialisation"
+      "semantic": "depends"
     },
     {
       "from": "feel-input-buffer-and-combo",
       "to": "ctl-buffer-and-dash-weight",
-      "semantic": "relates",
-      "label": "cancel-on-dash calls into the dash"
+      "semantic": "relates"
     },
     {
       "from": "ctl-camera-lead-and-smoothing",
       "to": "ctl-controller-hygiene",
-      "semantic": "relates",
-      "label": "smoothing ticks pulled forward there"
+      "semantic": "relates"
     },
     {
       "from": "ctl-parked-longtail",
       "to": "feel-hitstop-shake-knockback",
-      "semantic": "relates",
-      "label": "revisit trigger fires when this ships"
+      "semantic": "relates"
     },
     {
       "from": "ctl-parked-longtail",
       "to": "ctl-cursor-aim-controller",
-      "semantic": "relates",
-      "label": "both parked items live in this controller"
+      "semantic": "relates"
     },
     {
       "from": "data-starter-gear-delivery",
       "to": "world-own-the-orc",
-      "semantic": "relates",
-      "label": "the drop is the upgrade"
+      "semantic": "relates"
     },
     {
       "from": "data-starter-gear-delivery",
       "to": "data-ids-and-registration-discipline",
-      "semantic": "depends",
-      "label": "_G convention and the kit-patch ledger"
+      "semantic": "depends"
     },
     {
       "from": "data-starter-kit-reward-gradient",
       "to": "data-starter-gear-delivery",
-      "semantic": "depends",
-      "label": "needs the delivery path first"
+      "semantic": "depends"
     },
     {
       "from": "data-starter-kit-reward-gradient",
       "to": "world-own-the-orc",
-      "semantic": "depends",
-      "label": "needs a drop table to measure against"
+      "semantic": "depends"
     },
     {
       "from": "data-starter-kit-reward-gradient",
       "to": "data-fork-elements-and-attributes",
-      "semantic": "relates",
-      "label": "shares the damage and armor numbers"
+      "semantic": "relates"
     },
     {
       "from": "world-death-screen",
       "to": "ui-death-escape-guard",
-      "semantic": "depends",
-      "label": "guard lands first"
+      "semantic": "depends"
     },
     {
       "from": "ui-death-escape-guard",
       "to": "world-first-spawn-area",
-      "semantic": "depends",
-      "label": "needs something that kills you"
+      "semantic": "depends"
     },
     {
       "from": "world-enemy-telegraphs",
       "to": "ui-cast-bars",
-      "semantic": "depends",
-      "label": "needs a visible cast"
+      "semantic": "depends"
     },
     {
       "from": "world-second-archetype",
       "to": "world-own-the-orc",
-      "semantic": "depends",
-      "label": "tuning template"
+      "semantic": "depends"
     },
     {
       "from": "world-second-archetype",
       "to": "data-repair-synty-wardrobe",
-      "semantic": "depends",
-      "label": "container builder"
+      "semantic": "depends"
     },
     {
       "from": "feel-hurt-and-dead-states",
       "to": "world-setup-doc",
-      "semantic": "depends",
-      "label": "needs the clip packs"
+      "semantic": "depends"
     },
     {
       "from": "data-icons-and-drop-models",
       "to": "world-setup-doc",
-      "semantic": "depends",
-      "label": "needs BLINK at its exact path"
+      "semantic": "depends"
     },
     {
       "from": "data-starter-kit-reward-gradient",
       "to": "data-author-starter-outfit",
-      "semantic": "relates",
-      "label": "re-tunes the starter armor"
+      "semantic": "relates"
     }
   ]
 }
