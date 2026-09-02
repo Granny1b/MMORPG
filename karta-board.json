@@ -66,19 +66,19 @@
     },
     {
       "name": "world",
-      "color": "#5f7a52"
+      "color": "straw"
     },
     {
       "name": "netcode",
-      "color": "#4a6b7a"
+      "color": "slate"
     },
     {
       "name": "tooling",
-      "color": "#6b6357"
+      "color": "purple"
     },
     {
       "name": "risk",
-      "color": "#9c4f42"
+      "color": "bronze"
     }
   ],
   "cards": [
