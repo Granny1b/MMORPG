@@ -9,6 +9,48 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Added
 
+- **`Documentation/Systems/03_DEMO_ROADMAP.md`** (2026-09-03) — build order to a playable demo,
+  covering enemies, the roll's cost, camera occlusion, start zone and world loot. Plan only.
+  - **The content gap, measured, is what sets the order.** `GameDatabase_G.asset` registers zero
+    monsters (`:85`, `:17`), zero skills (`:74`), zero status effects (`:81`) and zero quests
+    (`:89`), against 25 items of which 15 are cloaks; `Prototype_World_01.unity` is 19 GameObjects.
+    So the controller work is the most finished thing in the project and has nothing to point at.
+    Roll cost and camera occlusion are polish on working systems and are cheap; enemies are net-new
+    content and are the long pole. The roadmap orders around that asymmetry rather than around the
+    order the features were asked for.
+  - **The roll needs no kit edit.** `onCanDashValidated` exists alongside the `onCanMoveValidated`
+    that `DirectionalRollDash` already uses, and nothing in the kit gates a dash for you:
+    `AllowToDash()` is only a ground check (`CharacterControllerEntityMovement.cs:436`) and
+    `CanDash_Implementation()` covers only `DisallowDash` and action restrictions
+    (`BaseCharacterEntity_MoveFunctions.cs:166`).
+  - **Stamina is already plumbed and currently inert.** `Warrior_G` has `stamina: 100`, and the
+    assigned rule is the kit's `SimpleGameplayRule.asset` (`00Init.unity:792`) at 3/sec recovery;
+    `GetDecreasingStaminaPerSeconds` drains only while sprinting (`DefaultGameplayRule.cs:323-336`)
+    and no sprint is bound, so nothing consumes stamina today. Recovery is tuned by subclassing
+    `BaseGameplayRule` (`:104`), never by editing `SimpleGameplayRule.asset`, which is a `Demo/`
+    asset an Asset Store re-import would revert.
+  - **Cooldown and stamina both, because neither alone works.** Cooldown alone permits an infinite
+    chain at a fixed rate, so rolling stays the fastest way to cross the map; stamina alone permits
+    four instant rolls back to back, which reads as a bug. Recorded so the simpler single-gate
+    version is not retried.
+  - **The kit has camera collision but no occlusion fade.** `FollowCamera.cs:37-42` already exposes
+    `enableWallHitSpring` and its layer mask, which is free and should be enabled first; a search of
+    `Core/CameraAndInput/` for occlusion, transparency and fading returns nothing, so the fade
+    system is genuinely ours. Rejected subclassing `FollowCameraControls` — it already carries the
+    `SaveCameraPrefs` patch and every kit update requires re-applying it, so a side component
+    reading public API (the `LocomotionPhaseSync` pattern) was chosen instead.
+  - **Monster tiers are mostly data.** `MonsterCharacter` has `AdjustStats()` (`:434`),
+    `AdjustDamageAmount()` (`:397`), `AdjustArmors()` (`:871`) and four more inspector buttons that
+    generate level curves from stats authored at `defaultLevel`, so the expensive part is the first
+    entity prefab and the tiers after it are variants. Forking the kit's `OrcWarrior.asset` is
+    preferred over a blank asset: ~40 serialized fields, and a blank one misses several silently.
+  - **Breakable chests over openable ones.** There is no chest entity in the kit; `HarvestableEntity`
+    plus a chest mesh is a networked, animated loot source with no new code, where an openable
+    container needs a new entity type, interaction and window.
+  - `moveSpeedRateWhileAttacking` defaults to 0 on `MonsterCharacter` too (`:77`), not only on
+    weapons as CLAUDE.md records it — a monster frozen for the length of every swing reads as broken
+    AI rather than as the documented weapon trap.
+
 - **`Documentation/Systems/02_ARENA_1V1_2V2_DESIGN.md`** (2026-09-03) — design for ranked 1v1 and
   2v2 arena on top of the battleground queue transport from doc 01. Design only, nothing implemented.
   - **Friend/foe is a property of the map, not of combat code.** `DamageableEntity.IsAlly`/`IsEnemy`
