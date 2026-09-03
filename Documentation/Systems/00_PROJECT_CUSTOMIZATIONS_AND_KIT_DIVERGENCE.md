@@ -21,8 +21,8 @@ Inside this document:
 Outside this document:
 
 - How each system works internally: see the numbered system documents.
-- Third-party dependency details: [41_THIRD_PARTY_DEPENDENCIES.md](41_THIRD_PARTY_DEPENDENCIES.md).
-- The extension mechanisms themselves: [39_DEV_EXTENSION_SYSTEM.md](39_DEV_EXTENSION_SYSTEM.md).
+- Third-party dependency details: `Packages/manifest.json`.
+- The extension mechanisms themselves: `Assets/UnityMultiplayerARPG/Core/DevExtension/`.
 
 ## High-Level Architecture
 
@@ -187,7 +187,7 @@ Nothing in the project layer changes the kit's startup order. The differences ar
 
 ## Networking and Authority
 
-No project code adds network messages, sync fields or RPCs. `TopDownAimController` only changes which look rotation and `MovementState` the owning client sends through the kit's existing movement path (`SetLookRotation`, `KeyMovement`) and where a pending attack is aimed before the kit's own `RequestAttack` runs. Server validation of attacks, skills and movement is unchanged. See [03_NETWORKING_FOUNDATION.md](03_NETWORKING_FOUNDATION.md) and [10_COMBAT_AND_DAMAGE_SYSTEM.md](10_COMBAT_AND_DAMAGE_SYSTEM.md).
+No project code adds network messages, sync fields or RPCs. `TopDownAimController` only changes which look rotation and `MovementState` the owning client sends through the kit's existing movement path (`SetLookRotation`, `KeyMovement`) and where a pending attack is aimed before the kit's own `RequestAttack` runs. Server validation of attacks, skills and movement is unchanged. See `Assets/UnityMultiplayerARPG/Core/Scripts/Networking/` and `Assets/UnityMultiplayerARPG/Core/Scripts/GameData/Damage/`.
 
 ## Persistence
 
@@ -195,13 +195,13 @@ No project code changes persistence. The camera prefab persists zoom and rotatio
 
 ## Dependencies
 
-Depends on:
-- [01_CORE_ARCHITECTURE.md](01_CORE_ARCHITECTURE.md) for `GameInstance` fields the entry scene sets.
-- [15_CHARACTER_MODEL_AND_ANIMATION_SYSTEM.md](15_CHARACTER_MODEL_AND_ANIMATION_SYSTEM.md) for the Playables API the animation components use.
-- [36_INPUT_CAMERA_AND_CONTROLLER_SYSTEM.md](36_INPUT_CAMERA_AND_CONTROLLER_SYSTEM.md) for the controller base class.
-- [30_UI_SYSTEM.md](30_UI_SYSTEM.md) for `UIBase` and `UISceneGameplay`.
+Depends on these parts of the kit, which are the API surface the project's own code binds to:
+- `Core/Scripts/GameInstance/` for the `GameInstance` fields the entry scene sets.
+- `Core/Scripts/GameData/Model/` for the Playables API the two animation components use.
+- `Core/Scripts/Gameplay/CharacterControllerSystems/` for the controller base class.
+- `Core/Scripts/UI/` for `UIBase` and `UISceneGameplay`.
 
-Depended on by: every other document, when it needs to say whether an element is kit or project.
+Depended on by: `CLAUDE.md`, which states the rules this document justifies, and by anyone deciding whether a file is safe to edit.
 
 ## Extension and Customization Points
 
@@ -212,7 +212,7 @@ Rules the project follows (and future work should keep following):
 3. Runtime behaviour is added by subclassing (`TopDownAimController : PlayerCharacterController`) or by side components that read public API (`LocomotionPhaseSync`, `ActionLayerMaskUpdater`, `UIEscapeWindowsHandler`), never by editing kit scripts, unless no hook exists (see the next section).
 4. Editor tooling lives in `Assets/Scripts/Editor/` under namespace `MMORPGGranny.EditorTools` and menu `Tools/`.
 
-Mechanisms available but not yet used by the project: `[DevExtMethods]` hooks and partial classes on kit types, entity events (`onReceivedDamage`, `onApplyBuff`, ...), `GameExtensionInstance` delegates, `BaseGameplayRule` subclassing, handler interface swaps. See [39_DEV_EXTENSION_SYSTEM.md](39_DEV_EXTENSION_SYSTEM.md).
+Mechanisms available but not yet used by the project: `[DevExtMethods]` hooks and partial classes on kit types, entity events (`onReceivedDamage`, `onApplyBuff`, ...), `GameExtensionInstance` delegates, `BaseGameplayRule` subclassing, handler interface swaps. See `Assets/UnityMultiplayerARPG/Core/DevExtension/`.
 
 ## Core Framework vs Project Customization
 
@@ -258,14 +258,14 @@ Also present in the kit tree after the update, as side effects rather than inten
 | `Assets/1. Data/GameData/Items/Weapons/SyntySword001_G.asset` | Project custom | Still has `moveSpeedRateWhileAttacking` 0 and no grip offsets (known follow-up) |
 | `Assets/1. Data/GameData/MapInfos/Prototype_World_01.asset` | Project custom | `useMonsterFactionAsAlliance` on, PK off, start position (0, 0.1, 0) |
 | `Assets/1. Data/Scenes/Prototype_World_01.unity` | Project custom | Terrain, directional light, NavMesh surface, one `SpawnPoint`; no spawn areas, NPCs or portals |
-| `Assets/1. Data/Prefabs/SyntyPlayerCharacter.prefab` | Project custom | Synty FixedScale rig; components listed in [08_CHARACTER_SYSTEM.md](08_CHARACTER_SYSTEM.md) |
+| `Assets/1. Data/Prefabs/SyntyPlayerCharacter.prefab` | Project custom | Synty FixedScale rig; components listed in `Assets/UnityMultiplayerARPG/Core/Scripts/Gameplay/CharacterEntity/` |
 | `Assets/1. Data/Prefabs/UI Prefabs/{CanvasGameplay_G,UIDialogs_G,UIItemsDialog}.prefab` | Project custom | Forks; only `UIItemsDialog` is detached from its kit prefab, the other dialogs inside `UIDialogs_G` remain kit prefab instances |
 | `Assets/1. Data/Prefabs/Weapons/SM_Wep_Sword_01_G.prefab` | Project custom | Carries two `MeshCollider` components from the source art (known follow-up) |
 | `Assets/1. Data/Animation controllers/SyntyPlayerAnimatorController.controller` | Project custom | Present; `PlayableCharacterModel` drives animation through Playables, so check whether this controller is still referenced before relying on it |
 | `Assets/1. Data/AvatarMasks/SyntyUpperBody.mask` | Project custom | Built from the avatar's bone mapping (15 lower-body transforms masked) |
 | `Assets/Settings/**` | Project custom | URP assets and quality levels |
 | `Assets/Resources/BillingMode.json` | Unity Purchasing | `androidStore: GooglePlay` |
-| `Packages/manifest.json` | Project configuration | See [41_THIRD_PARTY_DEPENDENCIES.md](41_THIRD_PARTY_DEPENDENCIES.md) |
+| `Packages/manifest.json` | Project configuration | See `Packages/manifest.json` |
 | `ProjectSettings/ProjectSettings.asset` | Project configuration | Product name, defines, input handler "Both", scripting backends |
 | `CHANGELOG.md`, `.gitignore`, `.gitattributes`, `.vsconfig` | Project custom | Change record, excluded content, LFS rules |
 
@@ -282,7 +282,7 @@ Also present in the kit tree after the update, as side effects rather than inten
 
 ### Installed but unused
 
-`com.unity.services.vivox`, `com.unity.cinemachine`, `com.unity.splines`, `com.unity.timeline`, `com.unity.visualscripting`, `com.unity.memoryprofiler`, `com.unity.multiplayer.center`, `com.unity.analytics`, `com.unity.services.analytics` have no references from kit or project code. The `STEAMWORKS_NET` define is set on four platforms with no Steamworks code present. `com.coplaydev.unity-mcp` is an editor bridge for AI tooling with no runtime footprint. `com.unity.purchasing` is installed and the kit has IAP code, but `ENABLE_PURCHASING` is only present on a legacy numeric define entry; see [33_CASH_SHOP_AND_IAP_SYSTEM.md](33_CASH_SHOP_AND_IAP_SYSTEM.md).
+`com.unity.services.vivox`, `com.unity.cinemachine`, `com.unity.splines`, `com.unity.timeline`, `com.unity.visualscripting`, `com.unity.memoryprofiler`, `com.unity.multiplayer.center`, `com.unity.analytics`, `com.unity.services.analytics` have no references from kit or project code. The `STEAMWORKS_NET` define is set on four platforms with no Steamworks code present. `com.coplaydev.unity-mcp` is an editor bridge for AI tooling with no runtime footprint. `com.unity.purchasing` is installed and the kit has IAP code, but `ENABLE_PURCHASING` is only present on a legacy numeric define entry; see `Assets/UnityMultiplayerARPG/Core/Scripts/GameData/CashShop/`.
 
 ## Differences from Official MMORPG Kit Documentation and Known Issues
 
@@ -322,11 +322,8 @@ Known issues and follow-ups recorded by the project:
 
 ## Related Documents
 
-- [../PROJECT_OVERVIEW.md](../PROJECT_OVERVIEW.md)
-- [01_CORE_ARCHITECTURE.md](01_CORE_ARCHITECTURE.md)
-- [15_CHARACTER_MODEL_AND_ANIMATION_SYSTEM.md](15_CHARACTER_MODEL_AND_ANIMATION_SYSTEM.md)
-- [30_UI_SYSTEM.md](30_UI_SYSTEM.md)
-- [36_INPUT_CAMERA_AND_CONTROLLER_SYSTEM.md](36_INPUT_CAMERA_AND_CONTROLLER_SYSTEM.md)
-- [39_DEV_EXTENSION_SYSTEM.md](39_DEV_EXTENSION_SYSTEM.md)
-- [41_THIRD_PARTY_DEPENDENCIES.md](41_THIRD_PARTY_DEPENDENCIES.md)
-- [44_EDITOR_TOOLING.md](44_EDITOR_TOOLING.md)
+- [../../CLAUDE.md](../../CLAUDE.md): the operating manual, which turns this inventory into rules.
+- [../../CHANGELOG.md](../../CHANGELOG.md): the decision log. Every row in the tables above traces back to an entry there.
+- [../PROJECT_OVERVIEW.md](../PROJECT_OVERVIEW.md): architecture orientation and the map into the source.
+
+There are no per-subsystem documents. See section 2 of the overview for why.

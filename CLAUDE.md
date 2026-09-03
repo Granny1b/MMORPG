@@ -103,8 +103,9 @@ Purchased art is excluded by `.gitignore` and must be re-imported **before** ope
 
 ## Deeper documentation
 
-`Documentation/` holds architecture reference generated from the source. Start at `Documentation/PROJECT_OVERVIEW.md`.
+Two documents, both worth keeping current:
 
-`Documentation/Systems/00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md` is the one to keep current: it is the full inventory of what is ours versus vendored, plus the re-apply checklist after a kit update.
+- `Documentation/PROJECT_OVERVIEW.md`: orientation. Repository layout, architecture, startup flow, who owns global state, the LAN and MMO topologies, and a map from each system to the source directory that implements it.
+- `Documentation/Systems/00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md`: the full inventory of ours versus vendored, every kit file patched in place, and the re-apply checklist after a kit update.
 
-The other files under `Documentation/Systems/` describe vendored kit subsystems. **Treat them as a snapshot, not as truth.** They were written against the kit at the commits named above and will not be updated when the kit is mirrored again. When you need current detail about a kit subsystem, read the source or regenerate the document. When a document and the code disagree, the code is right.
+**There is deliberately no per-subsystem documentation of the kit.** It was drafted and then deleted. Kit trees are replaced wholesale on update, so prose describing them rots silently while the source stays readable, and an agent can read the source directly. Documentation here holds only what cannot be recomputed from the code. If you want a deep map of a kit subsystem, generate one on demand from the current source rather than adding a file to maintain. When any document and the code disagree, the code is right.

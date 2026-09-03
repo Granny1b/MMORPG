@@ -510,6 +510,22 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Removed
 
+- **`Documentation/Systems/01_CORE_ARCHITECTURE.md`, `03_NETWORKING_FOUNDATION.md` and
+  `04_MMO_SERVER_ARCHITECTURE.md`** (2026-09-03) — 1,694 lines describing vendored kit
+  subsystems, deleted the same day they were written. They were accurate, and that was the
+  problem: they describe `Core/` and `MMO/`, which are replaced wholesale by a GitHub mirror, so
+  they would have gone stale in one silent step while reading as current. Kept instead are
+  `PROJECT_OVERVIEW.md` and `00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md`, which describe our
+  decisions and the vendor boundary rather than the kit's internals.
+  - Consequence handled: the two survivors carried 83 links into the documentation set that was
+    planned but never built. The overview's 46-row catalogue of documents was replaced with a
+    46-row **map from system to source directory**, which is more useful and degrades to a wrong
+    path rather than to wrong prose. All remaining references now point at source. Verified
+    mechanically: every markdown link resolves and all 59 source paths in the map exist.
+  - The rule this establishes, recorded in `CLAUDE.md`: documentation holds what cannot be
+    recomputed from the code. Anything an agent could derive by reading the source in a few
+    minutes should be generated on demand, not stored and maintained.
+
 - **`Assets/TopDownController/Scripts/TopDownPlayerCharacterController.cs`** and
   **`Demo/Prefabs/TopDownPlayerCharacterController.prefab`** (2026-08-28) — the addon's own
   controller forced `controllerMode = PlayerCharacterControllerMode.PointClick` every frame in

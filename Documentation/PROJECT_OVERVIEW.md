@@ -24,12 +24,12 @@ The project is at an early stage: it is the kit plus a first slice of project co
 Read in this order if you are new:
 
 1. This overview (sections 3 to 8).
-2. [Systems/00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md](Systems/00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md): what is project-owned versus kit-owned, and which kit files were edited in place.
-3. [Systems/01_CORE_ARCHITECTURE.md](Systems/01_CORE_ARCHITECTURE.md), [Systems/03_NETWORKING_FOUNDATION.md](Systems/03_NETWORKING_FOUNDATION.md), [Systems/07_ENTITY_FRAMEWORK.md](Systems/07_ENTITY_FRAMEWORK.md), [Systems/08_CHARACTER_SYSTEM.md](Systems/08_CHARACTER_SYSTEM.md): the four documents everything else builds on.
-4. [Systems/39_DEV_EXTENSION_SYSTEM.md](Systems/39_DEV_EXTENSION_SYSTEM.md) before writing any code, so that new functionality lands outside the kit tree.
-5. The subsystem document for the area you are changing (section 10).
+2. [Systems/00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md](Systems/00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md): what is project-owned versus kit-owned, which kit files were edited in place, and the checklist to re-apply after a kit update.
+3. The source itself, using the system map in section 10 to find the right directory.
 
-Every system document uses the same section order: Purpose, Scope, High-Level Architecture, Key Components, Important Classes and Interfaces, Data Flow, Runtime Behaviour, Networking and Authority, Persistence, Dependencies, Extension and Customization Points, Core Framework vs Project Customization, Differences from Official MMORPG Kit Documentation and Known Issues, Related Documents. Paths are repository-relative and start with `Assets/`.
+**There are deliberately no per-subsystem documents for the kit itself.** Of the 2,514 C# files here, 2,507 are vendored kit code, and `Core/` and `MMO/` are replaced wholesale when the kit is mirrored from GitHub. Prose describing them goes stale in one discontinuous step, silently, while the source stays readable. This documentation therefore holds only what cannot be recomputed from the code: the project's own decisions, the vendor boundary, and a map into the source. For detail on a kit subsystem, read the source, or ask an agent to generate a map of it from the current code.
+
+Paths are repository-relative and start with `Assets/`.
 
 Conventions used throughout:
 
@@ -118,7 +118,7 @@ Layering rules that hold in the code:
 - Everything in `Core/Scripts`, `MMO/Scripts`, `GuildWar`, `Demo*/Scripts`, `Assets/Scripts` and `Assets/TopDownController` compiles into the single default `Assembly-CSharp`. Only the sub-libraries (LiteNetLibManager, UniTask, xNode, CameraAndInput, and so on) have assembly definitions. This means project code can use `partial class` and `[DevExtMethods]` hooks on kit classes directly.
 - The MMO layer inherits from the Core layer: `MapNetworkManager : BaseGameNetworkManager : LiteNetLibGameManager : LiteNetLibManager`. LAN/offline play uses `LanRpgNetworkManager : BaseGameNetworkManager` instead.
 - Game data is loaded once into static dictionaries on `GameInstance` keyed by an integer `DataId` derived from the asset name. Entities reference data by id, never by asset reference, so the same data works on client, server and in the database.
-- Server authority is the rule: clients send requests or RPCs, the server validates and mutates synchronized state, and the state replicates back. Movement is the main client-driven exception (see [Systems/07_ENTITY_FRAMEWORK.md](Systems/07_ENTITY_FRAMEWORK.md)).
+- Server authority is the rule: clients send requests or RPCs, the server validates and mutates synchronized state, and the state replicates back. Movement is the main client-driven exception, in `Assets/UnityMultiplayerARPG/Core/Scripts/Gameplay/EntityMovementSystems/`.
 
 ## 5. What happens when the game starts
 
@@ -144,7 +144,7 @@ sequenceDiagram
     NM->>NM: EnterGame request, map scene load, ClientReady, spawn player entity
 ```
 
-Details, including which default services are created and the execution-order constants, are in [Systems/01_CORE_ARCHITECTURE.md](Systems/01_CORE_ARCHITECTURE.md). The MMO server start sequence (command-line arguments, `serverConfig.json`, which of central / map spawn / database / map servers a process starts) is in [Systems/04_MMO_SERVER_ARCHITECTURE.md](Systems/04_MMO_SERVER_ARCHITECTURE.md).
+The default services created for null fields are all in `GameInstance.Awake()`, and the execution-order constants in `Core/Scripts/Consts/DefaultExecutionOrders.cs`. The MMO server start sequence (command-line arguments, `serverConfig.json`, and which of the central, map spawn, database and map servers a given process starts) is in `MMO/Scripts/MMOGame/MMOServerInstance.cs` alongside `Src/Consts/ProcessArguments.cs` and `Config/ServerConfig.cs`.
 
 ## 6. Who owns global state
 
@@ -157,7 +157,7 @@ Details, including which default services are created and the execution-order co
 | Networked objects and players | `LiteNetLibGameManager.Assets` (spawned objects), `Players` | Server keeps the authoritative set |
 | Per-map server state (online players, warp requests, instance ids, pending saves) | `MapNetworkManager` (MMO) or `LanRpgNetworkManager` (LAN) | One per process |
 | Cluster-wide state (registered app servers, online users, channels) | `CentralNetworkManager` + `ClusterServer` | One central per cluster |
-| Persistent state | SQL through `IDatabase` (MMO) or `DefaultGameSaveSystem` files (LAN) | See [Systems/05_DATABASE_AND_PERSISTENCE_SYSTEM.md](Systems/05_DATABASE_AND_PERSISTENCE_SYSTEM.md) |
+| Persistent state | SQL through `IDatabase` (MMO) or `DefaultGameSaveSystem` files (LAN) | `MMO/Scripts/MMOGame/Src/Database/`, `Core/Scripts/LanGame/SaveSystem/` |
 
 ## 7. Runtime topologies
 
@@ -179,7 +179,7 @@ flowchart LR
     end
 ```
 
-Both topologies run the same gameplay code; the difference is which `BaseGameNetworkManager` subclass is active and which handler implementations it installs. The MMO topology is documented in [Systems/04_MMO_SERVER_ARCHITECTURE.md](Systems/04_MMO_SERVER_ARCHITECTURE.md) and the network foundation in [Systems/03_NETWORKING_FOUNDATION.md](Systems/03_NETWORKING_FOUNDATION.md).
+Both topologies run the same gameplay code; the difference is which `BaseGameNetworkManager` subclass is active and which handler implementations it installs. The MMO topology lives in `MMO/Scripts/MMOGame/`, and the network foundation in `Core/LiteNetLibManager/` plus `Core/Scripts/Networking/`.
 
 ## 8. How data flows
 
@@ -195,9 +195,9 @@ flowchart LR
     G --> C
 ```
 
-- Definitions are ScriptableObjects; instances are plain structs/classes (`CharacterItem`, `CharacterSkill`, `CharacterBuff`, `CharacterQuest`, ...) that carry a `dataId` and per-instance values. [Systems/02_GAME_DATA_AND_SCRIPTABLE_OBJECTS.md](Systems/02_GAME_DATA_AND_SCRIPTABLE_OBJECTS.md)
-- Derived values (final stats, resistances, calculated buffs) are computed and cached per entity, never persisted. [Systems/09_CHARACTER_STATS_AND_PROGRESSION.md](Systems/09_CHARACTER_STATS_AND_PROGRESSION.md)
-- Custom per-character values use the built-in public/private/server boolean, int and float collections instead of schema changes. [Systems/34_CUSTOM_DATA_SYSTEM.md](Systems/34_CUSTOM_DATA_SYSTEM.md)
+- Definitions are ScriptableObjects; instances are plain structs and classes (`CharacterItem`, `CharacterSkill`, `CharacterBuff`, `CharacterQuest`) carrying a `dataId` and per-instance values. See `Core/Scripts/GameData/` and `Core/SharedData/`.
+- Derived values (final stats, resistances, calculated buffs) are computed and cached per entity, never persisted. See `Core/Scripts/MemoryManagement/Caching/`.
+- Custom per-character values use the built-in public, private and server boolean, int and float collections instead of schema changes. See `CharacterDataBoolean`, `CharacterDataInt32` and `CharacterDataFloat32` in `Core/SharedData/`.
 
 ## 9. Core framework versus project customization
 
@@ -218,81 +218,81 @@ Summary of what the project currently owns:
 
 Both entry scenes matter: `00Init.unity` (LAN) is wired to the project assets above, while `00Init_MMO.unity` still instantiates the kit's `GameInstance.prefab`, which references `Assets/UnityMultiplayerARPG/Demo/GameData/GameDatabase.asset`, the stock `PlayerCharacterController.prefab` and the stock `CanvasGameplay.prefab`. The kit's demo `GameDatabase.asset` has itself been edited to include the project content, so the two databases differ only by the two project swords.
 
-## 10. System catalogue
+## 10. System map
 
-Numbering reflects dependency order: lower numbers are foundations that higher numbers rely on. The `00` document is the cross-cutting customization index.
+Where each system lives. Kit paths below are relative to `Assets/UnityMultiplayerARPG/`; project paths are given in full. Use this to find the source, then read it. Nothing here restates what the code says.
 
-| Document | System | Key classes | Project status |
-|---|---|---|---|
-| [00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md](Systems/00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md) | Customization and divergence index | all project files | Project |
-| [01_CORE_ARCHITECTURE.md](Systems/01_CORE_ARCHITECTURE.md) | Bootstrap, GameInstance, services, assemblies, defines | `GameInstance`, `BaseGameDatabase`, `DefaultExecutionOrders` | Kit, configured by project |
-| [02_GAME_DATA_AND_SCRIPTABLE_OBJECTS.md](Systems/02_GAME_DATA_AND_SCRIPTABLE_OBJECTS.md) | Data assets and registries | `BaseGameData`, `GameDatabase`, `GameDataHelpers` | Kit, project data added |
-| [03_NETWORKING_FOUNDATION.md](Systems/03_NETWORKING_FOUNDATION.md) | Transport, replication, RPC, handlers | `LiteNetLibManager`, `LiteNetLibGameManager`, `BaseGameNetworkManager`, `LanRpgNetworkManager` | Kit |
-| [04_MMO_SERVER_ARCHITECTURE.md](Systems/04_MMO_SERVER_ARCHITECTURE.md) | Central, cluster, map spawn, map, database servers | `MMOServerInstance`, `CentralNetworkManager`, `MapNetworkManager`, `MapSpawnNetworkManager` | Kit, not yet configured for deployment |
-| [05_DATABASE_AND_PERSISTENCE_SYSTEM.md](Systems/05_DATABASE_AND_PERSISTENCE_SYSTEM.md) | SQL persistence, LAN save system | `IDatabase`, `MySQLDatabase`, `SQLiteDatabase`, `DatabaseNetworkManager`, `DefaultGameSaveSystem` | Kit |
-| [06_AUTHENTICATION_AND_ACCOUNT_SYSTEM.md](Systems/06_AUTHENTICATION_AND_ACCOUNT_SYSTEM.md) | Login, tokens, accounts | `CentralNetworkManager_Login`, `DefaultDatabaseUserLogin` | Kit |
-| [07_ENTITY_FRAMEWORK.md](Systems/07_ENTITY_FRAMEWORK.md) | Entity base classes, movement, hit boxes, pooling | `BaseGameEntity`, `DamageableEntity`, `EntityInfo`, `CharacterControllerEntityMovement` | Kit |
-| [08_CHARACTER_SYSTEM.md](Systems/08_CHARACTER_SYSTEM.md) | Player and monster characters, creation, lifecycle | `BaseCharacterEntity`, `PlayerCharacterEntity`, `PlayerCharacterData` | Kit, project prefab added |
-| [09_CHARACTER_STATS_AND_PROGRESSION.md](Systems/09_CHARACTER_STATS_AND_PROGRESSION.md) | Attributes, stats, exp, levels | `CharacterStats`, `Attribute`, `ExpTable`, `CharacterDataCacheManager` | Kit |
-| [10_COMBAT_AND_DAMAGE_SYSTEM.md](Systems/10_COMBAT_AND_DAMAGE_SYSTEM.md) | Attacks, damage, hit registration, death, respawn | `DamageInfo`, `DefaultCharacterAttackComponent`, `DamageableEntity` | Kit, project aim controller feeds it |
-| [11_SKILL_AND_ABILITY_SYSTEM.md](Systems/11_SKILL_AND_ABILITY_SYSTEM.md) | Skills | `BaseSkill`, `Skill`, `DefaultCharacterUseSkillComponent` | Kit |
-| [12_BUFF_AND_STATUS_EFFECT_SYSTEM.md](Systems/12_BUFF_AND_STATUS_EFFECT_SYSTEM.md) | Buffs, status effects, ailments | `Buff`, `StatusEffect`, `CharacterBuff` | Kit |
-| [13_ITEM_AND_INVENTORY_SYSTEM.md](Systems/13_ITEM_AND_INVENTORY_SYSTEM.md) | Items, inventory, drops | `BaseItem`, `CharacterItem`, `BaseInventoryManager` | Kit, project items added |
-| [14_EQUIPMENT_SYSTEM.md](Systems/14_EQUIPMENT_SYSTEM.md) | Equip slots, weapon sets, visuals | `EquipWeapons`, `ArmorType`, `EquipmentModel`, `EquipmentContainer` | Kit, project slots and sockets added |
-| [15_CHARACTER_MODEL_AND_ANIMATION_SYSTEM.md](Systems/15_CHARACTER_MODEL_AND_ANIMATION_SYSTEM.md) | Models, Playables animation graph, equipment visuals | `BaseCharacterModel`, `PlayableCharacterModel`, `AnimationPlayableBehaviour` | Kit plus project components and builders |
-| [16_QUEST_SYSTEM.md](Systems/16_QUEST_SYSTEM.md) | Quests | `Quest`, `QuestTask`, `CharacterQuest` | Kit |
-| [17_NPC_AND_DIALOGUE_SYSTEM.md](Systems/17_NPC_AND_DIALOGUE_SYSTEM.md) | NPCs, dialog graphs, conditions, actions | `NpcEntity`, `NpcDialog`, `NpcDialogGraph` | Kit |
-| [18_MONSTER_AI_AND_SPAWN_SYSTEM.md](Systems/18_MONSTER_AI_AND_SPAWN_SYSTEM.md) | Monster AI, spawn areas, loot | `MonsterCharacterEntity`, `MonsterActivityComponent`, `MonsterSpawnArea` | Kit |
-| [19_WORLD_MAP_AND_SCENE_SYSTEM.md](Systems/19_WORLD_MAP_AND_SCENE_SYSTEM.md) | Maps, scenes, portals, day/night | `MapInfo`, `WarpPortalEntity`, `UISceneLoading` | Kit, project map added |
-| [20_INSTANCE_AND_DUNGEON_SYSTEM.md](Systems/20_INSTANCE_AND_DUNGEON_SYSTEM.md) | Instanced maps | `MapSpawnNetworkManager`, instance map info settings | Kit |
-| [21_SOCIAL_SYSTEM.md](Systems/21_SOCIAL_SYSTEM.md) | Party, guild, friends | `PartyData`, `GuildData`, party/guild handlers | Kit |
-| [22_PVP_SYSTEM.md](Systems/22_PVP_SYSTEM.md) | PK, dueling, alliances | `PlayerCharacterPkComponent`, `PlayerCharacterDuelingComponent` | Kit |
-| [23_GAMEPLAY_RULES_AND_RESTRICTIONS.md](Systems/23_GAMEPLAY_RULES_AND_RESTRICTIONS.md) | Gameplay rule service, configs, restrictions | `BaseGameplayRule`, `DefaultGameplayRule` | Kit |
-| [24_BUILDING_SYSTEM.md](Systems/24_BUILDING_SYSTEM.md) | Construction | `BuildingEntity`, `BuildingArea`, `PlayerCharacterBuildingComponent` | Kit |
-| [25_HARVESTING_AND_RESOURCE_SYSTEM.md](Systems/25_HARVESTING_AND_RESOURCE_SYSTEM.md) | Harvestables | `HarvestableEntity`, `HarvestableSpawnArea` | Kit |
-| [26_CRAFTING_SYSTEM.md](Systems/26_CRAFTING_SYSTEM.md) | Crafting | `ItemCraft`, `PlayerCharacterCraftingComponent`, `WorkbenchEntity` | Kit |
-| [27_MOUNT_AND_VEHICLE_SYSTEM.md](Systems/27_MOUNT_AND_VEHICLE_SYSTEM.md) | Mounts and vehicles | `VehicleEntity`, `MountEntity`, `MountItem` | Kit |
-| [28_PET_AND_SUMMON_SYSTEM.md](Systems/28_PET_AND_SUMMON_SYSTEM.md) | Pets and summons | `CharacterSummon`, `PetItem`, `SkillSummon` | Kit |
-| [29_EFFECTS_SYSTEM.md](Systems/29_EFFECTS_SYSTEM.md) | Visual effects | `GameEffect`, `PoolingGameEffectsPlayer` | Kit |
-| [30_UI_SYSTEM.md](Systems/30_UI_SYSTEM.md) | UI framework | `UIBase`, `UISceneGameplay`, `UIList` | Kit plus project forks and escape handler |
-| [31_CHAT_AND_COMMUNICATION_SYSTEM.md](Systems/31_CHAT_AND_COMMUNICATION_SYSTEM.md) | Chat | `ChatMessage`, chat handlers | Kit |
-| [32_ECONOMY_CURRENCY_TRADE_AND_STORAGE.md](Systems/32_ECONOMY_CURRENCY_TRADE_AND_STORAGE.md) | Gold, currencies, shops, dealing, vending, storage, bank, mail | `Currency`, `Storage`, storage/mail handlers | Kit |
-| [33_CASH_SHOP_AND_IAP_SYSTEM.md](Systems/33_CASH_SHOP_AND_IAP_SYSTEM.md) | Cash shop, Unity IAP | `CashShopItem`, `CashPackage`, `GameInstance_Purchasing` | Kit, not configured |
-| [34_CUSTOM_DATA_SYSTEM.md](Systems/34_CUSTOM_DATA_SYSTEM.md) | Custom character data | `CharacterDataBoolean/Int32/Float32` | Kit |
-| [35_ADDRESSABLES_AND_CONTENT_LOADING.md](Systems/35_ADDRESSABLES_AND_CONTENT_LOADING.md) | Addressables | `AddressableAssetTools`, `AssetReference*` | Kit, disabled on Standalone |
-| [36_INPUT_CAMERA_AND_CONTROLLER_SYSTEM.md](Systems/36_INPUT_CAMERA_AND_CONTROLLER_SYSTEM.md) | Input, camera, player controller | `InputManager`, `FollowCameraControls`, `PlayerCharacterController`, `TopDownAimController` | Kit plus project controller |
-| [37_MULTI_PLATFORM_SUPPORT.md](Systems/37_MULTI_PLATFORM_SUPPORT.md) | Platform branches | `GameInstance` platform fields, defines | Kit |
-| [38_LOCALIZATION_SYSTEM.md](Systems/38_LOCALIZATION_SYSTEM.md) | Languages | `LanguageManager`, `UITextKeys` | Kit |
-| [39_DEV_EXTENSION_SYSTEM.md](Systems/39_DEV_EXTENSION_SYSTEM.md) | Extension mechanisms | `DevExtUtils`, `GameExtensionInstance`, entity events | Kit, used by project |
-| [40_BUILD_AND_DEPLOYMENT_SYSTEM.md](Systems/40_BUILD_AND_DEPLOYMENT_SYSTEM.md) | Builds, server processes, config files | `Builder`, `ProcessArguments`, `ServerConfig` | Kit |
-| [41_THIRD_PARTY_DEPENDENCIES.md](Systems/41_THIRD_PARTY_DEPENDENCIES.md) | Dependency catalogue | packages, DLLs, asset packs | Project |
-| [42_AUDIO_AND_GRAPHIC_SETTINGS.md](Systems/42_AUDIO_AND_GRAPHIC_SETTINGS.md) | Audio manager, graphics settings | `AudioManager`, `GraphicSettingManager` | Kit |
-| [43_GM_COMMANDS_AND_ADMIN_TOOLS.md](Systems/43_GM_COMMANDS_AND_ADMIN_TOOLS.md) | GM commands, logging, bans | `DefaultGMCommands`, `IServerLogHandlers` | Kit |
-| [44_EDITOR_TOOLING.md](Systems/44_EDITOR_TOOLING.md) | Editor windows and menus | kit editors, project tools | Kit plus project tools |
-| [45_GUILD_WAR_EXTENSION.md](Systems/45_GUILD_WAR_EXTENSION.md) | Guild war add-on | `GuildWarMapInfo`, `GuildWarCastleHeart` | Kit add-on, registered in project database |
+| System | Key types | Source |
+|---|---|---|
+| Bootstrap and global state | `GameInstance` | `Core/Scripts/GameInstance/` |
+| Game data definitions | `BaseGameData`, `GameDatabase`, `GameDataHelpers` | `Core/Scripts/GameData/`, `Core/Scripts/GameData/Database/` |
+| Shared data types | `CharacterData`, `PlayerCharacterData`, `CharacterItem`, `GuildData`, `PartyData`, `Mail` | `Core/SharedData/` |
+| Networking library | `LiteNetLibManager`, `LiteNetLibIdentity`, sync fields and lists, RPC, transports | `Core/LiteNetLibManager/Scripts/` |
+| Game networking | `BaseGameNetworkManager`, handler interfaces, message structs | `Core/Scripts/Networking/` |
+| LAN and offline play | `LanRpgNetworkManager`, `DefaultGameSaveSystem` | `Core/Scripts/LanGame/` |
+| MMO servers | `MMOServerInstance`, `CentralNetworkManager`, `MapNetworkManager`, `MapSpawnNetworkManager` | `MMO/Scripts/MMOGame/` |
+| Database and persistence | `IDatabase`, `MySQLDatabase`, `SQLiteDatabase`, `DatabaseNetworkManager` | `MMO/Scripts/MMOGame/Src/Database/` |
+| SQL schema | 34 tables | `MMO/SQLs/mysql_main.sql` |
+| Entity framework | `BaseGameEntity`, `DamageableEntity`, `EntityInfo` | `Core/Scripts/Gameplay/` |
+| Entity movement | `CharacterControllerEntityMovement`, `NavMeshEntityMovement` | `Core/Scripts/Gameplay/EntityMovementSystems/` |
+| Characters | `BaseCharacterEntity`, `PlayerCharacterEntity`, `BaseMonsterCharacterEntity` | `Core/Scripts/Gameplay/CharacterEntity/` |
+| Character components | recovery, skill and buff, crafting, dealing, vending, dueling, PK, building | `Core/Scripts/Gameplay/CharacterSystems/` |
+| Character data instances | `CharacterAttribute`, `CharacterSkill`, `CharacterQuest`, `CharacterBuff` | `Core/Scripts/CharacterData/` |
+| Stat caching | `CharacterDataCacheManager`, `CalculatedBuff` | `Core/Scripts/MemoryManagement/Caching/` |
+| Combat and damage | `IDamageInfo`, `MeleeDamageInfo`, `MissileDamageInfo`, `DamageElement` | `Core/Scripts/GameData/Damage/`, `Core/Scripts/Gameplay/DamageEntities/` |
+| Attack and skill execution | `DefaultCharacterAttackComponent`, `DefaultCharacterUseSkillComponent` | `Core/Scripts/Gameplay/CharacterSystems/CharacterActionsSystem/` |
+| Skills | `BaseSkill`, `Skill`, `SkillSummon`, `SkillMount` | `Core/Scripts/GameData/Skill/` |
+| Buffs and status effects | `Buff`, `StatusEffect`, `AilmentPresets` | `Core/Scripts/GameData/Buff/` |
+| Items and inventory | `BaseItem`, `Item`, the item implementations and interfaces | `Core/Scripts/GameData/Item/` |
+| Equipment | `ArmorType`, `WeaponType`, `EquipmentModel`, `EquipmentSet` | `Core/Scripts/GameData/Item/Equipments/` |
+| Character models and animation | `BaseCharacterModel`, `PlayableCharacterModel`, `AnimationPlayableBehaviour` | `Core/Scripts/GameData/Model/` |
+| Quests | `Quest`, `QuestTask`, `BaseCustomQuestTask` | `Core/Scripts/GameData/Quest/` |
+| NPCs and dialogue | `Npc`, `NpcDialog`, `NpcDialogGraph`, conditions and actions | `Core/Scripts/GameData/Npc/`, `Core/Scripts/Gameplay/Npcs/` |
+| Monster AI | `MonsterActivityComponent` | `Core/Scripts/Gameplay/CharacterSystems/MonsterCharacterSystems/` |
+| Spawn areas | `MonsterSpawnArea`, `HarvestableSpawnArea`, `GameSpawnArea` | `Core/Scripts/Gameplay/Area/` |
+| Maps, portals and scenes | `MapInfo`, `WarpPortal`, `WarpPortalEntity` | `Core/Scripts/GameData/MapInfo/`, `Core/Scripts/GameData/WarpPortal/` |
+| Building | `BuildingEntity`, `BuildingArea`, `WorkbenchEntity` | `Core/Scripts/Gameplay/BuildingSystems/` |
+| Harvesting | `Harvestable`, `HarvestableEntity` | `Core/Scripts/GameData/Harvestable/`, `Core/Scripts/Gameplay/HarvestSystems/` |
+| Vehicles and mounts | `VehicleEntity`, `MountEntity`, `VehicleSeat` | `Core/Scripts/Gameplay/VehicleSystems/` |
+| Rewards and drops | `Reward`, `ItemDropEntity`, `ItemsContainerEntity` | `Core/Scripts/Gameplay/Rewarding/` |
+| Social | `SocialCharacterData`, `SocialSystemSetting`, guild and party data | `Core/Scripts/Gameplay/Social/`, `Core/SharedData/` |
+| Gameplay rules | `BaseGameplayRule`, `DefaultGameplayRule` | `Core/Scripts/Gameplay/Rule/` |
+| Effects | `GameEffect`, `PoolingGameEffectsPlayer` | `Core/Scripts/GameEffect/` |
+| UI framework | `UIBase`, `UISceneGameplay`, `UIList` | `Core/Scripts/UI/` |
+| Input, camera, controllers | `InputManager`, `FollowCameraControls`, `PlayerCharacterController` | `Core/CameraAndInput/`, `Core/Scripts/Gameplay/CharacterControllerSystems/`, `Assets/TopDownController/` |
+| Localization | `LanguageManager`, `UITextKeys` | `Core/Scripts/Language/`, `Core/SharedData/` |
+| Audio and graphics settings | `AudioManager`, `GraphicSettingManager` | `Core/AudioManager/`, `Core/GraphicSettings/` |
+| Addressables | `AssetReference` wrappers, download manager | `Core/AddressableAssetTools/`, `Core/Scripts/AddressableAssets/` |
+| Cash shop and IAP | `CashShopItem`, `CashPackage`, purchasing | `Core/Scripts/GameData/CashShop/`, `Core/Scripts/GameInstance/GameInstance_Purchasing.cs` |
+| GM commands | `BaseGMCommands`, `DefaultGMCommands` | `Core/Scripts/Gameplay/GMCommands/` |
+| Extension mechanisms | `DevExtUtils`, `[DevExtMethods]`, `GameExtensionInstance` | `Core/DevExtension/`, `Core/Scripts/Modding/`, `Demo/Scripts/DevExt/` |
+| Editor tooling | database editor, entity creators, dialog graph editor | `Core/Editor/`, `Assets/Scripts/Editor/` |
+| Guild war add-on | `GuildWarMapInfo`, `GuildWarCastleHeart` | `GuildWar/` |
+| Project game data and prefabs | `GameDatabase_G`, Synty character, UI forks, prototype map | `Assets/1. Data/` |
+| Project runtime code | `LocomotionPhaseSync`, `ActionLayerMaskUpdater`, `UIEscapeWindowsHandler` | `Assets/Scripts/` |
 
 ## 11. Conditional compilation and build flavours
 
 `ProjectSettings/ProjectSettings.asset` defines `STEAMWORKS_NET` for Standalone, Android, iOS and WebGL (no Steamworks code exists; the define is inert) and `DISABLE_ADDRESSABLES` for Standalone. The second one matters: every `#if !DISABLE_ADDRESSABLES` path in the kit (addressable entity, UI and scene loading) is compiled out of PC builds, and the direct prefab references on `GameInstance` and `GameDatabase` are used instead. The editor compiles both paths. Legacy numeric entries carry `UNITY_SERVER`, `NO_GPGS` and `ENABLE_PURCHASING;UNITY_PURCHASING`.
 
-Kit-recognised symbols with the largest footprint: `UNITY_SERVER` and `EXCLUDE_SERVER_CODES` (strip server code from clients), `EXCLUDE_PREFAB_REFS` (addressables-only builds), `DISABLE_CUSTOM_CHARACTER_DATA`, `DISABLE_CLASSIC_PK`, `DISABLE_DIFFER_MAP_RESPAWNING`, `ENABLE_INPUT_SYSTEM`, `ENABLE_PURCHASING`. See [Systems/40_BUILD_AND_DEPLOYMENT_SYSTEM.md](Systems/40_BUILD_AND_DEPLOYMENT_SYSTEM.md).
+Kit-recognised symbols with the largest footprint: `UNITY_SERVER` and `EXCLUDE_SERVER_CODES` (strip server code from clients), `EXCLUDE_PREFAB_REFS` (addressables-only builds), `DISABLE_CUSTOM_CHARACTER_DATA`, `DISABLE_CLASSIC_PK`, `DISABLE_DIFFER_MAP_RESPAWNING`, `ENABLE_INPUT_SYSTEM`, `ENABLE_PURCHASING`. The build scene list is in `ProjectSettings/EditorBuildSettings.asset` and the server launch arguments in `MMO/Scripts/MMOGame/Src/Consts/ProcessArguments.cs`.
 
 ## 12. Where to change what
 
 | I want to... | Go to |
 |---|---|
-| Add an item, skill, quest, NPC, map or monster definition | Create the asset under `Assets/1. Data/GameData/<Category>/`, register it in `Assets/1. Data/GameDatabase_G.asset`. [02](Systems/02_GAME_DATA_AND_SCRIPTABLE_OBJECTS.md) |
-| Add a new item or skill type | Subclass `BaseItem`/`Item` or `BaseSkill`/`Skill` with `CreateAssetMenu`. [13](Systems/13_ITEM_AND_INVENTORY_SYSTEM.md), [11](Systems/11_SKILL_AND_ABILITY_SYSTEM.md) |
-| Change damage, exp, gold or drop formulas | Subclass `BaseGameplayRule` and assign it on `GameInstance`. [23](Systems/23_GAMEPLAY_RULES_AND_RESTRICTIONS.md), [10](Systems/10_COMBAT_AND_DAMAGE_SYSTEM.md) |
-| React to entity lifecycle or damage without touching kit code | Partial class with `[DevExtMethods("Awake")]` subscribing to `onReceivedDamage`, `onApplyBuff`, and so on. [39](Systems/39_DEV_EXTENSION_SYSTEM.md) |
-| Store a custom per-character value | Use the public/private/server custom data collections. [34](Systems/34_CUSTOM_DATA_SYSTEM.md) |
-| Add a new network request | Register in a `BaseGameNetworkManager` partial under `[DevExtMethods("RegisterMessages")]`, add a message struct and handler. [03](Systems/03_NETWORKING_FOUNDATION.md) |
-| Change how the player controls the character or camera | Extend `TopDownAimController` or swap `GameInstance.defaultControllerPrefab`. [36](Systems/36_INPUT_CAMERA_AND_CONTROLLER_SYSTEM.md) |
-| Add equipment visuals to the Synty character | Run the Synty Equipment Container Builder, set `EquipmentModel.equipSocket` and `instantiatedObjectIndex` on the item. [14](Systems/14_EQUIPMENT_SYSTEM.md), [15](Systems/15_CHARACTER_MODEL_AND_ANIMATION_SYSTEM.md) |
-| Add or change animations | Fill `PlayableCharacterModel.defaultAnimations` / `weaponAnimations` or the `WeaponType` playable settings. [15](Systems/15_CHARACTER_MODEL_AND_ANIMATION_SYSTEM.md) |
-| Add a dialog window | Add it under the forked `UIDialogs_G.prefab`; it is auto-collected by `UIEscapeWindowsHandler`. [30](Systems/30_UI_SYSTEM.md) |
-| Run a dedicated server or an MMO cluster | [40](Systems/40_BUILD_AND_DEPLOYMENT_SYSTEM.md), [04](Systems/04_MMO_SERVER_ARCHITECTURE.md), [05](Systems/05_DATABASE_AND_PERSISTENCE_SYSTEM.md) |
-| Update the kit from GitHub | Follow the re-apply checklist in [00](Systems/00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md) |
+| Add an item, skill, quest, NPC, map or monster definition | Create the asset under `Assets/1. Data/GameData/<Category>/`, register it in `Assets/1. Data/GameDatabase_G.asset`. `Core/Scripts/GameData/Database/` |
+| Add a new item or skill type | Subclass `BaseItem`/`Item` or `BaseSkill`/`Skill` with `CreateAssetMenu`. `Core/Scripts/GameData/Item/`, `Core/Scripts/GameData/Skill/` |
+| Change damage, exp, gold or drop formulas | Subclass `BaseGameplayRule` and assign it on `GameInstance`. `Core/Scripts/Gameplay/Rule/` |
+| React to entity lifecycle or damage without touching kit code | Partial class with `[DevExtMethods("Awake")]` subscribing to `onReceivedDamage`, `onApplyBuff`, and so on. `Core/DevExtension/`, `Demo/Scripts/DevExt/` |
+| Store a custom per-character value | Use the public/private/server custom data collections. `Core/SharedData/` |
+| Add a new network request | Register in a `BaseGameNetworkManager` partial under `[DevExtMethods("RegisterMessages")]`, add a message struct and handler. `Core/Scripts/Networking/` |
+| Change how the player controls the character or camera | Extend `TopDownAimController` or swap `GameInstance.defaultControllerPrefab`. `Assets/TopDownController/`, `Core/Scripts/Gameplay/CharacterControllerSystems/` |
+| Add equipment visuals to the Synty character | Run the Synty Equipment Container Builder, set `EquipmentModel.equipSocket` and `instantiatedObjectIndex` on the item. `Assets/Scripts/Editor/SyntyEquipmentContainerBuilder.cs` |
+| Add or change animations | Fill `PlayableCharacterModel.defaultAnimations` / `weaponAnimations` or the `WeaponType` playable settings. `Core/Scripts/GameData/Model/` |
+| Add a dialog window | Add it under the forked `UIDialogs_G.prefab`; it is auto-collected by `UIEscapeWindowsHandler`. `Assets/1. Data/Prefabs/UI Prefabs/` |
+| Run a dedicated server or an MMO cluster | `MMO/Scripts/MMOGame/`, `MMO/SQLs/mysql_main.sql` |
+| Update the kit from GitHub | Follow the re-apply checklist in [Systems/00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md](Systems/00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md) |
 
 ## 13. Known gaps and risks (project level)
 
@@ -302,7 +302,7 @@ Kit-recognised symbols with the largest footprint: `UNITY_SERVER` and `EXCLUDE_S
 - `Assets/1. Data/GameData/` is mostly empty placeholder folders; the game still runs on kit demo data (attributes, currencies, skills, quests, NPCs, monsters).
 - The MMO entry scene is not wired to the project's database, controller or canvas.
 - Purchased art is not in the repository; a fresh clone shows missing meshes and clips on the Synty character until the packs are re-imported.
-- Installed but unused packages (Vivox, Cinemachine, Splines, Timeline, Visual Scripting, Memory Profiler, Multiplayer Center) add editor and build weight without kit integration. See [Systems/41_THIRD_PARTY_DEPENDENCIES.md](Systems/41_THIRD_PARTY_DEPENDENCIES.md).
+- Installed but unused packages (Vivox, Cinemachine, Splines, Timeline, Visual Scripting, Memory Profiler, Multiplayer Center) add editor and build weight without kit integration. The set is in `Packages/manifest.json`.
 
 ## 14. Out of scope for this pass
 
