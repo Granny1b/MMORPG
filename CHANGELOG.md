@@ -9,6 +9,60 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Changed
 
+- **Backward movement is full speed** (2026-09-02) — `CharacterControllerEntityMovement` on
+  `SyntyPlayerCharacter` shipped every backward rate at 0.75, so walking or strafing away from the
+  aim was a quarter slower than towards it. All eight backward fields set to 1
+  (`standBackwardMoveSpeedRate` and `standBackwardSideMoveSpeedRate` plus the crouch, crawl and
+  swim pairs). Only the stand pair can be reached today - crouch and crawl are vetoed by
+  `DisabledMovementStates` - but the others are set too so the character does not change behaviour
+  if a pose is ever re-enabled. Forward and side rates were already 1, so movement speed is now
+  the same in every direction.
+  - This is a per-character setting, not a global one: monsters and any other character prefab keep
+    the kit's 0.75.
+
+- **Roll: 20% longer, costs stamina, cannot be spammed** (2026-09-02) — three changes on
+  `DirectionalRollDash` / `SyntyPlayerCharacter`.
+  - **Distance.** `rollDistance` 3.7 -> 4.98, which is +20% *on the ground* (4.22 m -> 5.07 m,
+    simulated at 60 Hz against the profile). Not a 20% bump of the field: speed is floored at
+    walking pace through the roll's slow middle, so a fixed part of the travel does not scale.
+    Duration, clip and animation speed unchanged.
+  - **Cooldown**, the actual anti-spam: new `rollCooldown` (1.5 s) refuses the dash through
+    `onCanDashValidated`. Measured from the roll's start and deliberately kept in its own field
+    rather than reusing `_rollStartTime`, which the early get-up cancel clears - otherwise
+    cancelling out of a roll would also clear its cooldown, which is exactly the spam being fixed.
+    Safe to answer false mid-roll: the kit reads `CanDash` when *starting* a dash, and a roll in
+    flight is carried by its force applier, not by that flag.
+  - **Stamina.** New `staminaCost` (20) also gates `onCanDashValidated`. The pool is 100 and the
+    gameplay rule recovers 3/s, so five rolls back to back and ~6.7 s to earn one back; sustained
+    rolling drains 13/s against 3/s recovery. Deducted in `StartRoll` under `if (IsServer)` -
+    `currentStamina` is a `ServerToClients` sync field, so only the server's write propagates, and
+    the server's copy runs `StartRoll` exactly once when it relays the roll broadcast.
+  - Both gates run on every copy: the local player refuses its own input, and the server refuses a
+    client that asks anyway. Set `staminaCost` to 0 for a free roll on cooldown alone.
+
+- **Rolls synced to other clients** (2026-09-02) — observers used to see the forward roll whatever
+  direction you rolled: every copy of the character ran `DirectionalRollDash` locally, and only the
+  owner has movement input, so the others fell back to "along facing". The clip choice is now
+  broadcast instead of guessed.
+  - `DirectionalRollDash` changed base from `MonoBehaviour` to the kit's
+    `BaseNetworkedGameEntityComponent<BaseGameEntity>`, so it is a `LiteNetLibBehaviour` on the
+    character's identity and can own RPCs. Two `[AllRpc]` methods: `RpcPlayRoll(byte clipIndex)`
+    and `RpcStopRoll()` (the early get-up cancel), both reliable-ordered.
+  - Only the copy holding the input (`BasePlayerCharacterController.Singleton.PlayingCharacterEntity`
+    is this entity) picks the direction and the clip. It plays at once and broadcasts; every other
+    copy plays nothing on its own and waits for the call, so there is no wrong-clip-then-correct pop.
+  - The server echoes an All-RPC back to its sender, which would restart the clip mid-roll a round
+    trip in. `StartRoll` therefore ignores a repeat of the same clip index within 0.3 s - long
+    enough for any sane round trip, shorter than the earliest possible second roll (~0.82 s, the
+    movement unlock). On a host the echo hooks immediately and is swallowed the same way.
+  - Facing lock and the stand-up movement veto are now gated to the local player. Remote copies are
+    positioned and rotated from the network, so running either there fought the synced transform.
+  - `IsRolling` is set on every copy (the RPC drives it), so the `ActionLayerMaskUpdater` exemption
+    that keeps a roll full-body works for observers too, not just the local player.
+  - Behaviour ordering note: the identity now lists five behaviours, with `DirectionalRollDash`
+    last. RPC ids are index-based, so every peer must run the same prefab build - which is already
+    true for a LAN game shipped as one binary.
+
 - **`.gitignore`** (2026-09-02) — the 5000 Fantasy Icons pack is no longer committed.
   `Assets/5000FantasyIcons/` is ~555 MB across 6,292 PNGs, purchased and re-downloadable, and
   every file would otherwise go through Git LFS. Nothing under it was tracked yet, so the two rules

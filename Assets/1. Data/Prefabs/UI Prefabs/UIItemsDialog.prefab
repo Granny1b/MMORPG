@@ -10812,7 +10812,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 6663706198494484598}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1aa08ab6e0800fa44ae55d278d1423e3, type: 3}
+  m_Script: {fileID: 11500000, guid: 324c30734ea2403fb89156f159263730, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   m_Content: {fileID: 6872830052798773786}
@@ -10833,6 +10833,7 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+  blockNavigationScrolling: 1
 --- !u!222 &6875177642508716160
 CanvasRenderer:
   m_ObjectHideFlags: 0

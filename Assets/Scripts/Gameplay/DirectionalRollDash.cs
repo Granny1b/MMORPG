@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Insthync.CameraAndInput;
+using LiteNetLibManager;
 using MultiplayerARPG.GameData.Model.Playables;
 using UnityEngine;
 
@@ -18,17 +19,36 @@ namespace MultiplayerARPG
     /// <c>dashStartState</c> is left empty and the clip is chosen here and played through
     /// <see cref="PlayableCharacterModel.PlayCustomAnimation"/> (indices below).
     ///
-    /// Direction comes from the owner's raw input through the controller's own
-    /// <c>GetMoveDirection</c>; the entity's synced flags cannot be used because
-    /// <c>PlayerCharacterController</c> stamps every movement as plain Forward. Anywhere without
-    /// that input (server copy of a remote player) the roll goes along facing with the forward clip.
+    /// Networking: only the local player has the movement input, so only it picks the direction and
+    /// the clip. It plays the roll at once and broadcasts the choice with <see cref="RpcPlayRoll"/>,
+    /// an <c>[AllRpc]</c> - hence <see cref="BaseNetworkedGameEntityComponent{T}"/> rather than a
+    /// plain MonoBehaviour. Every other copy of the character plays nothing on its own and waits for
+    /// that call, so observers see the same clip instead of always the forward roll. The server
+    /// echoes an All-RPC back to its sender, so <see cref="StartRoll"/> ignores a repeat of the same
+    /// clip inside <see cref="DuplicateWindow"/> and the local roll never restarts mid-animation.
     /// </summary>
-    [RequireComponent(typeof(BaseGameEntity))]
-    public class DirectionalRollDash : MonoBehaviour, IEntityMovementForceUpdateListener
+    [RequireComponent(typeof(BaseCharacterEntity))]
+    public class DirectionalRollDash : BaseNetworkedGameEntityComponent<BaseCharacterEntity>, IEntityMovementForceUpdateListener
     {
+        /// <summary>An echo of our own broadcast arrives within a round trip; a second roll cannot start this soon.</summary>
+        private const float DuplicateWindow = 0.3f;
+
+        [Header("Cost")]
+        [Tooltip("Seconds from the start of one roll before another may begin. Must exceed the roll's own length (1.167 s) or rolls can chain into each other.")]
+        public float rollCooldown = 1.5f;
+
+        [Tooltip("Stamina taken per roll, deducted by the server. The character pool is 100 and recovers 3/s, so 20 gives five rolls back to back and about 6.7 s to earn one back. Set to 0 for a free roll on cooldown alone.")]
+        public int staminaCost = 20;
+
+        [Tooltip("Refuse attacks for as long as the roll lasts. Cancelling the get-up early by moving ends the roll, and with it this block.")]
+        public bool blockAttackWhileRolling = true;
+
+        [Tooltip("Also refuse skills and skill items while rolling. Off by default, so only plain attacks are blocked; turn it on to close that gap.")]
+        public bool blockSkillsWhileRolling = false;
+
         [Header("Distance")]
-        [Tooltip("Ground distance the profile covers. The authored Synty roll travels 4.42 m; holding walking speed through the slow middle adds a little on top.")]
-        public float rollDistance = 3.7f;
+        [Tooltip("Ground distance the profile covers. The delivered distance is higher because speed is floored at walking pace through the slow middle - 4.98 here measures out at about 5.07 m on the ground.")]
+        public float rollDistance = 4.98f;
 
         [Tooltip("Length of the roll clips. The stand-up lock and the facing lock run until this has elapsed since the roll began.")]
         public float rollDuration = 1.167f;
@@ -62,26 +82,77 @@ namespace MultiplayerARPG
         public int leftClipIndex = 2;
         public int rightClipIndex = 3;
 
-        /// <summary>True from the roll's first movement tick until <see cref="rollDuration"/> has elapsed.</summary>
+        /// <summary>True from the roll's first frame until <see cref="rollDuration"/> has elapsed, on every copy of the character.</summary>
         public bool IsRolling { get { return _rollStartTime >= 0f && Time.time < _rollStartTime + rollDuration; } }
 
-        private BaseGameEntity _entity;
+        /// <summary>The copy of this character that the player on this machine is steering; the only one with movement input.</summary>
+        private bool IsLocalPlayer
+        {
+            get
+            {
+                BasePlayerCharacterController controller = BasePlayerCharacterController.Singleton;
+                return controller != null && controller.PlayingCharacterEntity == Entity;
+            }
+        }
+
         private PlayableCharacterModel _model;
         private float _rollStartTime = -1f;
         private float _lastDashTickTime = -1f;
         private float _lockedYaw;
+        private int _clipIndex = -1;
+        private float _cooldownUntil = -1f;
 
         private void Awake()
         {
-            _entity = GetComponent<BaseGameEntity>();
             _model = GetComponent<PlayableCharacterModel>();
-            _entity.onCanMoveValidated += OnCanMove;
+            Entity.onCanMoveValidated += OnCanMove;
+            Entity.onCanDashValidated += OnCanDash;
+            Entity.onCanAttackValidated += OnCanAttack;
+            Entity.onCanUseSkillValidated += OnCanUseSkill;
+            Entity.onCanUseSkillItemValidated += OnCanUseSkill;
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
-            if (_entity != null)
-                _entity.onCanMoveValidated -= OnCanMove;
+            if (Entity != null)
+            {
+                Entity.onCanMoveValidated -= OnCanMove;
+                Entity.onCanDashValidated -= OnCanDash;
+                Entity.onCanAttackValidated -= OnCanAttack;
+                Entity.onCanUseSkillValidated -= OnCanUseSkill;
+                Entity.onCanUseSkillItemValidated -= OnCanUseSkill;
+            }
+            base.OnDestroy();
+        }
+
+        /// <summary>
+        /// Refuses the dash the kit would otherwise start, which is what stops roll spam. Runs on
+        /// every copy: the local player blocks its own input, and the server blocks a client that
+        /// asks anyway. Safe to answer false during a roll - the kit only reads this when starting
+        /// one, and an in-flight roll is carried by its force applier, not by this flag.
+        /// </summary>
+        private void OnCanDash(BaseGameEntity entity, ref bool canDash)
+        {
+            if (Time.time < _cooldownUntil)
+                canDash = false;
+            else if (staminaCost > 0 && Entity.CurrentStamina < staminaCost)
+                canDash = false;
+        }
+
+        /// <summary>
+        /// No swinging mid-roll. The kit runs this validation on the server as well as the attacker,
+        /// and <see cref="IsRolling"/> is true on every copy, so a client cannot attack by asking twice.
+        /// </summary>
+        private void OnCanAttack(BaseGameEntity entity, ref bool canAttack)
+        {
+            if (blockAttackWhileRolling && IsRolling)
+                canAttack = false;
+        }
+
+        private void OnCanUseSkill(BaseGameEntity entity, ref bool canUseSkill)
+        {
+            if (blockSkillsWhileRolling && IsRolling)
+                canUseSkill = false;
         }
 
         public void OnPreUpdateForces(IList<EntityMovementForceApplier> forceAppliers)
@@ -105,7 +176,7 @@ namespace MultiplayerARPG
 
         private void LateUpdate()
         {
-            if (!IsRolling)
+            if (!IsRolling || !IsLocalPlayer)
                 return;
             // Past the unlock point with a movement key held: cut the get-up short and let the run blend in.
             if (cancelClipWhenMoving && !IsDashAlive() && Time.time >= UnlockTime() && GetInputDirection().sqrMagnitude > 0.001f)
@@ -116,7 +187,7 @@ namespace MultiplayerARPG
             // The kit re-targets the yaw to the dash direction every movement tick; put the aim back
             // after it, before rendering, so the character rolls sideways or backwards without turning.
             if (keepFacing)
-                _entity.SetLookRotation(Quaternion.Euler(0f, _lockedYaw, 0f), true);
+                Entity.SetLookRotation(Quaternion.Euler(0f, _lockedYaw, 0f), true);
         }
 
         private float UnlockTime()
@@ -130,19 +201,12 @@ namespace MultiplayerARPG
             return Time.time - _lastDashTickTime <= tick;
         }
 
-        private void CancelRoll()
-        {
-            if (_model != null)
-                _model.StopCustomAnimation();
-            _rollStartTime = -1f;
-        }
-
         private void BeginRoll(EntityMovementForceApplier applier)
         {
             Vector3 facing = transform.forward;
             facing.y = 0f;
             facing = facing.sqrMagnitude > 0.001f ? facing.normalized : Vector3.forward;
-            Vector3 direction = GetInputDirection();
+            Vector3 direction = IsLocalPlayer ? GetInputDirection() : Vector3.zero;
             if (direction.sqrMagnitude <= 0.001f)
                 direction = facing;
 
@@ -150,19 +214,67 @@ namespace MultiplayerARPG
             applier.Deceleration = 0f;
             applier.Duration = rollDuration;
 
-            _rollStartTime = Time.time;
-            _lockedYaw = transform.eulerAngles.y;
-            PlayRollClip(facing, direction);
+            // Only the copy holding the input decides; every other copy waits for the broadcast below,
+            // otherwise it would guess "forward" and then be corrected a round trip later.
+            if (!IsLocalPlayer)
+                return;
+
+            int index = ChooseClipIndex(facing, direction);
+            StartRoll(index);
+            if (IsServer || IsOwnerClient)
+                RPC(RpcPlayRoll, (byte)index);
         }
 
-        private void PlayRollClip(Vector3 facing, Vector3 direction)
+        private int ChooseClipIndex(Vector3 facing, Vector3 direction)
         {
-            if (_model == null)
-                return;
             float angle = Vector3.SignedAngle(facing, direction, Vector3.up); // positive = to the right
             float abs = Mathf.Abs(angle);
-            int index = abs <= 45f ? forwardClipIndex : abs >= 135f ? backwardClipIndex : angle > 0f ? rightClipIndex : leftClipIndex;
-            _model.PlayCustomAnimation(index, false);
+            return abs <= 45f ? forwardClipIndex : abs >= 135f ? backwardClipIndex : angle > 0f ? rightClipIndex : leftClipIndex;
+        }
+
+        /// <summary>Plays the roll and starts its clocks. Ignores the echo of our own broadcast.</summary>
+        private void StartRoll(int index)
+        {
+            if (_clipIndex == index && _rollStartTime >= 0f && Time.time - _rollStartTime < DuplicateWindow)
+                return;
+            _rollStartTime = Time.time;
+            _clipIndex = index;
+            _lockedYaw = transform.eulerAngles.y;
+            // Kept apart from _rollStartTime, which an early get-up cancel clears; the cooldown must not be cancelable.
+            _cooldownUntil = Time.time + rollCooldown;
+            // Stamina is a ServerToClients field, so only the server's write propagates. Every copy runs
+            // this method, and the server's copy runs it too when it relays the broadcast, so it lands once.
+            if (IsServer && staminaCost > 0)
+                Entity.CurrentStamina = Mathf.Max(0, Entity.CurrentStamina - staminaCost);
+            if (_model != null)
+                _model.PlayCustomAnimation(index, false);
+        }
+
+        private void StopRollLocal()
+        {
+            if (_model != null)
+                _model.StopCustomAnimation();
+            _rollStartTime = -1f;
+            _clipIndex = -1;
+        }
+
+        private void CancelRoll()
+        {
+            StopRollLocal();
+            if (IsServer || IsOwnerClient)
+                RPC(RpcStopRoll);
+        }
+
+        [AllRpc]
+        private void RpcPlayRoll(byte clipIndex)
+        {
+            StartRoll(clipIndex);
+        }
+
+        [AllRpc]
+        private void RpcStopRoll()
+        {
+            StopRollLocal();
         }
 
         private float SpeedForTick(float elapsed, float dt)
@@ -175,14 +287,14 @@ namespace MultiplayerARPG
             if (done >= releaseAtTravel)
                 return 0f; // released: the kit removes the applier, the tail lock holds the feet
             float travel = (distanceProfile.Evaluate(t1) - done) * rollDistance;
-            float walking = _entity.GetMoveSpeed(MovementState.Forward, ExtraMovementState.None);
+            float walking = Entity.GetMoveSpeed(MovementState.Forward, ExtraMovementState.None);
             return Mathf.Max(travel / dt, walking + 0.01f);
         }
 
         private Vector3 GetInputDirection()
         {
             PlayerCharacterController controller = BasePlayerCharacterController.Singleton as PlayerCharacterController;
-            if (controller == null || (BaseGameEntity)controller.PlayingCharacterEntity != _entity)
+            if (controller == null || controller.PlayingCharacterEntity != Entity)
                 return Vector3.zero;
             float horizontal = InputManager.GetAxis("Horizontal", false);
             float vertical = InputManager.GetAxis("Vertical", false);
@@ -193,7 +305,8 @@ namespace MultiplayerARPG
 
         private void OnCanMove(BaseGameEntity entity, ref bool canMove)
         {
-            if (!lockMovementDuringTail || _rollStartTime < 0f)
+            // Remote copies are positioned by the network, so never hold their movement back here.
+            if (!lockMovementDuringTail || _rollStartTime < 0f || !IsLocalPlayer)
                 return;
             // Dash still alive (seen within the last tick or so)? Leave it alone: the kit cancels a dash whose entity cannot move.
             if (IsDashAlive())

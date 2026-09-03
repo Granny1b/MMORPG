@@ -77917,23 +77917,23 @@ MonoBehaviour:
   standForwardMoveSpeedRate: 1
   standForwardSideMoveSpeedRate: 1
   standSideMoveSpeedRate: 1
-  standBackwardSideMoveSpeedRate: 0.75
-  standBackwardMoveSpeedRate: 0.75
+  standBackwardSideMoveSpeedRate: 1
+  standBackwardMoveSpeedRate: 1
   crouchForwardMoveSpeedRate: 1
   crouchForwardSideMoveSpeedRate: 1
   crouchSideMoveSpeedRate: 1
-  crouchBackwardSideMoveSpeedRate: 0.75
-  crouchBackwardMoveSpeedRate: 0.75
+  crouchBackwardSideMoveSpeedRate: 1
+  crouchBackwardMoveSpeedRate: 1
   crawlForwardMoveSpeedRate: 1
   crawlForwardSideMoveSpeedRate: 1
   crawlSideMoveSpeedRate: 1
-  crawlBackwardSideMoveSpeedRate: 0.75
-  crawlBackwardMoveSpeedRate: 0.75
+  crawlBackwardSideMoveSpeedRate: 1
+  crawlBackwardMoveSpeedRate: 1
   swimForwardMoveSpeedRate: 1
   swimForwardSideMoveSpeedRate: 1
   swimSideMoveSpeedRate: 1
-  swimBackwardSideMoveSpeedRate: 0.75
-  swimBackwardMoveSpeedRate: 0.75
+  swimBackwardSideMoveSpeedRate: 1
+  swimBackwardMoveSpeedRate: 1
   landedPauseMovementDuration: 0
   beforeCrawlingPauseMovementDuration: 0
   afterCrawlingPauseMovementDuration: 0
@@ -78597,7 +78597,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c91dad3d861edad46aaa0fa5504de806, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MultiplayerARPG.DirectionalRollDash
-  rollDistance: 3.7
+  _behaviourIndex: 0
+  rollCooldown: 1.5
+  staminaCost: 20
+  rollDistance: 4.98
   rollDuration: 1.167
   distanceProfile:
     serializedVersion: 2
@@ -78796,6 +78799,13 @@ MonoBehaviour:
     m_RotationOrder: 4
   releaseAtTravel: 0.9
   lockMovementDuringTail: 1
+  movementUnlockAt: 0.7
+  cancelClipWhenMoving: 1
+  keepFacing: 1
+  forwardClipIndex: 0
+  backwardClipIndex: 1
+  leftClipIndex: 2
+  rightClipIndex: 3
 --- !u!1 &6685246626844922709
 GameObject:
   m_ObjectHideFlags: 0
