@@ -46,6 +46,25 @@ Treat the kit as a third-party dependency that happens to live in the repo.
 - **New UI window**: add it under the forked `Assets/1. Data/Prefabs/UI Prefabs/UIDialogs_G.prefab`. `UIEscapeWindowsHandler` collects windows automatically at `Awake`, so Escape handling needs no wiring.
 - **Editor tooling**: `Assets/Scripts/Editor/`, namespace `MMORPGGranny.EditorTools`, menu path under `Tools/`.
 
+## Adding functionality
+
+**Full reference with every hook name, event and code example: `Documentation/EXTENDING.md`.** Upstream reading: https://suriyun-production.github.io/mmorpg-kit-docs/#/pages/037-dev-extension.
+
+The kit is designed to be extended from outside. Kit classes are `partial` and compile into the same assembly as our code, so `Assets/Scripts/` can add members to them directly. Work down this list and stop at the first thing that fits:
+
+1. **Content** (item, skill, quest, NPC, map, monster): make a data asset, register it in `GameDatabase_G`. No code.
+2. **A new kind of content**: subclass the kit's abstract data class and add `CreateAssetMenu`. For example `BaseItem`, `BaseSkill`, `BaseCustomQuestTask`, `BaseCustomNpcDialogCondition`.
+3. **Behaviour on your own prefab**: an ordinary `MonoBehaviour` in `Assets/Scripts/Gameplay/`.
+4. **React to a kit lifecycle moment**: a partial class with `[DevExtMethods("Awake")]`. The kit calls every method tagged with the matching name.
+5. **React to gameplay** (damage, death, level, buffs, inventory): subscribe to an entity event from a `[DevExtMethods("Awake")]` hook, and unsubscribe from the `OnDestroy` one. To forbid an action, use the `onCan...Validated` events rather than editing combat code.
+6. **Change a formula or global rule**: subclass `BaseGameplayRule`, make an asset, assign it on `GameInstance`. Seven other services swap the same way.
+7. **Store extra per-character values**: use the custom character data helpers, which already persist and replicate. Do not add database columns.
+8. **Change control or camera**: subclass the controller, point `GameInstance.defaultControllerPrefab` at a prefab carrying it. `TopDownAimController` is the existing example.
+9. **Replace a whole server feature**: implement the matching handler interface and assign it. Large surface, prefer the options above.
+10. **Nothing fits**: patch the kit, keep it minimal, log it in `CHANGELOG.md` in bold as a stock-kit edit, and add it to the divergence index.
+
+Two failure modes worth knowing up front. **Hook names are strings, so a typo fails silently**, with no compile error and no warning; check the spelling against the table in `EXTENDING.md` when a hook does not fire. And **exceptions inside a hook are caught and logged rather than thrown**, so a broken hook is quiet. Watch the console.
+
 ## The changelog
 
 `CHANGELOG.md` at the repo root is the project's memory. It exists because the reasoning behind a change is not recoverable from the diff, and because this project sits on a vendored framework where "why did we do it this way" usually means "what did the kit force on us".
