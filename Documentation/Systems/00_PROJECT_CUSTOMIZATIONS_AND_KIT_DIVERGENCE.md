@@ -325,5 +325,6 @@ Known issues and follow-ups recorded by the project:
 - [../../CLAUDE.md](../../CLAUDE.md): the operating manual, which turns this inventory into rules.
 - [../../CHANGELOG.md](../../CHANGELOG.md): the decision log. Every row in the tables above traces back to an entry there.
 - [../PROJECT_OVERVIEW.md](../PROJECT_OVERVIEW.md): architecture orientation and the map into the source.
+- [01_BATTLEGROUND_QUEUE_DESIGN.md](01_BATTLEGROUND_QUEUE_DESIGN.md): design for the battleground queue and instance system. Project-owned feature, not yet implemented.
 
-There are no per-subsystem documents. See section 2 of the overview for why.
+There are no per-subsystem documents describing the *kit*; see section 2 of the overview for why. Numbered documents from 01 onward cover project-owned features, where the reasoning is ours and cannot be recomputed from kit source.

@@ -7,6 +7,45 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ## [Unreleased]
 
+### Added
+
+- **`Documentation/Systems/01_BATTLEGROUND_QUEUE_DESIGN.md`** (2026-09-03) — design for a
+  battleground queue that spawns a dedicated instance once enough players have queued. Design only,
+  nothing implemented yet.
+  - **The kit's own instance warp cannot serve a queue.** `WarpCharacterToInstance`
+    (`MMO/.../MapNetworkManager_PlayerActivity.cs:81`) requires the participants to be in one party,
+    requires the caller to be the party leader, and requires members to be standing within
+    `joinInstanceMapDistance` of the leader. A queue is by definition strangers on different map
+    servers, so the built-in path was rejected outright rather than adapted.
+  - **You also cannot join an instance by id.** `ClusterServer.HandleRequestSpawnMap` overwrites
+    whatever `instanceId` the caller sends (`ClusterServer.cs:496`), so every `SpawnMap` request
+    yields a fresh instance and there is no "join instance X" request type. Any design that assumes
+    otherwise will not work.
+  - **Chosen mechanism: spawn one instance, reuse its `peerInfo` for N players.** The spawn response
+    carries a `CentralServerPeerInfo`, and the private `SaveAndWarpCharacterByPeerInfo`
+    (`MapNetworkManager_PlayerActivity.cs:156`) will move any character to any peer. `MapNetworkManager`
+    is `partial`, and parts of a partial class share private access, so a file of ours in
+    `Assets/Scripts/` can call it directly — no reflection, no kit edit. This is the load-bearing
+    trick of the design.
+  - **Queue lives on the cluster**, beside parties and guilds, because no single map server can see
+    players queued on other map servers. Registered from a `[DevExtMethods("OnStartServer")]` hook on
+    the partial `CentralNetworkManager`, which exposes `ClusterServer` publicly.
+  - **`BaseGameNetworkManagerComponent` preferred over `[DevExtMethods]`** for the map-server and
+    match-runner pieces: compile-checked overrides instead of silent string hook names,
+    inspector-configurable, and it can be attached to the instance manager prefab only so match logic
+    never loads on world servers.
+  - **Measured constraint: an empty instance quits after 30 s.** `TERMINATE_INSTANCE_DELAY = 30f`
+    (`MapNetworkManager.cs:18`, checked at `:167`), timed from when the instance learns its map
+    (`:1070`). All participants must finish save-warp-reconnect inside that window, which rules out
+    pre-spawning instances to wait for a queue to fill. The constant is `const`, so raising it would
+    be a stock-kit edit and is avoided by design.
+  - **MMO-only.** LAN has no instances: `LanRpgNetworkManager.IsInstanceMap()` returns `false`
+    (`:452`) and its `WarpCharacterToInstance` forwards to a normal warp with a kit `TODO` (`:445`).
+    Phase 0 of the plan is therefore wiring `00Init_MMO.unity` to this project's assets, which
+    `CLAUDE.md` already flags as unfinished.
+  - Team assignment crosses the map transfer via custom character data rather than a schema change,
+    since `SaveAndWarpCharacterByPeerInfo` does a full save on the way out.
+
 ### Changed
 
 - **`.gitignore`** (2026-09-02) — the 5000 Fantasy Icons pack is no longer committed.
