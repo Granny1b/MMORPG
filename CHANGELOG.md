@@ -45,9 +45,30 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
     from scratch" is the wrong cost estimate: the data collection and sorting exist, the AI just never
     reads them. What is genuinely missing is threat decay, per-skill threat modifiers, healing threat,
     and a reset that is not death (the ledger clears only in `Killed`, `:71`).
-  - **Taunt is small once threat exists.** `BaseMonsterCharacterEntity.SetAttackTarget` is public
-    (`:313`) and called from nowhere but the AI component, so a custom skill can redirect a boss
-    directly. The work is the lock that stops the next hit re-rolling the target, not the redirect.
+  - **Taunt as a debuff works, because a `CharacterBuff` records who applied it.**
+    `CharacterBuff.BuffApplier` returns an `EntityInfo`
+    (`Core/Scripts/CharacterData/RelatesData/CharacterBuff.cs:10`), set inside `ApplyBuff` on both the
+    refresh path (`BaseCharacterEntity_BuffFunctions.cs:83`) and the fresh-buff path (`:151`). So a
+    taunt debuff is not just a flag, it names the taunter. Taunt-over-taunt is already correct too:
+    with `maxStack <= 1` the old buff is removed and the new one records the new applier (`:105-112`).
+    The only code needed is the lookup plus a target lock in the activity component.
+  - **The two ways to land that debuff use different `BuffType` values and different asset fields.**
+    `isDebuff` + `debuff` is applied on hit as `BuffType.SkillDebuff` (`BaseSkill.cs:906-909`) and can
+    miss; `skillBuffType = BuffToEnemy` applies the `buff` field directly with no hit roll, as
+    `BuffType.SkillBuff` (`Skill.cs:214-221`). Querying `IndexOfBuff` with the wrong one returns -1
+    silently, which is exactly the kind of failure that looks like a broken taunt.
+  - **`BuffApplier` is server-side only** — `SetApplier` runs inside `ApplyBuff`, which returns early
+    on `!IsServer` (`BaseCharacterEntity_BuffFunctions.cs:11-12`). Fine for AI, since the monster AI is
+    server-only anyway, but a "taunted by X" client indicator would need the identity replicated
+    separately.
+  - **The applier cache never evicts per entry.** `MemoryManager.CharacterBuffs` is keyed by the
+    buff's unique id (`CharacterBuffCacheManager.cs:38-46`) and `BaseCacheManager.GetOrMakeCache` only
+    inserts (`BaseCacheManager.cs:42-51`). One entry accumulates per buff instance ever applied, which
+    a boss taunted every few seconds for hours will notice.
+  - `BaseMonsterCharacterEntity.SetAttackTarget` is public (`:313`) and called from nowhere but the AI
+    component, so a skill could redirect the boss directly instead. Rejected as the primary route: the
+    buff gets duration, stacking, replication, UI and `restrictTags` taunt-immunity for free, where a
+    direct call gets none of them.
   - **Two traps that would have cost a day each.** The AI halts entirely on
     `Identity.CountSubscribers() == 0` (`:148`), so an enrage timer driven from the activity component
     freezes when the arena empties; and `findEnemyDelayMax` is dead because

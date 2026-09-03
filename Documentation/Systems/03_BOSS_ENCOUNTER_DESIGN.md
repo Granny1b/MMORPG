@@ -205,11 +205,72 @@ data is collected, the sorting is written, and the AI simply never looks at it.
 - A reset that is not death — the ledger clears only in `Killed` (`:71`), so a boss that leashes
   home keeps every record.
 
-**Taunt** is small once the above exists. `BaseMonsterCharacterEntity.SetAttackTarget` is public
-(`:313`), validates the target, and is called from nowhere but the AI component (five sites, all in
-`MonsterActivityComponent`). A custom `BaseSkill` subclass calls it and sets a lock flag your
-activity component honours for N seconds. The lock is the real work: without it, the next hit
-re-rolls the target.
+### Taunt as a debuff: the applier is already recorded
+
+The natural design — a taunt skill that leaves a debuff on the boss, and the boss attacks whoever
+applied it — works, because **a `CharacterBuff` remembers who applied it**:
+
+```csharp
+public EntityInfo BuffApplier => MemoryManager.CharacterBuffs.GetBuffApplier(in this);
+```
+`Core/Scripts/CharacterData/RelatesData/CharacterBuff.cs:10`
+
+It is populated inside `ApplyBuff`, on both the refresh path (`BaseCharacterEntity_BuffFunctions.cs:83`)
+and the fresh-buff path (`:151`). So the debuff is not just a flag — it carries the taunter's
+identity, and `EntityInfo.TryGetEntity<T>` (`Gameplay/DamageEntities/EntityInfo.cs:67`) turns it back
+into an entity.
+
+**What is free, as data:**
+
+- A `Skill` asset. Two ways to land it:
+  - `isDebuff = true` plus a configured `debuff` — applied on hit by
+    `BaseSkill.OnSkillAttackHit` (`BaseSkill.cs:906-909`) as `BuffType.SkillDebuff`. Can miss.
+  - `skillBuffType = BuffToEnemy` (`Skill.cs:214-221`) — applies the skill's `buff` field directly to
+    the selected target with no hit roll, as `BuffType.**SkillBuff**`. Requires a target
+    (`:413-418`). This is the guaranteed taunt.
+  - The two paths use **different `BuffType` values and different fields on the asset**. Whichever you
+    pick, `IndexOfBuff` must be queried with the matching type or the lookup silently returns -1.
+- **Taunt-over-taunt is already correct.** With `maxStack <= 1` (the default), re-applying removes the
+  existing buff and creates a new one (`BaseCharacterEntity_BuffFunctions.cs:105-112`), whose
+  `Apply(buffApplier, ...)` (`:151`) records the new taunter. A second tank pulling off the first
+  needs no code.
+- Duration, expiry, the icon replicating to every client, and any stat effects you hang on the same
+  buff (reduced boss damage, a slow) all come from the existing buff system.
+- `Buff.tag` / `restrictTags` (`Buff.cs:13-14`) gives **taunt immunity** for free — tag a phase buff so
+  the taunt is rejected while the boss is unstoppable.
+
+**What you must write** — roughly thirty lines in the seam-4 subclass, no kit edit:
+
+```csharp
+// Server-only. MonsterActivityComponent already returns early when !IsServer (:148).
+protected bool TryGetTauntTarget(out BaseCharacterEntity taunter)
+{
+    taunter = null;
+    int index = Entity.IndexOfBuff(tauntBuffType, tauntSkillDataId);   // CharacterDataExtensions.cs:22
+    if (index < 0)
+        return false;
+    return Entity.Buffs[index].BuffApplier.TryGetEntity(out taunter);
+}
+```
+
+Consult it first in a `FindEnemy` override, **and suppress the coin-flip target switch at
+`MonsterActivityComponent.cs:136` while the taunt is live.** That second half is what actually makes
+it stick; without it the next hit re-rolls the target and the taunt reads as broken.
+
+**Two caveats.**
+
+- **`BuffApplier` is server-side only.** `SetApplier` runs inside `ApplyBuff`, which returns early on
+  `!IsServer` (`BaseCharacterEntity_BuffFunctions.cs:11-12`). Clients see the buff, not the applier.
+  Fine for AI; a "Taunted by X" nameplate would need the identity replicated separately.
+- **The applier cache never evicts per entry.** It lives in `MemoryManager.CharacterBuffs`, keyed by
+  the buff's unique id (`CharacterBuffCacheManager.cs:38-46`), and `BaseCacheManager.GetOrMakeCache`
+  only ever inserts (`BaseCacheManager.cs:42-51`). Long-running map servers accumulate one entry per
+  buff instance ever applied. Not a correctness problem for taunt, but it is a slow leak worth
+  watching on a boss that is taunted every few seconds for hours.
+
+`BaseMonsterCharacterEntity.SetAttackTarget` is also public (`:313`) and called from nowhere but the
+AI component, so a custom skill can redirect the boss directly instead. Prefer the buff: it gets
+duration, stacking, replication and UI for free, where a direct call gets none of them.
 
 ## The five seams, ranked by cost
 
@@ -362,7 +423,8 @@ With seams 1–4 and no kit edits:
 | Fixed rotations / openers / "cast A then B" | Needs seam 4. |
 | Enrage timer | Needs seam 2, driven off the network manager, not the AI component. |
 | Ground telegraphs, avoidable AoE | Stock `BaseAreaSkill` handles the mechanic; seam 4 for the timing. |
-| Threat table, taunt, tanking | Build it, but not from zero — the per-attacker damage ledger already exists and is unused. Seam 4 plus a threat component. Still the largest single item. |
+| Taunt (debuff that redirects the boss) | Small. The debuff already records its applier; you write the lookup and the target lock. |
+| Threat table, tanking | Build it, but not from zero — the per-attacker damage ledger already exists and is unused. Seam 4 plus a threat component. Still the largest single item. |
 | Positional mechanics (behind-only, stack, spread) | Seam 4. Distance/angle checks against participants. |
 | Multi-part bosses, linked health, adds that buff the boss | Seam 2 + a shared encounter object. No kit support. |
 | Boss health frame, cast bar, phase banner | New UI under `UIDialogs_G.prefab`. No kit support. |
