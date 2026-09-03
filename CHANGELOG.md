@@ -9,6 +9,72 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Added
 
+- **`Documentation/Systems/04_CAMERA_SHAKE_DESIGN.md`** (2026-09-03) — design for a camera shake
+  system with a locally callable API and server-decided shakes. Design only, nothing implemented.
+  - **A server-decided shake mostly needs no networking.** The server already replicates a boss's
+    skill to every observing client (`[AllRpc] RpcUseSkill`,
+    `DefaultCharacterUseSkillComponent.cs:518`) and each of those clients already instantiates
+    `skill.SkillActivateEffects` locally (`GameEntityModel.InstantiateEffect:263`, called at
+    `DefaultCharacterUseSkillComponent.cs:276/285/292`), and `PoolSystem` fires the pooled prefab's
+    serialized `onGetInstance` UnityEvent on every spawn (`PoolDescriptor.cs:16`, `:24`). A shake
+    component on the effect prefab, wired to that event, is therefore server-decided, correctly
+    interest-filtered and free. Recording this because the obvious design — a new RPC and a new
+    message id — is the *second* tier, not the first.
+  - **The camera pose is rewritten absolutely every frame, which is what makes the shake easy.**
+    `FollowCamera` is `[DefaultExecutionOrder(int.MinValue)]` (`FollowCamera.cs:7`) and assigns
+    `CacheCameraTransform.position/rotation` outright from `LateUpdate` (`:207-208`). So anything
+    running earlier is silently discarded, and anything running later gets a clean base pose and
+    cannot accumulate drift — no save/restore, no reset when the shake ends. The kit already relies
+    on this once, for weapon recoil (`FollowCameraControls.cs:207`, applied at `:212-221`).
+  - **Rejected: a parent "shake pivot" so the camera's own transform stays clean.** The pose is
+    written in *world* space onto the camera's own transform (`FollowCamera.cs:45`, `:79`,
+    `:207-208`), so a parent offset is ignored outright, and moving the `Camera` onto a child just
+    relocates the problem. There is no clean transform to hide behind; post-processing the pose is
+    the mechanism, not a workaround.
+  - **Rejected: reusing `FollowCameraControls.Recoil`.** It is rotation-only (`:221`), a spring
+    toward zero rather than a windowed envelope (`:219-220`), has one global amplitude with no
+    per-source blending, and `ShooterRecoilUpdater.cs:271` already owns it for gun recoil. Sharing
+    it would make weapon recoil and world shake fight over one accumulator. Both are additive
+    offsets on a pose rebuilt each frame, so a second component sums with it for free.
+  - **Camera shake shakes the *aim* in this project, not just the picture.**
+    `TopDownAimController.TryGetCursorWorldPosition` builds its ray with
+    `camera.ScreenPointToRay` (`:216`) and the result drives the character's replicated facing
+    (`:200`). The shake lands in `LateUpdate` and the aim is read in `Update`, so the aim uses the
+    previous frame's shaken pose — a real one-frame wobble on a stationary mouse. The fix is to
+    cache the pre-shake pose and aim from that; the kit's own click-pick
+    (`PlayerCharacterController_Inputs.cs:32`) keeps the jitter, accepted rather than patching
+    `Core/`. This is the assumption to prove before building anything else.
+  - **`[AllRpc]` handlers run on the server too**, so client-only presentation must be a no-op
+    there and not merely unlikely to run: host connections dispatch by direct `HookCallback()`
+    (`LiteNetLibRPC.cs:78-83`) and a dedicated server invokes the callback as well
+    (`:95-97`). The design leans on one guard — the static camera reference being null — so that no
+    call site anywhere needs an `IsClient` check.
+  - **Never add a new `LiteNetLibBehaviour` to an existing networked prefab to carry the RPC.**
+    `behaviourIndex` is the position in `GetComponentsInChildren<LiteNetLibBehaviour>()`
+    (`LiteNetLibIdentity.cs:584`) and is hashed into every RPC and sync-element id
+    (`LiteNetLibBehaviour.cs:1193-1207`), so inserting a component silently renumbers everything
+    after it, child objects included. Same-build client and server still agree, which means this
+    fails only across mismatched builds. A `partial class` on an existing behaviour moves no index.
+  - **Camera shake profiles should not go in `GameDatabase_G`.** `GameDatabase` holds a fixed set
+    of typed arrays (`GameDatabase.cs:25-63`) with no generic slot; a new type would need the
+    `partial` field plus a `[DevExtMethods("LoadDataImplement")]` hook (`:18`, `:136`). That route
+    works, but only the RPC tiers ever name a profile over the wire and a standalone profile set
+    keyed by `GenerateHashId` (`BaseGameData.cs:180`, `:184`) covers it without putting
+    presentation tuning in the asset that governs items, skills and quests. Also rejected: sending
+    raw shake parameters (freezes tuning into the server build, grows with every new field) and
+    sending an array index (breaks on reorder — hashed string ids do not).
+  - **`[AllRpc]` reaches current subscribers only, and default interest is 80 m**
+    (`LiteNetLibRPC.cs:86`, `BaseInterestManager.cs:10`, `:58`). That is the right filter for a
+    stomp for free, and simultaneously a hard ceiling: a zone-wide rumble cannot ride an entity RPC
+    and needs a manager message instead.
+  - **The world-space UI camera is already handled.** `CharacterUICamera` is a child at local zero
+    on `TopDownGameplayCamera.prefab` and `CopyCamera` copies lens properties only, never the
+    transform (`Utils/CopyCamera.cs`), so shaking the root keeps nameplates welded to the world.
+  - **Shake would be inert in MMO mode today.** `00Init_MMO.unity` still uses the kit's
+    `GameInstance.prefab` with the stock camera prefab, so a shaker installed on our
+    `TopDownGameplayCamera.prefab` never exists there. The server halves of all three tiers are
+    unaffected; only the receiving end is missing.
+
 - **`Documentation/Systems/03_BOSS_ENCOUNTER_DESIGN.md`** (2026-09-03) — survey of how complex a
   boss can be in this kit, and the design for phase-scripted encounters. Design only, nothing
   implemented.
