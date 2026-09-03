@@ -69,6 +69,33 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
     component, so a skill could redirect the boss directly instead. Rejected as the primary route: the
     buff gets duration, stacking, replication, UI and `restrictTags` taunt-immunity for free, where a
     direct call gets none of them.
+  - **Skill-shot bosses need almost no code, because the AI already aims at a point.**
+    `MonsterActivityComponent.cs:352-357` builds `AimPosition{type = Position}` and passes
+    `targetObjectId: 0`, so with `hitOnlySelectedTarget` false by default (`Damage.cs:25`) the
+    missile's `_lockingTarget` stays null. That field is a damage filter, not homing
+    (`MissileDamageEntity.cs:399`), so the projectile hits whoever it collides with — a boss can miss.
+  - **Cast time is literally the dodge window.** The aim position is stamped at cast start and carried
+    unchanged through `FrameBasedDelay(CastingSkillDuration)`
+    (`DefaultCharacterUseSkillComponent.cs:200`, `:267`) before `ApplySkillUsing` (`:372`). So a
+    dodgeable boss attack needs only a non-zero `castDuration` and a projectile with travel time
+    (`MissileDamageEntity.cs:128`) — no code at all.
+  - **`applyDuration` on an area skill is a free telegraph window.** `AreaDamageEntity` sets
+    `_lastAppliedTime` at spawn (`:92`) and only ticks when `applyDuration` has elapsed (`:101`), with
+    membership maintained by `OnTriggerEnter`/`OnTriggerExit` (`:143-187`). Stepping out before the
+    tick takes **zero** damage, not reduced damage. That is a WoW-style ground AoE with no code.
+  - **`TargetObjectPrefab` on `BaseAreaSkill` is not a networked telegraph** — it is the local aim
+    preview for the player's own area skills, referenced only by `DefaultAreaSkillAimController.cs:28-31`
+    and `ShooterAreaSkillAimController.cs:25-28`. A monster casting the skill spawns nothing. The boss's
+    visible warning must live on the `AreaDamageEntity` prefab, which is what network-spawns. Recording
+    this because "I authored a boss AoE and there is no circle" has exactly one cause.
+  - **`GetDefaultAttackAimPosition` is `virtual`** (`BaseSkill.cs:1276`) and defaults to the target's
+    current position. Overriding it in a `Skill` subclass is the whole skill-shot design space — lead
+    prediction, spread fans, scatter, aim-where-they-were — as content rather than architecture.
+    `BaseAreaSkill` already overrides it to the feet rather than the aim transform (`:104`).
+  - **Threat is deferred, not rejected** (2026-09-03). The skill-shot model answers the question threat
+    exists to answer: who gets hit is decided by who failed to move. The open decision in the document
+    is marked deferred rather than removed, and the damage-ledger findings above stand for whenever it
+    is picked up.
   - **Two traps that would have cost a day each.** The AI halts entirely on
     `Identity.CountSubscribers() == 0` (`:148`), so an enrage timer driven from the activity component
     freezes when the arena empties; and `findEnemyDelayMax` is dead because

@@ -25,6 +25,7 @@ Inside this document:
 - Exactly what the stock monster AI does, and the ceiling that imposes.
 - The one built-in phase mechanic, and the three ways it will disappoint you.
 - Five extension seams, ranked by cost, that raise the ceiling.
+- How skill-shot bosses work — telegraphed, dodgeable attacks — and why the kit already supports them.
 - A recommended architecture for phased bosses, and why each piece sits where it does.
 - Gotchas found in the source that will cost time if discovered late.
 - A build order that puts the riskiest unknown first.
@@ -272,6 +273,136 @@ it stick; without it the next hit re-rolls the target and the taunt reads as bro
 AI component, so a custom skill can redirect the boss directly instead. Prefer the buff: it gets
 duration, stacking, replication and UI for free, where a direct call gets none of them.
 
+## Skill-shot bosses: the kit is already built for this
+
+This project is an action game — `TopDownAimController` runs with `strictCursorAim`, and
+`DirectionalRollDash` gives four-way rolls that hold facing so the character keeps aiming at the
+mouse while rolling sideways. A boss whose damage is *positional* — telegraphed shots you dodge
+rather than tank — is the natural fit, and it turns out the kit supports it with almost no code.
+
+### The AI already fires at a point, not at a target
+
+```csharp
+AimPosition skillAimPosition = new AimPosition()
+{
+    type = AimPositionType.Position,
+    position = _queueSkill.GetDefaultAttackAimPosition(Entity, _queueSkillLevel, _isLeftHandAttacking, targetEnemy),
+};
+Entity.UseSkill(_queueSkill.DataId, WeaponHandlingState.None, 0, skillAimPosition);
+```
+`MonsterActivityComponent.cs:352-357` — note the `0` for `targetObjectId`.
+
+Because no target id is passed, and `DamageInfo.hitOnlySelectedTarget` defaults to `false`
+(`GameData/Damage/Damage.cs:25`), `MissileDamageEntity._lockingTarget` stays null. That field is a
+damage *filter*, not homing (`MissileDamageEntity.cs:399`) — with it null, the projectile damages
+whoever it physically collides with. A boss can therefore miss, and can hit the wrong player.
+
+Travel time is real: `_missileDuration = (missileDistance / missileSpeed) + 0.1f`
+(`MissileDamageEntity.cs:128`), from `missileDistance` and `missileSpeed`
+(`GameData/Damage/Damage.cs:39-41`). `pierceThroughEntities` (`:62`) turns a bolt into something that
+spears everyone lined up behind the first hit.
+
+### Cast time *is* the dodge window, literally
+
+The aim position is stamped when the cast starts and carried unchanged through the wait:
+
+| Step | Where |
+|---|---|
+| `CastingSkillDuration = skill.GetCastDuration(skillLevel)` | `DefaultCharacterUseSkillComponent.cs:200` |
+| `await GenericUtils.FrameBasedDelay(CastingSkillDuration, ...)` | `:267` |
+| `await GenericUtils.FrameBasedDelay(tempTriggerDuration, ...)` | `:333` |
+| `ApplySkillUsing(..., aimPosition)` | `:372`, `:383` |
+
+So the projectile or area spawns at a position that is `castDuration` (plus the animation's trigger
+duration) out of date. **Cast time is the difficulty dial and it is a float in the inspector.** No
+code is needed to make a boss attack dodgeable — only a non-zero cast time and a projectile with
+travel time.
+
+### Ground AoE gets a free telegraph window
+
+`SimpleAreaAttackSkill.ApplySkillImplement` network-spawns an `AreaDamageEntity` at
+`aimPosition.position` and calls `Setup(..., areaDuration, applyDuration)`. Inside that entity:
+
+```csharp
+_lastAppliedTime = Time.unscaledTime;                              // :92, at spawn
+...
+if (Time.unscaledTime - _lastAppliedTime >= _applyDuration)        // :101, in ManagedUpdate
+    // ... apply damage to everyone currently inside
+```
+
+**`applyDuration` is the telegraph window.** The area exists, and is visible, for `applyDuration`
+seconds before it deals any damage, then re-ticks every `applyDuration` until `areaDuration` expires.
+
+Membership is trigger-based — `OnTriggerEnter` / `OnTriggerExit` maintain
+`_receivingDamageHitBoxes` (`:143-187`) — so a player who steps out before the tick takes **zero**
+damage, not reduced damage. That is a real dodge, and it is the whole mechanic, free.
+
+Damage application is server-gated (`if (!IsServer) return;`, `:98`), so this is safe in MMO mode.
+The prefab also carries `canApplyDamageToUser` and `canApplyDamageToAllies` (`:13-14`), which decide
+whether the boss's own pool hurts the boss and its adds.
+
+### Authoring the shot is one virtual method
+
+```csharp
+public virtual Vector3 GetDefaultAttackAimPosition(BaseCharacterEntity skillUser, int skillLevel, bool isLeftHand, IDamageableEntity target)
+{
+    return target.OpponentAimTransform.position;    // BaseSkill.cs:1276
+}
+```
+
+The default is "exactly where the target stands right now", which combined with cast time already
+produces a dodgeable shot. Override it in a `Skill` subclass and the whole skill-shot design space
+opens up, as content rather than architecture:
+
+| Variant | Override returns |
+|---|---|
+| Lead prediction — punishes running in a straight line | target position + velocity × estimated flight time |
+| Deliberate under-lead — rewards committing to a direction | target position, unchanged (the current default) |
+| Aim where they were — punishes standing still | a buffered position from N seconds ago |
+| Spread fan | a position rotated by a per-cast offset around the boss→target vector |
+| Scatter / suppression | target position + random offset inside a radius |
+| Not-the-tank | a randomly chosen participant instead of the current target |
+
+`BaseAreaSkill` already overrides it to `target.Entity.MovementTransform.position` (`:104`) — the
+feet rather than the aim transform, which is what a ground decal wants.
+
+### Traps found in the source
+
+- **`TargetObjectPrefab` on `BaseAreaSkill` is not a networked telegraph.** It is the local aim
+  preview for the *player's own* area skills, referenced only by `DefaultAreaSkillAimController.cs:28-31`
+  and `ShooterAreaSkillAimController.cs:25-28`. A monster casting the skill spawns nothing of the
+  sort. **The boss's visible warning must live on the `AreaDamageEntity` prefab itself**, which is what
+  network-spawns. Authoring a boss AoE and seeing no circle on the ground is this, every time.
+- **The boss freezes while casting.** `moveSpeedRateWhileUsingSkill` defaults to 0
+  (`BaseSkill.cs:25`). Good for readability — a rooted boss with a wind-up is exactly the telegraph
+  you want — but a long-cast boss with no gap-closer is trivially kited. Pair long casts with a
+  `SimpleDashAttackSkill` or `SimpleWarpToTargetSkill`, or set the rate above 0.
+- **The AI only ever builds `AimPositionType.Position`.** `AimPositionType.Direction` exists and is
+  handled downstream (`AimPosition.cs:18`, `:27`, `DamageInfoExtensions.cs:17`), but nothing in
+  `MonsterActivityComponent` produces it. Line and cone shots aimed along a direction need the seam-4
+  override to construct the aim itself.
+- **Spread is a weapon-item property, not a skill property.** `FireSpreadAmount` / `FireSpreadRange`
+  come off `weaponItem` in the attack path (`DefaultCharacterAttackComponent.cs:414-415`), so a boss
+  only gets a shotgun basic attack if it actually carries a weapon item. Multi-projectile *skills* are
+  authored by overriding the aim per cast, not by a spread field. Verify against your own boss setup
+  before relying on it.
+- **The AI walks to `GetCastDistance` before casting.** For area skills that is `castDistance`
+  (`BaseAreaSkill.cs:79`) and `GetCastFov` returns 360 (`:84-87`), so a long-range ground AoE lets the
+  boss stay put and does not require it to face anyone.
+
+### Starting points to tune from
+
+Not measured in-game yet — these are the shapes to start from and adjust once a boss exists.
+
+| Knob | Suggested start | Why |
+|---|---|---|
+| `castDuration` on a telegraphed shot | 1.0–1.5 s | Long enough to read and roll; `DirectionalRollDash.rollDuration` is 1.167 s |
+| `applyDuration` on a ground AoE | 1.2–2.0 s | The visible warning window before the first tick |
+| `areaDuration` for a lingering pool | 6–10 s | Denies ground without being a permanent wall |
+| `areaDuration` for a one-shot slam | just over `applyDuration` | One tick, then gone |
+| `missileSpeed` | low enough that flight time ≈ 0.5 s at typical range | Travel time is the second half of the dodge window |
+| `moveSpeedRateWhileUsingSkill` | 0 for the big telegraphed casts | Rooting the boss is what makes the tell readable |
+
 ## The five seams, ranked by cost
 
 Ordered the way `CLAUDE.md` asks: stop at the first one that fits.
@@ -422,7 +553,10 @@ With seams 1–4 and no kit edits:
 | Add waves at thresholds | Needs seam 2 or 4 to trigger; the summon itself is a stock skill. |
 | Fixed rotations / openers / "cast A then B" | Needs seam 4. |
 | Enrage timer | Needs seam 2, driven off the network manager, not the AI component. |
-| Ground telegraphs, avoidable AoE | Stock `BaseAreaSkill` handles the mechanic; seam 4 for the timing. |
+| Ground telegraphs, avoidable AoE | **Free.** `applyDuration` on `SimpleAreaAttackSkill` is the warning window; stepping out takes zero damage. |
+| Dodgeable projectiles that can miss | **Free.** The AI already aims at a position with no target lock; cast time plus travel time is the dodge window. |
+| Lead prediction, spread fans, scatter shots | One `Skill` subclass overriding `GetDefaultAttackAimPosition`. Content, not architecture. |
+| Line / cone shots aimed along a direction | Seam 4 — the AI never builds `AimPositionType.Direction`. |
 | Taunt (debuff that redirects the boss) | Small. The debuff already records its applier; you write the lookup and the target lock. |
 | Threat table, tanking | Build it, but not from zero — the per-attacker damage ledger already exists and is unused. Seam 4 plus a threat component. Still the largest single item. |
 | Positional mechanics (behind-only, stack, spread) | Seam 4. Distance/angle checks against participants. |
@@ -434,37 +568,45 @@ Nothing in this table requires editing `Core/` or `MMO/`.
 
 ## Build order
 
-Riskiest unknown first, so a dead end is found cheaply.
+Riskiest unknown first, so a dead end is found cheaply. Steps 1 and 2 are independent of each other —
+1 validates the feel, 2 validates the architecture.
 
-1. **Prove the prefab swap.** Fork a demo monster prefab into `Assets/1. Data/`, remove
+1. **One skill shot.** A `SimpleAreaAttackSkill` on a stock monster, `applyDuration` around 1.5 s, with
+   a visible decal on the `AreaDamageEntity` prefab (**not** `TargetObjectPrefab`). Confirm players see
+   the warning and that stepping out takes zero damage. This needs no code and no prefab swap, and it
+   is the fastest way to find out whether telegraphed boss attacks feel right in this game.
+2. **Prove the prefab swap.** Fork a demo monster prefab into `Assets/1. Data/`, remove
    `MonsterActivityComponent`, add an empty `BossActivityComponent : MonsterActivityComponent`,
-   confirm the monster still fights. If this fails, everything above it is wrong.
-2. **One threshold, one buff.** `BossEncounterState` watching `onCurrentHpChange`, applying a
+   confirm the monster still fights. If this fails, every seam-4 item below is wrong.
+3. **One threshold, one buff.** `BossEncounterState` watching `onCurrentHpChange`, applying a
    permanent buff at 50%. Confirms the buff overrides land and replicate.
-3. **Phase-gated selection.** Override `RandomSkill` (seam 3) or the selection call site (seam 4) so
+4. **Phase-gated selection.** Override `RandomSkill` (seam 3) or the selection call site (seam 4) so
    phase-one abilities actually stop. Confirms the "additional tactics" limit is beaten.
-4. **Transition.** Invulnerable + immobile + animation, then phase two. Confirms `IsInvincible` and
+5. **Transition.** Invulnerable + immobile + animation, then phase two. Confirms `IsInvincible` and
    `disallowMove` behave on a server-owned entity.
-5. **Rotation.** Ordered abilities with per-phase cooldowns, replacing random selection.
-6. **Threat.** Only after the above works. Start by reading the existing ledger
-   (`GetSortedReceivedDamageRecordsByDamage`) in a `FindOneEnemyFromList` override — that alone gives
-   a boss that stays on its biggest damage dealer. Taunt and threat modifiers come after.
-7. **Encounter lifecycle** — pull, reset, wipe, enrage — driven off a
+6. **Aimed variants.** A `Skill` subclass overriding `GetDefaultAttackAimPosition` — lead prediction,
+   then a spread fan. Confirms the skill-shot design space is really content-shaped.
+7. **Rotation.** Ordered abilities with per-phase cooldowns, replacing random selection.
+8. **Encounter lifecycle** — pull, reset, wipe, enrage — driven off a
    `BaseGameNetworkManagerComponent` (`Networking/BaseGameNetworkManagerComponent.cs:10`) so it
    survives the no-subscriber freeze.
-8. **UI last.**
+9. **UI last.**
+
+**Threat is not in this list** — see the open decision below. If it is picked up later, it slots in
+after step 7, and starts by reading the existing damage ledger
+(`GetSortedReceivedDamageRecordsByDamage`) from a `FindOneEnemyFromList` override.
 
 ## Open decisions
 
-- **Threat model, or design around its absence?** Cheaper than it first looks, because the damage
-  ledger is already there and already credits summons. A dodge-and-position game does not need threat and
-  saves the largest item on the list. A trinity game needs it. This choice determines whether step 6
-  exists at all.
+- **Threat model, or design around its absence?** **Deferred, 2026-09-03.** The skill-shot model above
+  answers the question threat exists to answer — who gets hit is decided by who failed to move — so this
+  is no longer blocking. It stays cheaper than it first looks whenever it is picked up, because the damage
+  ledger is already there and already credits summons. Revisit if the game moves toward a trinity.
 - **Where does the fight clock live?** A `BaseGameNetworkManagerComponent` is safe from the
   subscriber freeze but is per-map, not per-boss. An entity-owned clock is simpler but stops when the
   arena empties — which may in fact be the wanted behaviour.
 - **Does a boss reset on leash?** The kit's leash does not reset HP. Deciding "walk it out and it
-  heals to full" versus "it stays damaged" changes whether step 7 needs a full reset path.
+  heals to full" versus "it stays damaged" changes whether step 8 needs a full reset path.
 - **LAN or MMO first?** Everything here works in both. Only lockouts and instanced raids need MMO.
 
 ## Related
