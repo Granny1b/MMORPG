@@ -288,6 +288,30 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Added
 
+- **`CLAUDE.md`** (2026-09-03) — an operating manual for AI agents working in this repo, loaded
+  automatically at the start of every Claude Code session. Carries the hard rules (never edit
+  `Core/` or `MMO/`, log every change here, new work goes in `1. Data` / `Scripts` /
+  `TopDownController`), the ownership map, where new data and behaviour belong, the changelog
+  convention, the list of kit files we have patched in place, both entry scenes, and the gotchas
+  that have already cost time.
+  - Written instead of the 42 remaining subsystem documents that were planned for
+    `Documentation/Systems/`. The reasoning is worth recording, since the obvious move is to
+    document everything: **2,507 of this project's 2,514 C# files are vendored kit code**, and
+    `Core/` and `MMO/` are replaced wholesale by a GitHub mirror, as they were in `f2e39d8`. Prose
+    describing them goes stale in one discontinuous step, silently, and an agent can read the
+    source itself in seconds. What an agent cannot recover from source is why a choice was made,
+    what was rejected, and which files are ours. That is what this file and this changelog hold.
+  - Four documents from that pass were kept: `PROJECT_OVERVIEW.md` and, most usefully,
+    `Documentation/Systems/00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md`, which is the full
+    ours-versus-vendored inventory plus the re-apply checklist after a kit update. The three
+    kit-subsystem documents (`01`, `03`, `04`) are explicitly marked in `CLAUDE.md` as a snapshot
+    that will not be maintained, so nobody trusts them over the code later.
+  - Found while writing it: **renaming a game data asset silently changes its `DataId`**.
+    `BaseGameData.Id` returns the serialized `id` field or, when that is empty, the asset name
+    (`BaseGameData.cs:30`), and `DataId` is a hash of that string (`:180`). Every asset in
+    `1. Data` leaves `id` empty, so asset names are load-bearing and a rename would orphan any
+    saved item, skill or quest referencing them. Recorded as a gotcha; not fixed.
+
 - **`Assets/Scripts/UI/UIEscapeWindowsHandler.cs`** (2026-08-29) — WoW-style escape handling:
   the first Escape press closes every opened window, the next one toggles the system menu.
   Windows are auto-collected at `Awake` from `windowContainers` (`UIBase` on direct children) and
