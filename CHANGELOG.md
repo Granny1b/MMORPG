@@ -95,6 +95,32 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
     offset back by `zoomDistance` (`FollowCamera.cs:183`), so measuring from it makes the same
     explosion feel weaker the further a player has zoomed out — a difficulty difference produced by
     a camera setting.
+  - **The aim wobble camera shake causes is accepted, not fixed** (decided 2026-09-03). Shaking the
+    camera shakes the cursor ray and therefore the character's replicated facing; the fix exists and
+    needs no kit edit (cache the pre-shake pose, aim from that), but the wobble is bounded by the
+    shake amplitude — degrees and centimetres — and only exists while a shake runs. This removed a
+    build step and the `UnshakenPosition`/`UnshakenRotation` requirement from the shaker. The
+    mechanism stays documented so a twitching character during a stomp is not re-investigated as a
+    bug, and it puts a ceiling on rotation amplitude: the decision is only cheap while the numbers
+    stay small.
+  - **Radius needs two numbers, not one.** A single "shake within 30 m" starts fading the moment you
+    step off the spawn point, so `innerRadius` (full strength, roughly the ability's visual
+    footprint) and `outerRadius` (zero beyond, the advertised radius) with a tuned curve between.
+    Rejected both closed-form falloffs: linear makes the boundary noticeable as it sweeps past, and
+    true inverse-square spends almost everything in the first few metres and wastes the rest.
+  - **`outerRadius` is capped by the source entity's network visible range**, 80 m by default
+    (`BaseInterestManager.cs:10`, `:58`; per-prefab override at `LiteNetLibIdentity.cs:55-56`,
+    `:172`). A larger radius does not error — players beyond the interest range never receive the
+    effect at all, so the falloff curve silently claims strength that was already truncated by
+    replication. Not a concern at 30 m; it is the thing that makes a zone-wide rumble a tier-3
+    problem rather than a bigger number.
+  - **Magnitude is one multiplication chain**, profile amplitude x envelope(t) x falloff(distance) x
+    per-emitter scale x the player's accessibility setting, with every term after the first in 0-1.
+    So a profile is tuned once for "epicentre, setting at 100%" and every other case derives, no
+    per-call-site magic numbers, and no call path can bypass the accessibility slider.
+  - **Falloff distance is sampled once at spawn, not tracked.** Cheaper (one distance test per client
+    per effect) and better behaved: a shake whose strength changed as you walked would read as a bug.
+    It also makes the caster-following behaviour of skill effects irrelevant to the shake.
   - **`[AllRpc]` reaches current subscribers only, and default interest is 80 m**
     (`LiteNetLibRPC.cs:86`, `BaseInterestManager.cs:10`, `:58`). That is the right filter for a
     stomp for free, and simultaneously a hard ceiling: a zone-wide rumble cannot ride an entity RPC
