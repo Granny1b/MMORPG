@@ -2,7 +2,7 @@
 %TAG !u! tag:unity3d.com,2011:
 --- !u!78 &1
 TagManager:
-  serializedVersion: 2
+  serializedVersion: 3
   tags:
   - PlayerTag
   - MonsterTag
@@ -33,7 +33,7 @@ TagManager:
   - Monster
   - Npc
   - Vehicle
-  - 
+  - Occluder
   - 
   - 
   - 
@@ -57,3 +57,5 @@ TagManager:
   - name: ChatBubble
     uniqueID: 216950871
     locked: 0
+  m_RenderingLayers:
+  - Default

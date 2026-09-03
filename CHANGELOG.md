@@ -300,6 +300,18 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Changed
 
+- **No attacking while rolling** (2026-09-02) — `DirectionalRollDash` now answers
+  `onCanAttackValidated` with false while `IsRolling`, so the swing is refused before it starts
+  rather than being cut off. The kit runs that validation on the server as well as on the attacker,
+  and `IsRolling` is true on every copy because the roll broadcast drives it, so a client cannot
+  attack by simply asking again. Together with `dashRestricted` already set on the five weapons,
+  attack and roll now exclude each other in both directions.
+  - The block ends when the roll does. Cancelling the get-up early by moving clears the roll, and
+    with it the block, so the roll's tail is not dead time if you move out of it.
+  - `blockSkillsWhileRolling` added alongside, wired to `onCanUseSkillValidated` and
+    `onCanUseSkillItemValidated`, but left **off**: only plain attacks were asked for. Turn it on
+    to stop a skill being used as a mid-roll attack.
+
 - **Backward movement is full speed** (2026-09-02) — `CharacterControllerEntityMovement` on
   `SyntyPlayerCharacter` shipped every backward rate at 0.75, so walking or strafing away from the
   aim was a quarter slower than towards it. All eight backward fields set to 1

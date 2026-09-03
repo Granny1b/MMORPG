@@ -78600,6 +78600,8 @@ MonoBehaviour:
   _behaviourIndex: 0
   rollCooldown: 1.5
   staminaCost: 20
+  blockAttackWhileRolling: 1
+  blockSkillsWhileRolling: 0
   rollDistance: 4.98
   rollDuration: 1.167
   distanceProfile:

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 114548782499701980}
   - component: {fileID: 114185086765178122}
   - component: {fileID: 5008252603200347997}
+  - component: {fileID: 5008252603200348111}
   m_Layer: 0
   m_Name: TopDownGameplayCamera
   m_TagString: MainCamera
@@ -75,7 +76,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 1997623
+    m_Bits: 4094775
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0
@@ -247,6 +248,29 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &5008252603200348111
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1278824955568960}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c1f4a2e9b3d4c58ae0f6d21b8e437c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  occluderLayers:
+    serializedVersion: 2
+    m_Bits: 2097152
+  castRadius: 0.4
+  targetHeightOffset: 1.2
+  cameraPadding: 0.3
+  castInterval: 0.05
+  triggerInteraction: 1
+  hideMode: 0
+  restoreDelay: 0.15
+  drawGizmos: 0
 --- !u!1 &1875850924656240
 GameObject:
   m_ObjectHideFlags: 0
