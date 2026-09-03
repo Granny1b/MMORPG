@@ -151,13 +151,65 @@ or a component, never on the data asset.
 
 | Missing | Consequence for a boss |
 |---|---|
-| **Threat / aggro table** | None exists. A `grep` for `threat`/`aggro` across `Core/Scripts` returns nothing. Target selection is "first survivor found in an overlap query" (`MonsterActivityComponent.cs:463`, `:526`), and damage flips the target on a coin-flip (`:136`). Tanking is not possible without building it. |
+| **Threat / aggro table** | No threat *model*. `threat`, `aggro`, `taunt`, `enmity` and `provoke` return zero hits across the whole kit — `Core/`, `MMO/`, `GuildWar/` and the demos. Target selection is "first survivor found in an overlap query" (`MonsterActivityComponent.cs:463`, `:526`), and damage flips the target on a coin-flip (`:136`). But the *ledger* a threat table needs already exists — see the section below. |
 | **Phase state machine** | No concept of a phase, transition, or encounter. |
 | **Enrage / berserk timer** | No fight clock. |
 | **Ability sequencing** | Random selection only, per the section above. |
 | **Encounter lifecycle** | No pull, no reset, no wipe detection, no per-encounter loot lock. Leashing exists but is a distance/time leash (`:206`, `:212`), not an encounter reset. |
 | **Boss UI** | No boss frame, no cast bar for enemies, no phase banner. `CanvasMonsterCharacterUI.prefab` is a nameplate. |
 | **Multi-part bosses** | No linkage between entities. Two spawned monsters are unrelated. |
+
+## Threat: not implemented, but half-built and unused
+
+Worth its own section, because "there is no threat system" is true and still misleading.
+
+**The model does not exist.** `threat`, `aggro`, `taunt`, `enmity`, `provoke` — zero hits across
+`Core/`, `MMO/`, `GuildWar/` and every demo tree. No taunt skill type, no threat multiplier on any
+skill or buff, nothing that overrides a monster's target.
+
+**The ledger does exist, on every character entity.** `BaseCharacterEntity_DamageFunctions.cs` keeps
+a per-attacker cumulative damage table:
+
+```csharp
+protected readonly Dictionary<string, ReceivedDamageRecord> _receivedDamageRecords = ...   // :11
+```
+
+- Fed automatically on every damage application — `RecordRecivingDamage(instigator, totalDamage)`
+  (`:208`, implementation `:240`).
+- **Summon damage is credited to the summoner** (`:246-248`), which is the behaviour you would have
+  to write by hand otherwise.
+- Overkill is clamped to the HP that was actually there (`:254`), so a killing blow cannot inflate a
+  record.
+- `ReceivedDamageRecord` carries `Instigator`, `Damage` and `UpdatedTime`
+  (`Gameplay/CharacterEntity/ReceivedDamageRecord.cs:3-8`) — identity, magnitude and recency, which
+  is exactly the tuple a threat table sorts on.
+- Cleared on death (`:71`).
+
+And the kit ships two sorted accessors that **nothing in the kit ever calls**:
+
+```csharp
+public void GetSortedReceivedDamageRecordsByDamage(...)   // :278
+public void GetSortedReceivedDamageRecordsByTime(...)     // :288
+```
+
+The only live consumer of any of it is reward attribution when a monster dies
+(`BaseMonsterCharacterEntity.cs:469`, via the unsorted `GetReceivedDamageRecords` at `:269`). So the
+data is collected, the sorting is written, and the AI simply never looks at it.
+
+**What that leaves to build**, in `FindEnemy` / `FindOneEnemyFromList` overrides at seam 4:
+
+- Read `GetSortedReceivedDamageRecordsByDamage` instead of the overlap query, and defeat the
+  coin-flip target switch at `:136`.
+- Threat modifiers per skill, healing threat, and threat decay over time. `UpdatedTime` supports
+  recency, but there is no decay curve.
+- A reset that is not death — the ledger clears only in `Killed` (`:71`), so a boss that leashes
+  home keeps every record.
+
+**Taunt** is small once the above exists. `BaseMonsterCharacterEntity.SetAttackTarget` is public
+(`:313`), validates the target, and is called from nowhere but the AI component (five sites, all in
+`MonsterActivityComponent`). A custom `BaseSkill` subclass calls it and sets a lock flag your
+activity component honours for N seconds. The lock is the real work: without it, the next hit
+re-rolls the target.
 
 ## The five seams, ranked by cost
 
@@ -310,7 +362,7 @@ With seams 1–4 and no kit edits:
 | Fixed rotations / openers / "cast A then B" | Needs seam 4. |
 | Enrage timer | Needs seam 2, driven off the network manager, not the AI component. |
 | Ground telegraphs, avoidable AoE | Stock `BaseAreaSkill` handles the mechanic; seam 4 for the timing. |
-| Threat table, taunt, tanking | **Build from scratch.** Seam 4 plus a threat component. Largest single item. |
+| Threat table, taunt, tanking | Build it, but not from zero — the per-attacker damage ledger already exists and is unused. Seam 4 plus a threat component. Still the largest single item. |
 | Positional mechanics (behind-only, stack, spread) | Seam 4. Distance/angle checks against participants. |
 | Multi-part bosses, linked health, adds that buff the boss | Seam 2 + a shared encounter object. No kit support. |
 | Boss health frame, cast bar, phase banner | New UI under `UIDialogs_G.prefab`. No kit support. |
@@ -332,7 +384,9 @@ Riskiest unknown first, so a dead end is found cheaply.
 4. **Transition.** Invulnerable + immobile + animation, then phase two. Confirms `IsInvincible` and
    `disallowMove` behave on a server-owned entity.
 5. **Rotation.** Ordered abilities with per-phase cooldowns, replacing random selection.
-6. **Threat.** Only after the above works. This is a system, not a feature.
+6. **Threat.** Only after the above works. Start by reading the existing ledger
+   (`GetSortedReceivedDamageRecordsByDamage`) in a `FindOneEnemyFromList` override — that alone gives
+   a boss that stays on its biggest damage dealer. Taunt and threat modifiers come after.
 7. **Encounter lifecycle** — pull, reset, wipe, enrage — driven off a
    `BaseGameNetworkManagerComponent` (`Networking/BaseGameNetworkManagerComponent.cs:10`) so it
    survives the no-subscriber freeze.
@@ -340,7 +394,8 @@ Riskiest unknown first, so a dead end is found cheaply.
 
 ## Open decisions
 
-- **Threat model, or design around its absence?** A dodge-and-position game does not need threat and
+- **Threat model, or design around its absence?** Cheaper than it first looks, because the damage
+  ledger is already there and already credits summons. A dodge-and-position game does not need threat and
   saves the largest item on the list. A trinity game needs it. This choice determines whether step 6
   exists at all.
 - **Where does the fight clock live?** A `BaseGameNetworkManagerComponent` is safe from the

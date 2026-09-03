@@ -33,10 +33,21 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
   - **Phase changes should ride a `Buff`, not direct field writes.** `Buff.isOverrideDamageInfo`
     replaces the character's basic attack wholesale (`CharacterDataCache.cs:457`, `:471`), and buffs
     already replicate, stack and surface in UI. Writing stats directly would need new network plumbing.
-  - **There is no threat or aggro system anywhere in `Core/`.** Target selection is the first survivor
-    from an overlap query (`MonsterActivityComponent.cs:463`, `:526`) and every hit re-rolls the target
-    on a coin flip (`:136`). Tanking is a system to build, not a setting, and the document makes
-    "design around its absence" an explicit open decision rather than an oversight.
+  - **There is no threat model anywhere in the kit, but the ledger it needs is already built and
+    unused.** `threat`, `aggro`, `taunt`, `enmity` and `provoke` return zero hits across `Core/`,
+    `MMO/`, `GuildWar/` and the demos, and target selection is the first survivor from an overlap
+    query (`MonsterActivityComponent.cs:463`, `:526`) with a coin-flip re-roll on every hit (`:136`).
+    But `BaseCharacterEntity_DamageFunctions.cs:11` keeps a per-attacker cumulative damage table fed
+    on every damage application (`:208`), crediting summon damage to the summoner (`:246-248`) and
+    clamping overkill (`:254`) — and ships `GetSortedReceivedDamageRecordsByDamage` (`:278`) and
+    `...ByTime` (`:288`) which **nothing in the kit ever calls**. The only live consumer is reward
+    attribution on death (`BaseMonsterCharacterEntity.cs:469`). Recording this because "build threat
+    from scratch" is the wrong cost estimate: the data collection and sorting exist, the AI just never
+    reads them. What is genuinely missing is threat decay, per-skill threat modifiers, healing threat,
+    and a reset that is not death (the ledger clears only in `Killed`, `:71`).
+  - **Taunt is small once threat exists.** `BaseMonsterCharacterEntity.SetAttackTarget` is public
+    (`:313`) and called from nowhere but the AI component, so a custom skill can redirect a boss
+    directly. The work is the lock that stops the next hit re-rolling the target, not the redirect.
   - **Two traps that would have cost a day each.** The AI halts entirely on
     `Identity.CountSubscribers() == 0` (`:148`), so an enrage timer driven from the activity component
     freezes when the arena empties; and `findEnemyDelayMax` is dead because
