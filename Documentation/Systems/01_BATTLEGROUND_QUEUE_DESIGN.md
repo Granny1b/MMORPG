@@ -272,7 +272,17 @@ expensive to discover during testing.
    because the cluster replaces it (`ClusterServer.cs:496`). Do not try to derive meaning from it or
    set your own.
 
-7. **Instances do not load buildings.** `MapNetworkManager.cs:355` and `:407` skip building load and
+7. **`BaseMapInfo` has four abstract members that decide all PvP targeting.**
+   `IsPlayerAlly`, `IsMonsterAlly`, `IsPlayerEnemy` and `IsMonsterEnemy` are `protected abstract`
+   (`Core/Scripts/GameData/MapInfo/BaseMapInfo.cs:330-333`), so `BattlegroundMapInfo` does not
+   compile until all four are implemented. They are where teams are defined — `DamageableEntity`
+   delegates every ally/enemy question to the current map (`DamageableEntity.cs:443`, `:450`).
+   Implement them against a **public** custom-data team key, because ally checks also run on clients
+   for nameplates and targeting. Worked example and the reasoning:
+   [02_ARENA_1V1_2V2_DESIGN.md](02_ARENA_1V1_2V2_DESIGN.md), "The core problem: friend and foe".
+   *(Added 2026-09-03; missed in the original draft.)*
+
+8. **Instances do not load buildings.** `MapNetworkManager.cs:355` and `:407` skip building load and
    persistence when `IsInstanceMap()`. Anything a battleground needs must be in the scene or spawned
    at runtime; do not expect player-built structures.
 
@@ -325,4 +335,6 @@ Worth settling before Phase 3, not before Phase 2:
 - `Documentation/Systems/00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md` — ownership rules and the
   post-kit-update re-apply checklist.
 - `CHANGELOG.md` — running record of decisions.
+- [02_ARENA_1V1_2V2_DESIGN.md](02_ARENA_1V1_2V2_DESIGN.md) — ranked 1v1/2v2 arena built on
+  this transport; also covers team-based friend/foe and the warm map-server pool.
 - `GuildWar/` — the closest working precedent in the repo for a custom PvP map type.
