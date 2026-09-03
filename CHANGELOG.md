@@ -9,6 +9,41 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Added
 
+- **`Documentation/Systems/02_ARENA_1V1_2V2_DESIGN.md`** (2026-09-03) — design for ranked 1v1 and
+  2v2 arena on top of the battleground queue transport from doc 01. Design only, nothing implemented.
+  - **Friend/foe is a property of the map, not of combat code.** `DamageableEntity.IsAlly`/`IsEnemy`
+    delegate straight to `CurrentMapInfo` (`DamageableEntity.cs:443`, `:450`), which dispatches to
+    four `protected abstract` members on `BaseMapInfo` (`BaseMapInfo.cs:330-333`). A map type
+    therefore defines its own factions with no kit edit, which is what makes 2v2 friendly-fire
+    suppression possible. `GuildWarMapInfo.cs:102` is the in-repo precedent, keying off `GuildId`;
+    arena keys off a team index read through `EntityInfo.TryGetEntity`.
+  - **Team index must be `Public` custom data, not `Server`.** Ally checks run on clients too, for
+    nameplates and targeting, and only public custom data replicates. Doc 01 suggested `Server`
+    visibility for the battleground team; that is corrected here for anything the client renders.
+  - **Queue-pop latency is solved by configuration, not code.** `ClusterServer.HandleRequestSpawnMap`
+    consumes a pre-allocated warm map server before asking a map-spawn server to boot one
+    (`ClusterServer.cs:493-503`), and the pool is an inspector list on `MapSpawnNetworkManager`
+    (`spawningAllocateMaps`, `:56`). Booting a Unity process per 1v1 was rejected as the default:
+    arena matches are short and frequent, unlike battlegrounds.
+  - **Leaderboards have a measured trap.** Rating fits custom character data with no schema change
+    (`character_public_int32` is `(id, characterId, hashedKey, value)`), but the only indexes are
+    `PRIMARY(id)` and `KEY(characterId)` (`mysql_main.sql:790-794`), so `WHERE hashedKey=? ORDER BY
+    value DESC` is a full scan over every public custom value for every character. Chosen fix is a
+    cluster-side cached top-N; adding a composite index is an ops runbook step, explicitly **not** an
+    edit to `mysql_main.sql` or `MySQLDatabase_Migrate.cs`, which a kit update would revert.
+  - **The dueling system is a reference, not a dependency.** `PlayerCharacterDuelingComponent` has
+    the round shape worth copying — countdown separate from duration (`:336`), and disconnect-as-loss
+    via `OnDestroy` (`:369`) — but it is built around a consensual open-world request/accept
+    handshake, so arena drives its own match component instead. Arena maps must set
+    `DisableDueling` true, or players can start side-duels inside a ranked match (`:101`).
+  - **2v2 starts premade-only**, so team assignment falls out of existing party membership and the
+    balancing question is deferred rather than guessed at.
+
+- **`Documentation/Systems/01_BATTLEGROUND_QUEUE_DESIGN.md`** (2026-09-03) — amended with the four
+  abstract ally/enemy members, missed in the original draft. Not cosmetic: `BattlegroundMapInfo`
+  does not compile without implementing all four.
+
+
 - **`Documentation/Systems/01_BATTLEGROUND_QUEUE_DESIGN.md`** (2026-09-03) — design for a
   battleground queue that spawns a dedicated instance once enough players have queued. Design only,
   nothing implemented yet.
