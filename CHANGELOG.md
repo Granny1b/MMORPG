@@ -9,6 +9,40 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Added
 
+- **`Documentation/Systems/03_BOSS_ENCOUNTER_DESIGN.md`** (2026-09-03) — survey of how complex a
+  boss can be in this kit, and the design for phase-scripted encounters. Design only, nothing
+  implemented.
+  - **The kit already has exactly one phase primitive, and it is data-only.** `MonsterSkill.useWhenHpRate`
+    gates a skill behind `entity.HpRate <= rate` inside `MonsterCharacter.RandomSkill`
+    (`MonsterCharacter.cs:264`), so "new abilities below 50%" needs no code at all. Recording this
+    because it is easy to miss and easy to reimplement by accident.
+  - **That primitive has three hard limits, all in one method.** The gate is one-directional, so
+    phase-one abilities can never be retired, only added to. A single `Random.value` is drawn once
+    (`:258`) and compared against every skill's `useRate` in shuffled order, so the inspector's
+    per-skill rates are not the real selection frequencies. And selection is a shuffle, so ordered
+    rotations cannot be expressed. Real phases therefore need code, not tuning.
+  - **`MonsterActivityComponent` is referenced from exactly one place in the entire kit**, the editor
+    utility that builds a monster prefab (`Core/Editor/CharacterEntityCreatorEditor.cs:193`). Nothing
+    resolves it at runtime. So a boss prefab can carry a subclass instead and the kit never notices —
+    this is the seam the design is built on, and it costs no kit edit. Rejected the alternative of
+    hooking `MonsterActivityComponent` via `[DevExtMethods]`: the class invokes no hooks, and its
+    combat loop `UpdateAttackEnemy` is `private` (`:270`), so decoration cannot reach it.
+  - **Per-encounter state must never live on the `MonsterCharacter` asset.** Proved by the kit's own
+    `_tempRandomSkills` (`MonsterCharacter.cs:177`), a mutable list on the `ScriptableObject` that
+    every spawned instance of that monster shares. Two copies of a boss would otherwise share a phase.
+  - **Phase changes should ride a `Buff`, not direct field writes.** `Buff.isOverrideDamageInfo`
+    replaces the character's basic attack wholesale (`CharacterDataCache.cs:457`, `:471`), and buffs
+    already replicate, stack and surface in UI. Writing stats directly would need new network plumbing.
+  - **There is no threat or aggro system anywhere in `Core/`.** Target selection is the first survivor
+    from an overlap query (`MonsterActivityComponent.cs:463`, `:526`) and every hit re-rolls the target
+    on a coin flip (`:136`). Tanking is a system to build, not a setting, and the document makes
+    "design around its absence" an explicit open decision rather than an oversight.
+  - **Two traps that would have cost a day each.** The AI halts entirely on
+    `Identity.CountSubscribers() == 0` (`:148`), so an enrage timer driven from the activity component
+    freezes when the arena empties; and `findEnemyDelayMax` is dead because
+    `Random.Range(findEnemyDelayMin, findEnemyDelayMin)` passes `Min` twice (`:235`). The latter is a
+    kit bug — override it, do not patch `Core/`.
+
 - **`Documentation/Systems/02_ARENA_1V1_2V2_DESIGN.md`** (2026-09-03) — design for ranked 1v1 and
   2v2 arena on top of the battleground queue transport from doc 01. Design only, nothing implemented.
   - **Friend/foe is a property of the map, not of combat code.** `DamageableEntity.IsAlly`/`IsEnemy`
