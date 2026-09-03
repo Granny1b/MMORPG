@@ -66,6 +66,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 620467d42dba7b344ab2159462ce3b23, type: 2}
   - {fileID: 11400000, guid: d49d8d8518aed8f4db28cbf1fdd0dc63, type: 2}
   - {fileID: 11400000, guid: 29915ca929a14214baec7de15f1af758, type: 2}
+  - {fileID: 11400000, guid: 9bc44b8886e1083478dc1fd24943aff1, type: 2}
   - {fileID: 11400000, guid: c4f83999d394a4c4cbd65dc4e44885df, type: 2}
   - {fileID: 11400000, guid: 84eba039ed32fda4693c20ebba14c822, type: 2}
   - {fileID: 11400000, guid: 5842068f5743c524c967a28b483477ed, type: 2}
@@ -96,7 +97,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 93c389fe9d40638469bffd9de26d31ba, type: 2}
   - {fileID: 11400000, guid: b64f816f68b7d6a42b7d3857a4b5d931, type: 2}
   - {fileID: 11400000, guid: 0a439d3c316c36f4cae03a253c8839d4, type: 2}
-  - {fileID: 11400000, guid: 9bc44b8886e1083478dc1fd24943aff1, type: 2}
   itemCraftFormulas:
   - {fileID: 11400000, guid: 4fa8022457399b045aa759a2adf444be, type: 2}
   - {fileID: 11400000, guid: f3bf4536f24588043986c153c1e7e430, type: 2}
@@ -110,28 +110,21 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5d81a3e67ae68304c93a6f9e9447899b, type: 2}
   armorTypes:
   - {fileID: 11400000, guid: 0253737f3a4bc994cb0be8d992b59240, type: 2}
+  - {fileID: 11400000, guid: acacbce03b495b14c81834e5cdc2b3e8, type: 2}
   - {fileID: 11400000, guid: bea17275f6d55cb4b9e00d61decfaf95, type: 2}
   - {fileID: 11400000, guid: a1143a42e9d328c4988c7b1b33b11451, type: 2}
+  - {fileID: 11400000, guid: 0829b8372f9eb6a499e6b68766cd15e8, type: 2}
   - {fileID: 11400000, guid: 926f1d3f76315644784baae8e6482caf, type: 2}
   - {fileID: 11400000, guid: 745bc973ccf3f5640af5285026a87d5d, type: 2}
-  - {fileID: 11400000, guid: 0829b8372f9eb6a499e6b68766cd15e8, type: 2}
-  - {fileID: 11400000, guid: acacbce03b495b14c81834e5cdc2b3e8, type: 2}
   weaponTypes:
   - {fileID: 11400000, guid: dea0ff090cc71dd41ad5154120895633, type: 2}
   - {fileID: 11400000, guid: d433f880a1c9d6149bcbf3b5676ea6a0, type: 2}
-  - {fileID: 11400000, guid: a10c36dadc50a1e48881f48483f2ccc6, type: 2}
-  - {fileID: 11400000, guid: 46d5e8d1f00917a4da03a91092474bf4, type: 2}
   - {fileID: 11400000, guid: a33855f9c9112894fbf4fb803ab001da, type: 2}
   - {fileID: 11400000, guid: 68fba38efbfdced49a5d1e2ae95c0026, type: 2}
-  - {fileID: 11400000, guid: 27dd45bfaa340904abb135858ed2f965, type: 2}
-  - {fileID: 11400000, guid: 18b8853fc2026de47943b7cd985477d8, type: 2}
   - {fileID: 11400000, guid: 3f99c4876c3b1b04b9dc8b493565772a, type: 2}
   - {fileID: 11400000, guid: f8c1eae7f66f9bb46a41403e61cd87cb, type: 2}
   ammoTypes:
   - {fileID: 11400000, guid: 40442b933cd745c44a9c045c9db0d0c0, type: 2}
-  - {fileID: 11400000, guid: f5f6fa0bd208c2b4ab8b60ad89fee9e2, type: 2}
-  - {fileID: 11400000, guid: cde2a2492382cc6429a746d5c2e64769, type: 2}
-  - {fileID: 11400000, guid: d77b2a3b114e1814e86ff669bf73354a, type: 2}
   skills:
   - {fileID: 11400000, guid: e51e32bb6c31b564a9e211e7b65c82ec, type: 2}
   - {fileID: 11400000, guid: 2da121bb20bbc844bafd830dcb439578, type: 2}

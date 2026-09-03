@@ -143,3 +143,9 @@ InitTestScene*.unity*
 # still tracked as normal.
 /[Aa]ssets/2. Art/Blink/
 /[Aa]ssets/2. Art/Blink.meta
+
+# --- Asset Store content (5000 Fantasy Icons) ---
+# Purchased icon pack, ~555 MB across 6,292 PNGs, re-downloadable from the Asset Store.
+# Nothing in it was ever tracked, so no history rewrite was needed.
+/[Aa]ssets/5000FantasyIcons/
+/[Aa]ssets/5000FantasyIcons.meta

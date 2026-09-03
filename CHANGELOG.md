@@ -9,6 +9,277 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Changed
 
+- **`.gitignore`** (2026-09-02) — the 5000 Fantasy Icons pack is no longer committed.
+  `Assets/5000FantasyIcons/` is ~555 MB across 6,292 PNGs, purchased and re-downloadable, and
+  every file would otherwise go through Git LFS. Nothing under it was tracked yet, so the two rules
+  (folder + `.meta`) are enough. Same convention as the Synty, BLINK and SFX entries: icons
+  referenced from items will show as missing sprites after a fresh clone until the pack is
+  re-imported to the same path.
+
+- **Roll get-up is cancelable** (2026-09-02) — the stand-up lock used to hold input until the
+  full 1.167 s clip had played while the movement was done by ~0.75 s, a visible half-second
+  freeze. `DirectionalRollDash` gained `movementUnlockAt` (normalized clip time, 0.7 = 0.82 s)
+  and `cancelClipWhenMoving` (on): input is accepted again from the unlock point, and a held
+  movement key there stops the roll clip (`PlayableCharacterModel.StopCustomAnimation`) so the run
+  blends in at once; standing still lets the get-up finish. The cancel only fires once the dash
+  force is gone, so it cannot cut the travel short. Raise `movementUnlockAt` toward 1 for the
+  full get-up every time, lower it for a snappier roll.
+
+- **Directional roll: real input, facing held, four clips** (2026-09-02) — the first cut still
+  rolled forward along facing. Root cause: `PlayerCharacterController` stamps every WASD movement
+  as plain `MovementState.Forward` (no Left/Right/Backward flags), so the direction rebuilt from
+  the synced flags was always "forward". `DirectionalRollDash` reworked:
+  - **Direction** now comes from the raw axes through the controller's own public
+    `GetMoveDirection(h, v)` on the owner client (`BasePlayerCharacterController.Singleton`), so
+    it is camera-relative exactly like walking. Without that input (server copy of a remote
+    player) it falls back to facing.
+  - **Facing held.** The kit re-targets the yaw to the dash direction every movement tick
+    (`_targetYAngle` in `BuiltInEntityMovementFunctions3D`, no `CanTurn` gate). The component
+    captures the yaw when the roll begins and re-applies it from `LateUpdate` through
+    `SetLookRotation(..., immediately: true)`, after the movement update and before rendering.
+    The character keeps aiming at the mouse and rolls sideways or backwards.
+  - **Four clips.** The model's `dashStartState` is now empty; instead the four in-place Synty
+    rolls sit in `PlayableCharacterModel.customAnimations[0..3]` (F, B, L, R; speed 1, 0.1 s
+    transition, no mask) and the component calls `PlayCustomAnimation` with the one matching the
+    angle between facing and roll direction: forward within 45 degrees, backward beyond 135,
+    left/right between.
+  - **Full body while moving.** The project's `ActionLayerMaskUpdater` trims any action layer to
+    `SyntyUpperBody` while the character moves on the ground, which would have turned the roll
+    into an upper-body flail. It now leaves the mask alone while `DirectionalRollDash.IsRolling`.
+  - **No dash mid-swing.** `movementRestrictionWhileAttacking.dashRestricted` set on all five
+    project weapons: `PlayCustomAnimation` refuses to play while an action runs, which would have
+    left a clip-less slide.
+  - Remote observers (other LAN clients) do not receive the direction, so they see the roll
+    along facing with the forward clip; syncing the choice is a later job.
+  - Compile note: `PlayableCharacterModel` lives in `MultiplayerARPG.GameData.Model.Playables`,
+    not `MultiplayerARPG` - the first compile failed on that and Unity kept the old assembly.
+
+- **Roll follows WASD, moves with its animation, longer** (2026-09-02) — new
+  `Assets/Scripts/Gameplay/DirectionalRollDash.cs` on `SyntyPlayerCharacter`, an
+  `IEntityMovementForceUpdateListener` the movement system picks up from the same object. It
+  works inside the kit's dash rather than around it, on the movement tick, so client and server
+  agree.
+  - **Direction.** The kit always dashes along facing. On the tick the movement creates the Dash
+    force applier, the listener re-aims it along the held keys, rebuilt from the entity's synced
+    `MovementState` flags (Forward/Backward/Left/Right relative to facing, 8 sectors). No keys =
+    roll forward. The kit still turns the character into the roll, so it is a forward roll aimed
+    where you move - the pack's B/L/R rolls stay unused.
+  - **Speed from the authored curve.** The in-place clip has no travel; the root-motion twin
+    does. Its `RootT` curve was sampled in the editor and baked into the component's
+    `distanceProfile` (21 keys, linear): 4.42 m, front-loaded - 50% of the travel by 0.32 of the
+    clip, 80% by 0.51, 90% by 0.64, then the stand-up. Each tick the applier's speed becomes the
+    profile's slope times `rollDistance` (3.7 m), deceleration 0, duration = clip (1.167 s).
+  - **The kit's walking-speed cut.** `UpdateForces` removes any dash whose speed is under
+    `GetMoveSpeed(Forward, None)` - 5 m/s for `Warrior_G`, which the roll only exceeds in its
+    first third (it averages 3.8 m/s). Left alone it would cut at 45% of the clip and deliver
+    3.3 m, shorter than before. The speed is therefore floored at walking speed until
+    `releaseAtTravel` (0.9) of the profile is covered, then dropped to 0 to release. Simulated at
+    60 Hz: dash ends at 0.75 s (64% of clip), about 4.2 m delivered (old value 3.5 m). Raise
+    `rollDistance` for more; the floor adds roughly 0.5 m on top of it.
+  - **Stand-up lock.** The dash-start clip plays in full even after the applier is gone, and the
+    legs are planted for the last third. From the moment the dash is released until
+    `rollDuration` has elapsed, `onCanMoveValidated` answers false, so walking input cannot slide
+    the feet. Never vetoed while the dash is alive - the kit cancels a dash whose entity cannot
+    move - and a second Space press during the tail is swallowed for the same reason.
+  - `dashingForceApplier` on the prefab is now speed 8 / deceleration 0 / duration 1.167; only
+    the initial value matters since the listener rewrites it every tick.
+
+- **Jump replaced by a dodge roll** (2026-09-02) — built on the kit's own dash: the controller
+  already turns the `Dash` button into `MovementState.IsDash`, the movement layer pushes the
+  character along its facing with `dashingForceApplier` and forces the turn, and the model plays
+  `dashStartState` in full as a special move. No new gameplay code.
+  - Animation: `A_DodgeRoll_F_Sword` from `Synty/AnimationSwordCombat/Animations/Polygon/Dodge`
+    (the in-place variant, not `_RootMotion`; humanoid, 1.167 s) as `defaultAnimations.dashStartState`
+    on `SyntyPlayerCharacter`, speed rate 1, 0.1 s transition. Loop and end left empty. The pack
+    also has B/L/R rolls, but the kit's dash only goes forward, so they are unused.
+  - Distance: `dashingForceApplier` set to speed 6.0, deceleration 5.14, duration 1.167 - a
+    linear decay to zero exactly when the clip ends, 3.5 m per roll. Change `rollDistance` in
+    the changelog math (speed = 2·d/t, decel = speed/t) if it should go further.
+  - Input, three layers because Input Handling is *Both*: (1) new project asset
+    `Assets/1. Data/InputActions_G.inputactions`, a copy of the kit's `Demo/InputActions` with the
+    `Jump` bindings (Space, gamepad South) removed and `Dash` rebound from `=` to Space plus
+    gamepad South; the `InputSettingManager` in `00Init` now points at it. (2) The same component's
+    key table: `Jump` Space -> None, `Dash` `=` -> Space. (3) `ProjectSettings/InputManager.asset`:
+    both legacy `Jump` axes had their positive button blanked (Space, joystick button 3) - the
+    kit checks the legacy axis before the key table, and the controller tests Jump *before* Dash
+    with an else-if, so a live legacy Jump would have swallowed Space.
+  - Safety: `DisabledMovementStates` gained `disableJump` (on), vetoing `onCanJumpValidated` so
+    no other controller or UI button can jump either.
+
+- **Sprint, crouch and crawl disabled on the Synty character** (2026-09-02) — new
+  `Assets/Scripts/Gameplay/DisabledMovementStates.cs` on `SyntyPlayerCharacter`, three bools all
+  on. It subscribes to the entity's `onCanSprintValidated` / `onCanCrouchValidated` /
+  `onCanCrawlValidated` and answers false, and `EntityMovementFunctions.ValidateExtraMovementState`
+  drops any requested state back to None when those say no - so the veto holds for every
+  controller, key binding and UI button without touching kit or addon code.
+  - State before: sprint was live - `PlayerCharacterController` toggles it on Left Shift
+    (`InputSettingManager` in `00Init`, keyCode 304) and `SimpleGameplayRule` applies 1.5x speed.
+    Crouch (Left Ctrl) and crawl (Z) were bound but unreachable: neither `PlayerCharacterController`
+    nor `TopDownAimController` reads them; only the Shooter controller does. The bindings are left
+    in place; they are inert now.
+  - The controller still flips its private `_isSprinting` toggle on Shift, which costs nothing:
+    the movement layer overrides the state each tick, and stamina only drains on the applied state.
+
+- **Loading screen: on top, fading, no camera gap** (2026-09-02) — three fixes on
+  `CanvasLoading_G.prefab` and `UILoadingScreenView`.
+  - **Sorting.** The visible problem was not the root order: Synty's `Screen_FantasyMenus_Loading_01`
+    carries a nested `Background` Canvas with *Override Sorting* on at order **-100** (and
+    `AssetDemo_FX` at 0), which put the backdrop underneath every gameplay canvas while the crest
+    and bar floated above them. Both overrides cleared on the nested instance so they inherit the
+    root, and the root raised from 100 to 32000 (`Canvas.sortingOrder` is a short; the project's
+    other canvases sit at 0-2).
+  - **Fade.** A `CanvasGroup` on the root, driven by the view on unscaled time: 0 -> 1 over 0.35 s
+    on show, 1 -> 0 over 0.5 s on hide, `blocksRaycasts` on while visible. The Synty In/Out clips
+    only animate the Content/Vignette groups, so the backdrop used to pop. The loaders'
+    `finishedDelay` (0.6 s) already outlasts the fade-out.
+  - **"No cameras rendering".** The home scene's camera dies with its scene and the gameplay
+    camera only spawns with the character, so the editor showed its notice for the gap (a build
+    would show a stale frame under the overlay). A `FallbackCamera` child - URP base camera,
+    culling mask 0, solid black clear, depth -100, post-processing off, no AudioListener - is
+    enabled by `Show()` and released from `LateUpdate` once the loaders deactivate the screen root.
+    Real cameras render over it by depth, so it costs one clear while the screen is up and nothing
+    otherwise.
+
+- **Loading screen on the Synty Fantasy Menus template** (2026-09-02) — new
+  `Assets/1. Data/Prefabs/UI Prefabs/CanvasLoading_G.prefab` replaces the kit's `CanvasLoading`
+  instance in `Demo/Scenes/00Init.unity` (a stock-scene edit; re-apply after a Demo reimport).
+  - Root: Canvas (overlay, sort order 100), CanvasScaler at Synty's 3840x2160 design resolution
+    matching height, plus three project components. The Synty
+    `Screen_FantasyMenus_Loading_01` sits underneath as a *nested prefab instance*, so pack
+    updates flow through; the only override on it is a `TextWrapper` added to
+    `Label_LoadingPercentage`. It starts inactive and is the loaders' `rootObject`.
+  - `Assets/Scripts/UI/Loading/UILoadingScreenView.cs` owns the Synty-specific bits: the
+    screen Animator's `Active` bool (true = In state, false = Out, 0.5 s) and a random tip into
+    `Label_Tooltip` on every show, never the same tip twice in a row. Five starter tips on the
+    component; edit them on the prefab.
+  - `UINetworkSceneLoading_G : UINetworkSceneLoading` handles map loads. The `NetworkManager`'s
+    `LiteNetLibAssets.onLoadScene*` and `LanRpgNetworkManager.onSpawnEntities*` events were
+    re-pointed from the old canvas to it (six persistent calls, method names unchanged, assembly
+    type names filled in). `finishedDelay` 0.6 s so the Out animation finishes before the root
+    is hidden.
+  - `UISceneLoading_G : UISceneLoading` handles `GameInstance.LoadHomeScene()`. **Kit bug worked
+    around:** `UISceneLoading.Singleton` has a private setter that nothing in the kit assigns, so
+    `LoadHomeScene()` always took its "no loading UI" branch and the home scene loaded bare.
+    The subclass sets the property through reflection in `Awake`; harmless once upstream fixes
+    it. The Out animation is triggered from `SceneManager.sceneLoaded`, which fires inside the
+    base method's `finishedDelay` wait.
+  - Progress text and slider are bound on both loaders (`Label_LoadingPercentage`,
+    `Slider_Horizontal`, non-interactable). The status label is deliberately not bound: the kit
+    would overwrite the "LOADING GAME" header with "Scene Loading...". The background still shows
+    Synty's sample main-menu screenshot (`SPR_Screenshot`) - swap it for a shot of the world.
+
+- **Gameplay UI hotkeys rebound** (2026-09-02) — `UISceneGameplay.toggleUis` on
+  `CanvasGameplay_G.prefab`: Hero (`UICharacterDialog`) C -> N, Inventory (`UIItemsDialog`)
+  I -> B, Quests (`UIQuestDialog`) Q -> L, Party (`UIPartyDialog`) P -> O, Skills (`UISkillsDialog`) T -> P, Friends (`UIFriendDialog`) L -> J.
+  Guild (G) unchanged. Opening Friends still logs "request type 137/178 not registered" and a
+  "service not available" dialog in LAN mode, since `LanRpgNetworkManager` registers no friend
+  request handlers - the binding is kept for when one exists.
+
+- **Weapon grip placement from play-mode tuning** (2026-09-02) — values read off the instantiated
+  `(Clone)` objects in the Inspector and written to the items' `EquipmentModel`:
+  sword `localPosition (0.116, 0.03, -0.01)`, `localEulerAngles (-4.329, 269.014, -254.013)`;
+  shield `localPosition (0, 0, 0)`, `localEulerAngles (-92.142, -3.617981, -88.71701)`. The sword
+  values went onto every right-hand Fantasy Hero weapon - `OneHandSword001_G`, `SyntySword001_G`,
+  `TwoHandSword001_G`, `Staff001_G` - since the pack shares one grip pivot; the greatsword and
+  staff may still want a nudge. `DarkFortressSword001_G` keeps its own offsets.
+  `BaseCharacterModel` applies these as local position/euler on instantiate, so the numbers are
+  exactly what the Inspector shows on the clone.
+
+- **Attack while moving, turning locked during the swing** (2026-09-02) — on all five project
+  weapons: `moveSpeedRateWhileAttacking` 0 -> 1 (0 froze the character for the whole animation)
+  and `movementRestrictionWhileAttacking.turnRestricted` on. The lock holds on both rotation
+  paths of `CharacterControllerEntityMovement`: `TopDownAimController` feeds aim through
+  `SetLookRotation`, which returns early while `CanTurn()` is false, and the movement-direction
+  turn in `BuiltInEntityMovementFunctions3D` is gated the same way. The kit has no "slow turn
+  while attacking" - it is a hard lock or nothing - so lock it is. The rate is per item; drop it
+  below 1 for a heavier feel on the greatsword.
+
+- **Warrior starter set** (2026-09-02) — seven new items under `Assets/1. Data/GameData/Items/`,
+  all registered in `GameDatabase_G` (25 items now) and wired into `Warrior_G`: right hand
+  `OneHandSword001_G`, left hand `Shield001_G`, armor `Chest001_G` / `Legs001_G` / `Boots001_G` /
+  `Gloves001_G`, and `TwoHandSword001_G` + `Staff001_G` in the start inventory.
+  - Armor pieces are copies of `Legs001_G` with the socket and armor type swapped
+    (`Body`, `Gloves`, `Boots`) and instantiated-object index 1 on every piece, so the four show
+    the same Synty outfit variant as the existing legs. `Legs001_G`'s title changed from
+    "Legs001_G" to "Legs 01" and its "Test legs" description replaced, to match the set.
+  - Weapons are copies of `SyntySword001_G` pointed at `PolygonFantasyHeroCharacters` prefabs:
+    `SM_Wep_Sword_01` (OneHandSword, 8-12), `SM_Wep_Sword_Large_01` (TwoHandSword, 14-20,
+    weight 4), `SM_Wep_Staff_01` (OneHandStaff, 6-10). Grip offsets zero, scale zero (the kit reads
+    zero as "prefab scale"). `OneHandSword001_G` uses the same mesh as `SyntySword001_G`, which is
+    now redundant and can go once nothing else needs it.
+  - `Shield001_G` is a copy of the demo `Shield001` (`ShieldItem`) pointed at `SM_Wep_Shield_01`
+    on the `Shield` socket, demo drop model and equipment set cleared; it keeps the demo refine
+    table the way `Legs001_G` does.
+  - No icons on the new items: neither art pack carries anything identifiable as a sword,
+    shield, staff or armor piece by name, so they are left empty rather than guessed.
+  - The empty `Items/Armors/Shoes/` folder was replaced by `Items/Armors/Boots/` to follow the
+    armor-type rename, and `.gitkeep` removed from Body, Gloves and Shields.
+  - `SerializedProperty.intValue` on the float `weight` field logs "type is not a supported int
+    value" and skips the write instead of throwing, so an editor script that sets it must use
+    `floatValue` - found out the hard way on the greatsword.
+
+- **Armor type `Shoes` renamed `Boots`** (2026-09-02) — now
+  `Assets/1. Data/GameData/ArmorTypes/Boots.asset`, GUID kept, `defaultTitle` and `equipPosition`
+  set to `Boots`, so the demo `Shoes001/002` items and the `UIEquipItems.otherEquipSlots` binding
+  in `UIItemsDialog.prefab` still resolve it. The two "Shoes" labels and the `EquipSlotShoes`
+  object in that prefab were renamed to Boots to match.
+
+- **Synty leg slots split: `Legs` = hips mesh, `Boots` = leg meshes** (2026-09-02) — Synty's
+  `Male_10_Hips` mesh covers pelvis and thighs and the `Male_11/12_Leg_*` meshes cover shin and
+  foot, so a `Legs` socket spanning all three showed boots and shins whenever pants were equipped.
+  `SyntyEquipmentContainerBuilder`'s slot map now wires `Legs` to the hips part alone and a new
+  `Boots` socket to the two leg parts, and the builder was re-run on `SyntyPlayerCharacter`
+  through its `Build()` entry point (18 sockets rebuilt, `WeaponR`/`WeaponL`/`Shield` untouched,
+  no other container changed in the diff). `Legs` became a single-object container (indices
+  0-28, default `Chr_Hips_Male_00`), `Boots` an object-group container (indices 0-19, default 0).
+  `Legs001_G` keeps index 1, which now selects `Chr_Hips_Male_01` only. Boot items equip with
+  socket `Boots` and the leg-mesh number as index.
+  - Stock Synty quirk worth knowing: the `Chr_LegLeft_*` meshes sit under `Male_11_Leg_Right` and
+    `Chr_LegRight_*` under `Male_12_Leg_Left`. Harmless here, since each Boots group holds both.
+
+- **15 cloak items** (2026-09-02) — `Assets/1. Data/GameData/Items/Armors/Cloak/Cloak001_G` to
+  `Cloak015_G`, copied from `Legs001_G`: armor type `Cloak`, socket `Cloak`, instantiated-object
+  index = the `Chr_BackAttachment_NN` mesh number, titles "Cloak 01" to "Cloak 15", description
+  cleared, no icon yet; sell price, weight and refine table inherited from the template. All
+  registered in `GameDatabase_G`, which now lists 18 items. The Cloak folder's `.gitkeep` removed.
+
+- **`GameDatabase_G` emptied of prototype content** (2026-09-02) — the explicit-list database now
+  holds project data only: `SyntyPlayerCharacter` as the single player entity, the new `Warrior_G`
+  class, the three project items (`SyntySword001_G`, `DarkFortressSword001_G`, `Legs001_G`),
+  `Prototype_World_01` as the only map, and the type tables those depend on: attributes
+  Str/Dex/Int/Vit, currency Fame, damage elements Fire/Ice/Lightning/Poison, armor types
+  Body/Cloak/Gloves/Head/Legs/Ring/Shoes, weapon types OneHandSword/TwoHandSword/OneHandStaff/Bow,
+  ammo type Arrow (Bow's required ammo). Everything else — 57 demo items, four demo classes and
+  entities, monsters, the Alpaca vehicle, skills, craft formulas, quests, factions, gachas, guild
+  skills and icons, status effects, harvestables, Map001/Map002/Map_GuildWar — was removed from
+  the list only; the assets stay on disk for the demo scenes.
+  - Shield is not a WeaponType in the kit. `ShieldItem` is its own item class with no type asset,
+    so there was nothing to keep; the `Shield` socket on the Synty model is already in place.
+  - Kept type assets moved from `Demo/GameData/Resources/<Category>/` to
+    `Assets/1. Data/GameData/<Category>/` with `AssetDatabase.MoveAsset`, GUIDs verified unchanged,
+    so demo items, demo classes and `Demo/GameData/GameDatabase.asset` still resolve them. They no
+    longer sit under a `Resources/` folder, and `TwoHandSword` — which carries the project's 2H
+    attack setup — is now outside the store-only `Demo/` tree a kit reimport would overwrite.
+  - `.gitkeep` removed from the six category folders that now have content.
+
+- **`Warrior_G` player class** (2026-09-02) — `Assets/1. Data/GameData/PlayerCharacters/Warrior_G.asset`,
+  copied from the demo Warrior so base stats and per-level growth carry over, then stripped: no
+  skills, no start inventory, right hand `SyntySword001_G`, armor `Legs001_G`, start map
+  `Prototype_World_01`. The map's start position `(0, 0.1, 0)` was checked in the scene: terrain
+  height 0 there, on the NavMesh, and the scene's own `SpawnPoint` object sits at the origin. Still
+  uses the demo Warrior icon sprite. Set as the only entry in `SyntyPlayerCharacter`'s
+  `characterDatabases`, replacing Warrior/Mage/Archer/Novice.
+
+- **Own `NewCharacterSetting_G`, `NpcDatabase_G` and `WarpPortalDatabase_G`** (2026-09-02) — all
+  empty (0 start gold, no start items, no NPC or portal maps) in `Assets/1. Data/`, and set on the
+  GameInstance in `Demo/Scenes/00Init.unity` in place of the demo ones, which gave every new
+  character 2000 gold and ~30 demo items including guns, bullets and building pieces. This is an
+  edit to a stock kit scene — re-apply after a Demo reimport. Still pointing at demo assets on that
+  GameInstance: gameplay rule, network setting, social setting, cash shop, home scene `01Home`.
+  - Existing LAN saves were created with the removed demo classes. The kit strips unknown items,
+    skills and attributes on load but the class itself is gone, so create a new character instead
+    of reusing them.
+
 - **Freshly imported Asset Store SFX/VFX/animation/model packs added to `.gitignore`** (2026-08-31) —
   `Assets/Action RPG SFX V2/` (187 MB), `Assets/Hovl Studio/` (318 MB), `Assets/Kevin Iglesias/`
   (338 MB) and `Assets/Melee Weapons Pack 1/` (1.1 GB), plus their `.meta` files. ~1.9 GB of
@@ -493,6 +764,15 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 - **`Assets/TopDownController/Demo/Scenes/00Init_TopDownDemo.unity`** and its `.lighting` file
   (2026-08-28) — the addon's demo scene, orphaned once the point-click prefab was deleted.
   Verified absent from Build Settings and unreferenced before removal.
+
+- **Demo shooter weapon and ammo types deleted** (2026-09-02, by hand in the editor) —
+  `Demo/GameData/Resources/WeaponTypes/{Grenade,MachineGun,Pistol,Sniper}.asset` and
+  `Demo/GameData/Resources/AmmoTypes/{MachineGunBullet,PistolBullet,SniperBullet}.asset`. On the
+  next save the kit's validation dropped the now-null references from `Demo/GameData/GameDatabase.asset`
+  and reordered two of its armor-type entries. The demo gun items (Pistol001, Sniper001,
+  MachineGun001, Grenade001 and their bullets) now point at missing types; they are not in
+  `GameDatabase_G`, so only the demo scenes are affected. Restorable with
+  `git checkout -- <path>` since the files were tracked.
 
 ## Environment notes
 

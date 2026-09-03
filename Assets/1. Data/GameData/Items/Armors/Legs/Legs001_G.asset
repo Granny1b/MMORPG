@@ -14,11 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MultiplayerARPG.ArmorItem
   btnValidate: 0
   id: 
-  defaultTitle: Legs001_G
+  defaultTitle: Legs 01
   languageSpecificTitles: []
-  defaultDescription: 'Test legs
-
-'
+  defaultDescription: Starter leg armor.
   languageSpecificDescriptions: []
   category: 
   icon: {fileID: 21300000, guid: f0d0b67838166d14c938ad5254d9e4d1, type: 3}

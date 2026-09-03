@@ -29,12 +29,14 @@ namespace MultiplayerARPG
         private AvatarMask movingMask;
 
         private PlayableCharacterModel _model;
+        private DirectionalRollDash _roll;
         private bool _hasApplied;
         private bool _appliedMasked;
 
         private void Awake()
         {
             _model = GetComponent<PlayableCharacterModel>();
+            _roll = GetComponent<DirectionalRollDash>();
         }
 
         private void LateUpdate()
@@ -72,6 +74,9 @@ namespace MultiplayerARPG
             // The same condition PlayAction uses, so this only ever continues the kit's own logic.
             bool shouldMask = _model.MovementState.HasDirectionMovement()
                 && _model.MovementState.Has(MovementState.IsGrounded);
+            // A dodge roll is a full-body action that moves the character; never trim it to the upper body.
+            if (_roll != null && _roll.IsRolling)
+                shouldMask = false;
 
             if (_hasApplied && _appliedMasked == shouldMask)
                 return;

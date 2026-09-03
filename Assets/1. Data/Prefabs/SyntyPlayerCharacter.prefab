@@ -74462,6 +74462,8 @@ GameObject:
   - component: {fileID: 7437229708212974662}
   - component: {fileID: 3162828884025635975}
   - component: {fileID: 1839200562751605893}
+  - component: {fileID: 4904021485053957671}
+  - component: {fileID: 2790270401168252764}
   m_Layer: 0
   m_Name: SyntyPlayerCharacter
   m_TagString: Untagged
@@ -74838,112 +74840,40 @@ MonoBehaviour:
     activatingInstantiateObjectIndex: 0
   - equipSocket: Legs
     transform: {fileID: 1693285985426195406}
-    defaultModel: {fileID: 0}
-    instantiatedObjects: []
+    defaultModel: {fileID: 1690845724326734310}
+    instantiatedObjects:
+    - {fileID: 1690845724326734310}
+    - {fileID: 1690093040059000706}
+    - {fileID: 1689616071346615898}
+    - {fileID: 1690115684387710970}
+    - {fileID: 1691097302458286312}
+    - {fileID: 1690542550075371756}
+    - {fileID: 1691063302093244870}
+    - {fileID: 1689686502591242570}
+    - {fileID: 1689985514144131836}
+    - {fileID: 1690089416530883538}
+    - {fileID: 1690388076201231860}
+    - {fileID: 1690953479738965330}
+    - {fileID: 1690320073908555476}
+    - {fileID: 1690275077221944134}
+    - {fileID: 1690925003610298924}
+    - {fileID: 1690119101100356106}
+    - {fileID: 1690367639171825768}
+    - {fileID: 1690138898239613474}
+    - {fileID: 1690117029091304236}
+    - {fileID: 1690547270578334704}
+    - {fileID: 1690081193770834452}
+    - {fileID: 1689993863261565828}
+    - {fileID: 1689644041444557554}
+    - {fileID: 1690485531339783896}
+    - {fileID: 1690134458504862546}
+    - {fileID: 1690374627499490682}
+    - {fileID: 1690385198204326900}
+    - {fileID: 1690997986343154442}
+    - {fileID: 1690152237409859976}
     defaultInstantiatedObjectGroup:
-      instantiatedObjects:
-      - {fileID: 1690845724326734310}
-      - {fileID: 1690966044407054778}
-      - {fileID: 1690190575363333750}
-    instantiatedObjectGroups:
-    - instantiatedObjects:
-      - {fileID: 1690845724326734310}
-      - {fileID: 1690966044407054778}
-      - {fileID: 1690190575363333750}
-    - instantiatedObjects:
-      - {fileID: 1690093040059000706}
-      - {fileID: 1690061450831417080}
-      - {fileID: 1691032217400483890}
-    - instantiatedObjects:
-      - {fileID: 1689616071346615898}
-      - {fileID: 1690381488384363446}
-      - {fileID: 1690551308662638812}
-    - instantiatedObjects:
-      - {fileID: 1690115684387710970}
-      - {fileID: 1690442458426080686}
-      - {fileID: 1690003416199907376}
-    - instantiatedObjects:
-      - {fileID: 1691097302458286312}
-      - {fileID: 1690995063404514652}
-      - {fileID: 1689643889782078228}
-    - instantiatedObjects:
-      - {fileID: 1690542550075371756}
-      - {fileID: 1689585199563975324}
-      - {fileID: 1691092279017417006}
-    - instantiatedObjects:
-      - {fileID: 1691063302093244870}
-      - {fileID: 1690424806138414164}
-      - {fileID: 1691051946799278004}
-    - instantiatedObjects:
-      - {fileID: 1689686502591242570}
-      - {fileID: 1690292586843728402}
-      - {fileID: 1689595377716958880}
-    - instantiatedObjects:
-      - {fileID: 1689985514144131836}
-      - {fileID: 1690842690841160346}
-      - {fileID: 1691055048457668480}
-    - instantiatedObjects:
-      - {fileID: 1690089416530883538}
-      - {fileID: 1690279648927204572}
-      - {fileID: 1691017993763655630}
-    - instantiatedObjects:
-      - {fileID: 1690388076201231860}
-      - {fileID: 1690068948972053006}
-      - {fileID: 1689645638080754884}
-    - instantiatedObjects:
-      - {fileID: 1690953479738965330}
-      - {fileID: 1690288288913156694}
-      - {fileID: 1690001164490942900}
-    - instantiatedObjects:
-      - {fileID: 1690320073908555476}
-      - {fileID: 1690360816662265160}
-      - {fileID: 1691008845300444734}
-    - instantiatedObjects:
-      - {fileID: 1690275077221944134}
-      - {fileID: 1690551425103944148}
-      - {fileID: 1690355823168469102}
-    - instantiatedObjects:
-      - {fileID: 1690925003610298924}
-      - {fileID: 1690140839484500314}
-      - {fileID: 1691040859646385006}
-    - instantiatedObjects:
-      - {fileID: 1690119101100356106}
-      - {fileID: 1690131911220358102}
-      - {fileID: 1690161500970403438}
-    - instantiatedObjects:
-      - {fileID: 1690367639171825768}
-      - {fileID: 1690320187800059258}
-      - {fileID: 1690942664071718070}
-    - instantiatedObjects:
-      - {fileID: 1690138898239613474}
-      - {fileID: 1690102749386003594}
-      - {fileID: 1690521418500432420}
-    - instantiatedObjects:
-      - {fileID: 1690117029091304236}
-      - {fileID: 1690391403013042606}
-      - {fileID: 1690982250875497680}
-    - instantiatedObjects:
-      - {fileID: 1690547270578334704}
-      - {fileID: 1689620316745857620}
-      - {fileID: 1690234428067861222}
-    - instantiatedObjects:
-      - {fileID: 1690081193770834452}
-    - instantiatedObjects:
-      - {fileID: 1689993863261565828}
-    - instantiatedObjects:
-      - {fileID: 1689644041444557554}
-    - instantiatedObjects:
-      - {fileID: 1690485531339783896}
-    - instantiatedObjects:
-      - {fileID: 1690134458504862546}
-    - instantiatedObjects:
-      - {fileID: 1690374627499490682}
-    - instantiatedObjects:
-      - {fileID: 1690385198204326900}
-    - instantiatedObjects:
-      - {fileID: 1690997986343154442}
-    - instantiatedObjects:
-      - {fileID: 1690152237409859976}
+      instantiatedObjects: []
+    instantiatedObjectGroups: []
     activatingInstantiateObjectIndex: 0
   - equipSocket: Head
     transform: {fileID: 1684757490056071482}
@@ -75343,6 +75273,76 @@ MonoBehaviour:
     defaultInstantiatedObjectGroup:
       instantiatedObjects: []
     instantiatedObjectGroups: []
+    activatingInstantiateObjectIndex: 0
+  - equipSocket: Boots
+    transform: {fileID: 1684901793669939820}
+    defaultModel: {fileID: 0}
+    instantiatedObjects: []
+    defaultInstantiatedObjectGroup:
+      instantiatedObjects:
+      - {fileID: 1690966044407054778}
+      - {fileID: 1690190575363333750}
+    instantiatedObjectGroups:
+    - instantiatedObjects:
+      - {fileID: 1690966044407054778}
+      - {fileID: 1690190575363333750}
+    - instantiatedObjects:
+      - {fileID: 1690061450831417080}
+      - {fileID: 1691032217400483890}
+    - instantiatedObjects:
+      - {fileID: 1690381488384363446}
+      - {fileID: 1690551308662638812}
+    - instantiatedObjects:
+      - {fileID: 1690442458426080686}
+      - {fileID: 1690003416199907376}
+    - instantiatedObjects:
+      - {fileID: 1690995063404514652}
+      - {fileID: 1689643889782078228}
+    - instantiatedObjects:
+      - {fileID: 1689585199563975324}
+      - {fileID: 1691092279017417006}
+    - instantiatedObjects:
+      - {fileID: 1690424806138414164}
+      - {fileID: 1691051946799278004}
+    - instantiatedObjects:
+      - {fileID: 1690292586843728402}
+      - {fileID: 1689595377716958880}
+    - instantiatedObjects:
+      - {fileID: 1690842690841160346}
+      - {fileID: 1691055048457668480}
+    - instantiatedObjects:
+      - {fileID: 1690279648927204572}
+      - {fileID: 1691017993763655630}
+    - instantiatedObjects:
+      - {fileID: 1690068948972053006}
+      - {fileID: 1689645638080754884}
+    - instantiatedObjects:
+      - {fileID: 1690288288913156694}
+      - {fileID: 1690001164490942900}
+    - instantiatedObjects:
+      - {fileID: 1690360816662265160}
+      - {fileID: 1691008845300444734}
+    - instantiatedObjects:
+      - {fileID: 1690551425103944148}
+      - {fileID: 1690355823168469102}
+    - instantiatedObjects:
+      - {fileID: 1690140839484500314}
+      - {fileID: 1691040859646385006}
+    - instantiatedObjects:
+      - {fileID: 1690131911220358102}
+      - {fileID: 1690161500970403438}
+    - instantiatedObjects:
+      - {fileID: 1690320187800059258}
+      - {fileID: 1690942664071718070}
+    - instantiatedObjects:
+      - {fileID: 1690102749386003594}
+      - {fileID: 1690521418500432420}
+    - instantiatedObjects:
+      - {fileID: 1690391403013042606}
+      - {fileID: 1690982250875497680}
+    - instantiatedObjects:
+      - {fileID: 1689620316745857620}
+      - {fileID: 1690234428067861222}
     activatingInstantiateObjectIndex: 0
   setEquipmentLayerFollowEntity: 1
   equipmentLayer:
@@ -76071,8 +76071,8 @@ MonoBehaviour:
       applyPlayableIk: 0
     dashStartState:
       clip: {fileID: 0}
-      animSpeedRate: 0
-      transitionDuration: 0
+      animSpeedRate: 1
+      transitionDuration: 0.1
       isAdditive: 0
       applyFootIk: 0
       applyPlayableIk: 0
@@ -77755,7 +77755,67 @@ MonoBehaviour:
       skipMovementValidation: 0
       shouldUseRootMotion: 0
   skillAnimations: []
-  customAnimations: []
+  customAnimations:
+  - clip: {fileID: -6821712913461239410, guid: 3dd6129ee8b00f44294969e4601728a5, type: 3}
+    animSpeedRate: 1
+    transitionDuration: 0.1
+    isAdditive: 0
+    applyFootIk: 0
+    applyPlayableIk: 0
+    avatarMask: {fileID: 0}
+    clipWhileMoving: {fileID: 0}
+    avatarMaskWhileMoving: {fileID: 0}
+    clipWhileSprinting: {fileID: 0}
+    avatarMaskWhileSprinting: {fileID: 0}
+    clipWhileAirbourne: {fileID: 0}
+    avatarMaskWhileAirbourne: {fileID: 0}
+    skipMovementValidation: 0
+    shouldUseRootMotion: 0
+  - clip: {fileID: -5513451613650016088, guid: 63d4732793f6f534887f433911ae8fd3, type: 3}
+    animSpeedRate: 1
+    transitionDuration: 0.1
+    isAdditive: 0
+    applyFootIk: 0
+    applyPlayableIk: 0
+    avatarMask: {fileID: 0}
+    clipWhileMoving: {fileID: 0}
+    avatarMaskWhileMoving: {fileID: 0}
+    clipWhileSprinting: {fileID: 0}
+    avatarMaskWhileSprinting: {fileID: 0}
+    clipWhileAirbourne: {fileID: 0}
+    avatarMaskWhileAirbourne: {fileID: 0}
+    skipMovementValidation: 0
+    shouldUseRootMotion: 0
+  - clip: {fileID: 8349434863822044283, guid: d1b0bc5999cc985488548bbe48b832f2, type: 3}
+    animSpeedRate: 1
+    transitionDuration: 0.1
+    isAdditive: 0
+    applyFootIk: 0
+    applyPlayableIk: 0
+    avatarMask: {fileID: 0}
+    clipWhileMoving: {fileID: 0}
+    avatarMaskWhileMoving: {fileID: 0}
+    clipWhileSprinting: {fileID: 0}
+    avatarMaskWhileSprinting: {fileID: 0}
+    clipWhileAirbourne: {fileID: 0}
+    avatarMaskWhileAirbourne: {fileID: 0}
+    skipMovementValidation: 0
+    shouldUseRootMotion: 0
+  - clip: {fileID: 1785380911206079018, guid: 3f3848065b8e77c489f46f86ca36957b, type: 3}
+    animSpeedRate: 1
+    transitionDuration: 0.1
+    isAdditive: 0
+    applyFootIk: 0
+    applyPlayableIk: 0
+    avatarMask: {fileID: 0}
+    clipWhileMoving: {fileID: 0}
+    avatarMaskWhileMoving: {fileID: 0}
+    clipWhileSprinting: {fileID: 0}
+    avatarMaskWhileSprinting: {fileID: 0}
+    clipWhileAirbourne: {fileID: 0}
+    avatarMaskWhileAirbourne: {fileID: 0}
+    skipMovementValidation: 0
+    shouldUseRootMotion: 0
 --- !u!143 &5830146416372977105
 CharacterController:
   m_ObjectHideFlags: 0
@@ -77891,9 +77951,9 @@ MonoBehaviour:
   crawlCheckRadius: 1
   crawlCheckGizmosColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
   dashingForceApplier:
-    speed: 20
-    deceleration: 20
-    duration: 0
+    speed: 8
+    deceleration: 0
+    duration: 1.167
   alwaysUseRootMotion: 0
   useRootMotionForMovement: 0
   useRootMotionForAirMovement: 0
@@ -78153,10 +78213,7 @@ MonoBehaviour:
     logTagName: 
     isDebug: 0
   characterDatabases:
-  - {fileID: 11400000, guid: 8c31218a0e7c7604ea751e1a56a13a76, type: 2}
-  - {fileID: 11400000, guid: f924bc5e901d46141bb3c3ca9b6ef27a, type: 2}
-  - {fileID: 11400000, guid: 0122f68aff58f2a4e995208bf67f18ba, type: 2}
-  - {fileID: 11400000, guid: 1f9d2937bcd564b47b49c53b58e4e8af, type: 2}
+  - {fileID: 11400000, guid: 5a8c56a24f4585648bafd70b5534a996, type: 2}
   dataId:
     _behaviour: {fileID: 0}
     _elementId: 0
@@ -78512,6 +78569,233 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &4904021485053957671
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6611212440638421215}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de11c5b3cb692194289a4ae53de69915, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MultiplayerARPG.DisabledMovementStates
+  disableSprint: 1
+  disableCrouch: 1
+  disableCrawl: 1
+  disableJump: 1
+--- !u!114 &2790270401168252764
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6611212440638421215}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c91dad3d861edad46aaa0fa5504de806, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MultiplayerARPG.DirectionalRollDash
+  rollDistance: 3.7
+  rollDuration: 1.167
+  distanceProfile:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0.42
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.05
+      value: 0.021
+      inSlope: 0.42
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.1
+      value: 0.071
+      inSlope: 1
+      outSlope: 1.6199998
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.15
+      value: 0.152
+      inSlope: 1.6199998
+      outSlope: 2.3600004
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.2
+      value: 0.27
+      inSlope: 2.3600004
+      outSlope: 2.2599998
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.25
+      value: 0.383
+      inSlope: 2.2599998
+      outSlope: 1.8799998
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.3
+      value: 0.477
+      inSlope: 1.8799998
+      outSlope: 1.6800004
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.35
+      value: 0.561
+      inSlope: 1.6800004
+      outSlope: 2.18
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.4
+      value: 0.67
+      inSlope: 2.18
+      outSlope: 1.5200001
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.45
+      value: 0.746
+      inSlope: 1.5200001
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.5
+      value: 0.796
+      inSlope: 1
+      outSlope: 0.7599996
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.55
+      value: 0.834
+      inSlope: 0.7599996
+      outSlope: 0.83999974
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.6
+      value: 0.876
+      inSlope: 0.83999974
+      outSlope: 0.8400007
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.65
+      value: 0.918
+      inSlope: 0.8400007
+      outSlope: 0.7200001
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.7
+      value: 0.954
+      inSlope: 0.7200001
+      outSlope: 0.44000018
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.75
+      value: 0.976
+      inSlope: 0.44000018
+      outSlope: 0.19999976
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.8
+      value: 0.986
+      inSlope: 0.19999976
+      outSlope: 0.18000002
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.85
+      value: 0.995
+      inSlope: 0.18000002
+      outSlope: 0.060000475
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.9
+      value: 0.998
+      inSlope: 0.060000475
+      outSlope: 0.019999737
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.95
+      value: 0.999
+      inSlope: 0.019999737
+      outSlope: 0.019999737
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0.019999737
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  releaseAtTravel: 0.9
+  lockMovementDuringTail: 1
 --- !u!1 &6685246626844922709
 GameObject:
   m_ObjectHideFlags: 0

@@ -47,8 +47,8 @@ MonoBehaviour:
     priority: 0
     doNotSetupBones: 0
     equipmentModelBonesSetupManager: {fileID: 0}
-    localPosition: {x: 0, y: 0, z: 0}
-    localEulerAngles: {x: 0, y: 0, z: 0}
+    localPosition: {x: 0.116, y: 0.03, z: -0.01}
+    localEulerAngles: {x: -4.329, y: 269.014, z: -254.013}
     doNotChangeScale: 0
     localScale: {x: 0, y: 0, z: 0}
     useSpecificSheathEquipWeaponSet: 0
@@ -625,7 +625,7 @@ MonoBehaviour:
   moveSpeedRateWhileEquipped: 1
   moveSpeedRateWhileReloading: 1
   moveSpeedRateWhileCharging: 1
-  moveSpeedRateWhileAttacking: 0
+  moveSpeedRateWhileAttacking: 1
   movementRestrictionWhileReloading:
     jumpRestricted: 0
     dashRestricted: 0
@@ -636,8 +636,8 @@ MonoBehaviour:
     turnRestricted: 0
   movementRestrictionWhileAttacking:
     jumpRestricted: 0
-    dashRestricted: 0
-    turnRestricted: 0
+    dashRestricted: 1
+    turnRestricted: 1
   attackRestriction:
     restrictedWhileAirborne: 0
     restrictedWhileCrouching: 0

@@ -204,25 +204,25 @@ MonoBehaviour:
   showVendingUiOnActivate: 1
   toggleUis:
   - ui: {fileID: 3948214071897220108}
-    keyCode: 99
+    keyCode: 110
     buttonName: 
   - ui: {fileID: 114864523982907466}
-    keyCode: 105
+    keyCode: 98
     buttonName: 
   - ui: {fileID: 3643300943340481287}
-    keyCode: 116
+    keyCode: 112
     buttonName: 
   - ui: {fileID: 1150938618738099611}
-    keyCode: 113
+    keyCode: 108
     buttonName: 
   - ui: {fileID: 2350828162277250448}
-    keyCode: 112
+    keyCode: 111
     buttonName: 
   - ui: {fileID: 9029760540621653906}
     keyCode: 103
     buttonName: 
   - ui: {fileID: 4077059892062307405}
-    keyCode: 108
+    keyCode: 106
     buttonName: 
   ignorePointerOverUITags: []
   ignorePointerOverUIObjects:

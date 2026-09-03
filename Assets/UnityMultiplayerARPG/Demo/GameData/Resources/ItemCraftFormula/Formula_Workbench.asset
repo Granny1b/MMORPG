@@ -20,11 +20,6 @@ MonoBehaviour:
   languageSpecificDescriptions: []
   category: 
   icon: {fileID: 0}
-  addressableIcon:
-    m_AssetGUID: 
-    m_SubObjectName: 
-    m_SubObjectType: 
-    m_EditorAssetChanged: 0
   itemCraft:
     craftingItem: {fileID: 11400000, guid: 52d2c6fb152031542b7798e45c786553, type: 2}
     amount: 1

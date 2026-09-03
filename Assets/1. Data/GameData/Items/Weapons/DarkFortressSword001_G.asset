@@ -636,8 +636,8 @@ MonoBehaviour:
     turnRestricted: 0
   movementRestrictionWhileAttacking:
     jumpRestricted: 0
-    dashRestricted: 0
-    turnRestricted: 0
+    dashRestricted: 1
+    turnRestricted: 1
   attackRestriction:
     restrictedWhileAirborne: 0
     restrictedWhileCrouching: 0

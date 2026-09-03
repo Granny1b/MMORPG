@@ -60,9 +60,12 @@ namespace MMORPGGranny.EditorTools
                 "{G}_Parts/{G}_08_Hand_Right",
                 "{G}_Parts/{G}_09_Hand_Left"),
             // Socket names follow the kit's armor-type convention, which is body parts rather than
-            // garments: Body, Head, Gloves, Shoes - so Legs, not Pants.
+            // garments: Body, Head, Gloves, Boots - so Legs, not Pants.
+            // Synty's Hips mesh covers the pelvis and thighs; the two Leg meshes cover the shin and
+            // foot. So Legs (pants) is the hips part alone, and Boots is the pair of leg parts.
             new SlotDef("Legs",
-                "{G}_Parts/{G}_10_Hips",
+                "{G}_Parts/{G}_10_Hips"),
+            new SlotDef("Boots",
                 "{G}_Parts/{G}_11_Leg_Right",
                 "{G}_Parts/{G}_12_Leg_Left"),
             // Head children are named ..._All_Elements / ..._No_Elements, so they index by order and
