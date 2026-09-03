@@ -7,6 +7,297 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ## [Unreleased]
 
+### Added
+
+- **`Documentation/Systems/04_CAMERA_SHAKE_DESIGN.md`** (2026-09-03) — design for a camera shake
+  system with a locally callable API and server-decided shakes. Design only, nothing implemented.
+  - **A server-decided shake mostly needs no networking.** The server already replicates a boss's
+    skill to every observing client (`[AllRpc] RpcUseSkill`,
+    `DefaultCharacterUseSkillComponent.cs:518`) and each of those clients already instantiates
+    `skill.SkillActivateEffects` locally (`GameEntityModel.InstantiateEffect:263`, called at
+    `DefaultCharacterUseSkillComponent.cs:276/285/292`), and `PoolSystem` fires the pooled prefab's
+    serialized `onGetInstance` UnityEvent on every spawn (`PoolDescriptor.cs:16`, `:24`). A shake
+    component on the effect prefab, wired to that event, is therefore server-decided, correctly
+    interest-filtered and free. Recording this because the obvious design — a new RPC and a new
+    message id — is the *second* tier, not the first.
+  - **The camera pose is rewritten absolutely every frame, which is what makes the shake easy.**
+    `FollowCamera` is `[DefaultExecutionOrder(int.MinValue)]` (`FollowCamera.cs:7`) and assigns
+    `CacheCameraTransform.position/rotation` outright from `LateUpdate` (`:207-208`). So anything
+    running earlier is silently discarded, and anything running later gets a clean base pose and
+    cannot accumulate drift — no save/restore, no reset when the shake ends. The kit already relies
+    on this once, for weapon recoil (`FollowCameraControls.cs:207`, applied at `:212-221`).
+  - **Rejected: a parent "shake pivot" so the camera's own transform stays clean.** The pose is
+    written in *world* space onto the camera's own transform (`FollowCamera.cs:45`, `:79`,
+    `:207-208`), so a parent offset is ignored outright, and moving the `Camera` onto a child just
+    relocates the problem. There is no clean transform to hide behind; post-processing the pose is
+    the mechanism, not a workaround.
+  - **Rejected: reusing `FollowCameraControls.Recoil`.** It is rotation-only (`:221`), a spring
+    toward zero rather than a windowed envelope (`:219-220`), has one global amplitude with no
+    per-source blending, and `ShooterRecoilUpdater.cs:271` already owns it for gun recoil. Sharing
+    it would make weapon recoil and world shake fight over one accumulator. Both are additive
+    offsets on a pose rebuilt each frame, so a second component sums with it for free.
+  - **Camera shake shakes the *aim* in this project, not just the picture.**
+    `TopDownAimController.TryGetCursorWorldPosition` builds its ray with
+    `camera.ScreenPointToRay` (`:216`) and the result drives the character's replicated facing
+    (`:200`). The shake lands in `LateUpdate` and the aim is read in `Update`, so the aim uses the
+    previous frame's shaken pose — a real one-frame wobble on a stationary mouse. The fix is to
+    cache the pre-shake pose and aim from that; the kit's own click-pick
+    (`PlayerCharacterController_Inputs.cs:32`) keeps the jitter, accepted rather than patching
+    `Core/`. This is the assumption to prove before building anything else.
+  - **`[AllRpc]` handlers run on the server too**, so client-only presentation must be a no-op
+    there and not merely unlikely to run: host connections dispatch by direct `HookCallback()`
+    (`LiteNetLibRPC.cs:78-83`) and a dedicated server invokes the callback as well
+    (`:95-97`). The design leans on one guard — the static camera reference being null — so that no
+    call site anywhere needs an `IsClient` check.
+  - **Never add a new `LiteNetLibBehaviour` to an existing networked prefab to carry the RPC.**
+    `behaviourIndex` is the position in `GetComponentsInChildren<LiteNetLibBehaviour>()`
+    (`LiteNetLibIdentity.cs:584`) and is hashed into every RPC and sync-element id
+    (`LiteNetLibBehaviour.cs:1193-1207`), so inserting a component silently renumbers everything
+    after it, child objects included. Same-build client and server still agree, which means this
+    fails only across mismatched builds. A `partial class` on an existing behaviour moves no index.
+  - **Camera shake profiles should not go in `GameDatabase_G`.** `GameDatabase` holds a fixed set
+    of typed arrays (`GameDatabase.cs:25-63`) with no generic slot; a new type would need the
+    `partial` field plus a `[DevExtMethods("LoadDataImplement")]` hook (`:18`, `:136`). That route
+    works, but only the RPC tiers ever name a profile over the wire and a standalone profile set
+    keyed by `GenerateHashId` (`BaseGameData.cs:180`, `:184`) covers it without putting
+    presentation tuning in the asset that governs items, skills and quests. Also rejected: sending
+    raw shake parameters (freezes tuning into the server build, grows with every new field) and
+    sending an array index (breaks on reorder — hashed string ids do not).
+  - **The tier-1 spawn hook is reliable for `GameEffect` and quietly is not for networked prefabs.**
+    `PoolSystem.GetInstance` invokes `OnGetInstance()` after its if/else, so it fires on both the
+    dequeue and the fresh-instantiate branch (`PoolSystem.cs:108`), with an uninitialised pool
+    routed through `InitPool` and recursion (`:113-114`). `LiteNetLibAssets.GetObjectInstance`
+    invokes it **only** when dequeuing (`:324`) and not when instantiating (`:331-334`), and
+    `disablePooling` skips pooling entirely (`:274`, `:286`) — so a shake wired to a networked
+    prefab's `onGetInstance` works until the pool exceeds `PoolingSize` (`:302`), i.e. fails exactly
+    when the fight is busiest. Correct as the *reset* hook the kit uses it for
+    (`AreaDamageEntity.cs:33`); wrong as a fire-on-spawn hook. `OnEnable` is not the fix either:
+    pool pre-warm instantiates each instance active before deactivating it (`:304-306`), giving
+    `PoolingSize` phantom firings at load, and `NetworkSpawn` calls `SetActive(true)` (`:465`)
+    before `Initial(...)` assigns an object id (`:466`), so there is nothing to guard on. Use
+    `OnStartClient` (`LiteNetLibAssets.cs:472-473`, dispatched at `LiteNetLibIdentity.cs:642-644`).
+  - **Skill effects anchor to the caster's socket, not to the world.** `InstantiateEffect` requires a
+    non-empty `effectSocket`, resolves it against the model's containers, spawns at that container
+    and sets `FollowingTarget` to it (`GameEntityModel.cs:269-280`). So a stomp shakes outward from
+    the boss, which is right, but a meteor's activate effect would shake outward from its *caster*,
+    which is not. Ground-targeted abilities must take their origin from the `AreaDamageEntity`,
+    network-spawned at the aim position (`SimpleAreaAttackSkill.cs:148-153`). A third anchor exists
+    for "you personally were hit": `DamageableEntity.PlayHitEffects` off `[AllRpc]
+    RpcAppendCombatText` (`:236`, `:303`).
+  - **`SkillActivateEffects` lead the impact.** They spawn after the cast delay but *before* the
+    action animation plays (`DefaultCharacterUseSkillComponent.cs:270-297`), so an un-delayed shake
+    fires before the foot lands. Recording it because it reads as a physics bug, not a timing one.
+  - **Tier 1 costs nothing on a dedicated server.** Skill effect instantiation is inside
+    `if (IsClient)` (`DefaultCharacterUseSkillComponent.cs:271`) and hit effects behind
+    `if (!IsClient) return;` (`DamageableEntity.cs:255`), so the server never builds the effect that
+    would carry the shake.
+  - **Falloff must be measured from the camera's follow target, not the camera.** The camera is
+    offset back by `zoomDistance` (`FollowCamera.cs:183`), so measuring from it makes the same
+    explosion feel weaker the further a player has zoomed out — a difficulty difference produced by
+    a camera setting.
+  - **The aim wobble camera shake causes is accepted, not fixed** (decided 2026-09-03). Shaking the
+    camera shakes the cursor ray and therefore the character's replicated facing; the fix exists and
+    needs no kit edit (cache the pre-shake pose, aim from that), but the wobble is bounded by the
+    shake amplitude — degrees and centimetres — and only exists while a shake runs. This removed a
+    build step and the `UnshakenPosition`/`UnshakenRotation` requirement from the shaker. The
+    mechanism stays documented so a twitching character during a stomp is not re-investigated as a
+    bug, and it puts a ceiling on rotation amplitude: the decision is only cheap while the numbers
+    stay small.
+  - **Radius needs two numbers, not one.** A single "shake within 30 m" starts fading the moment you
+    step off the spawn point, so `innerRadius` (full strength, roughly the ability's visual
+    footprint) and `outerRadius` (zero beyond, the advertised radius) with a tuned curve between.
+    Rejected both closed-form falloffs: linear makes the boundary noticeable as it sweeps past, and
+    true inverse-square spends almost everything in the first few metres and wastes the rest.
+  - **`outerRadius` is capped by the source entity's network visible range**, 80 m by default
+    (`BaseInterestManager.cs:10`, `:58`; per-prefab override at `LiteNetLibIdentity.cs:55-56`,
+    `:172`). A larger radius does not error — players beyond the interest range never receive the
+    effect at all, so the falloff curve silently claims strength that was already truncated by
+    replication. Not a concern at 30 m; it is the thing that makes a zone-wide rumble a tier-3
+    problem rather than a bigger number.
+  - **Magnitude is one multiplication chain**, profile amplitude x envelope(t) x falloff(distance) x
+    per-emitter scale x the player's accessibility setting, with every term after the first in 0-1.
+    So a profile is tuned once for "epicentre, setting at 100%" and every other case derives, no
+    per-call-site magic numbers, and no call path can bypass the accessibility slider.
+  - **Falloff distance is sampled once at spawn, not tracked.** Cheaper (one distance test per client
+    per effect) and better behaved: a shake whose strength changed as you walked would read as a bug.
+    It also makes the caster-following behaviour of skill effects irrelevant to the shake.
+  - **`[AllRpc]` reaches current subscribers only, and default interest is 80 m**
+    (`LiteNetLibRPC.cs:86`, `BaseInterestManager.cs:10`, `:58`). That is the right filter for a
+    stomp for free, and simultaneously a hard ceiling: a zone-wide rumble cannot ride an entity RPC
+    and needs a manager message instead.
+  - **The world-space UI camera is already handled.** `CharacterUICamera` is a child at local zero
+    on `TopDownGameplayCamera.prefab` and `CopyCamera` copies lens properties only, never the
+    transform (`Utils/CopyCamera.cs`), so shaking the root keeps nameplates welded to the world.
+  - **Shake would be inert in MMO mode today.** `00Init_MMO.unity` still uses the kit's
+    `GameInstance.prefab` with the stock camera prefab, so a shaker installed on our
+    `TopDownGameplayCamera.prefab` never exists there. The server halves of all three tiers are
+    unaffected; only the receiving end is missing.
+
+- **`Documentation/Systems/03_BOSS_ENCOUNTER_DESIGN.md`** (2026-09-03) — survey of how complex a
+  boss can be in this kit, and the design for phase-scripted encounters. Design only, nothing
+  implemented.
+  - **The kit already has exactly one phase primitive, and it is data-only.** `MonsterSkill.useWhenHpRate`
+    gates a skill behind `entity.HpRate <= rate` inside `MonsterCharacter.RandomSkill`
+    (`MonsterCharacter.cs:264`), so "new abilities below 50%" needs no code at all. Recording this
+    because it is easy to miss and easy to reimplement by accident.
+  - **That primitive has three hard limits, all in one method.** The gate is one-directional, so
+    phase-one abilities can never be retired, only added to. A single `Random.value` is drawn once
+    (`:258`) and compared against every skill's `useRate` in shuffled order, so the inspector's
+    per-skill rates are not the real selection frequencies. And selection is a shuffle, so ordered
+    rotations cannot be expressed. Real phases therefore need code, not tuning.
+  - **`MonsterActivityComponent` is referenced from exactly one place in the entire kit**, the editor
+    utility that builds a monster prefab (`Core/Editor/CharacterEntityCreatorEditor.cs:193`). Nothing
+    resolves it at runtime. So a boss prefab can carry a subclass instead and the kit never notices —
+    this is the seam the design is built on, and it costs no kit edit. Rejected the alternative of
+    hooking `MonsterActivityComponent` via `[DevExtMethods]`: the class invokes no hooks, and its
+    combat loop `UpdateAttackEnemy` is `private` (`:270`), so decoration cannot reach it.
+  - **Per-encounter state must never live on the `MonsterCharacter` asset.** Proved by the kit's own
+    `_tempRandomSkills` (`MonsterCharacter.cs:177`), a mutable list on the `ScriptableObject` that
+    every spawned instance of that monster shares. Two copies of a boss would otherwise share a phase.
+  - **Phase changes should ride a `Buff`, not direct field writes.** `Buff.isOverrideDamageInfo`
+    replaces the character's basic attack wholesale (`CharacterDataCache.cs:457`, `:471`), and buffs
+    already replicate, stack and surface in UI. Writing stats directly would need new network plumbing.
+  - **There is no threat model anywhere in the kit, but the ledger it needs is already built and
+    unused.** `threat`, `aggro`, `taunt`, `enmity` and `provoke` return zero hits across `Core/`,
+    `MMO/`, `GuildWar/` and the demos, and target selection is the first survivor from an overlap
+    query (`MonsterActivityComponent.cs:463`, `:526`) with a coin-flip re-roll on every hit (`:136`).
+    But `BaseCharacterEntity_DamageFunctions.cs:11` keeps a per-attacker cumulative damage table fed
+    on every damage application (`:208`), crediting summon damage to the summoner (`:246-248`) and
+    clamping overkill (`:254`) — and ships `GetSortedReceivedDamageRecordsByDamage` (`:278`) and
+    `...ByTime` (`:288`) which **nothing in the kit ever calls**. The only live consumer is reward
+    attribution on death (`BaseMonsterCharacterEntity.cs:469`). Recording this because "build threat
+    from scratch" is the wrong cost estimate: the data collection and sorting exist, the AI just never
+    reads them. What is genuinely missing is threat decay, per-skill threat modifiers, healing threat,
+    and a reset that is not death (the ledger clears only in `Killed`, `:71`).
+  - **Taunt as a debuff works, because a `CharacterBuff` records who applied it.**
+    `CharacterBuff.BuffApplier` returns an `EntityInfo`
+    (`Core/Scripts/CharacterData/RelatesData/CharacterBuff.cs:10`), set inside `ApplyBuff` on both the
+    refresh path (`BaseCharacterEntity_BuffFunctions.cs:83`) and the fresh-buff path (`:151`). So a
+    taunt debuff is not just a flag, it names the taunter. Taunt-over-taunt is already correct too:
+    with `maxStack <= 1` the old buff is removed and the new one records the new applier (`:105-112`).
+    The only code needed is the lookup plus a target lock in the activity component.
+  - **The two ways to land that debuff use different `BuffType` values and different asset fields.**
+    `isDebuff` + `debuff` is applied on hit as `BuffType.SkillDebuff` (`BaseSkill.cs:906-909`) and can
+    miss; `skillBuffType = BuffToEnemy` applies the `buff` field directly with no hit roll, as
+    `BuffType.SkillBuff` (`Skill.cs:214-221`). Querying `IndexOfBuff` with the wrong one returns -1
+    silently, which is exactly the kind of failure that looks like a broken taunt.
+  - **`BuffApplier` is server-side only** — `SetApplier` runs inside `ApplyBuff`, which returns early
+    on `!IsServer` (`BaseCharacterEntity_BuffFunctions.cs:11-12`). Fine for AI, since the monster AI is
+    server-only anyway, but a "taunted by X" client indicator would need the identity replicated
+    separately.
+  - **The applier cache never evicts per entry.** `MemoryManager.CharacterBuffs` is keyed by the
+    buff's unique id (`CharacterBuffCacheManager.cs:38-46`) and `BaseCacheManager.GetOrMakeCache` only
+    inserts (`BaseCacheManager.cs:42-51`). One entry accumulates per buff instance ever applied, which
+    a boss taunted every few seconds for hours will notice.
+  - `BaseMonsterCharacterEntity.SetAttackTarget` is public (`:313`) and called from nowhere but the AI
+    component, so a skill could redirect the boss directly instead. Rejected as the primary route: the
+    buff gets duration, stacking, replication, UI and `restrictTags` taunt-immunity for free, where a
+    direct call gets none of them.
+  - **Skill-shot bosses need almost no code, because the AI already aims at a point.**
+    `MonsterActivityComponent.cs:352-357` builds `AimPosition{type = Position}` and passes
+    `targetObjectId: 0`, so with `hitOnlySelectedTarget` false by default (`Damage.cs:25`) the
+    missile's `_lockingTarget` stays null. That field is a damage filter, not homing
+    (`MissileDamageEntity.cs:399`), so the projectile hits whoever it collides with — a boss can miss.
+  - **Cast time is literally the dodge window.** The aim position is stamped at cast start and carried
+    unchanged through `FrameBasedDelay(CastingSkillDuration)`
+    (`DefaultCharacterUseSkillComponent.cs:200`, `:267`) before `ApplySkillUsing` (`:372`). So a
+    dodgeable boss attack needs only a non-zero `castDuration` and a projectile with travel time
+    (`MissileDamageEntity.cs:128`) — no code at all.
+  - **`applyDuration` on an area skill is a free telegraph window.** `AreaDamageEntity` sets
+    `_lastAppliedTime` at spawn (`:92`) and only ticks when `applyDuration` has elapsed (`:101`), with
+    membership maintained by `OnTriggerEnter`/`OnTriggerExit` (`:143-187`). Stepping out before the
+    tick takes **zero** damage, not reduced damage. That is a WoW-style ground AoE with no code.
+  - **`TargetObjectPrefab` on `BaseAreaSkill` is not a networked telegraph** — it is the local aim
+    preview for the player's own area skills, referenced only by `DefaultAreaSkillAimController.cs:28-31`
+    and `ShooterAreaSkillAimController.cs:25-28`. A monster casting the skill spawns nothing. The boss's
+    visible warning must live on the `AreaDamageEntity` prefab, which is what network-spawns. Recording
+    this because "I authored a boss AoE and there is no circle" has exactly one cause.
+  - **`GetDefaultAttackAimPosition` is `virtual`** (`BaseSkill.cs:1276`) and defaults to the target's
+    current position. Overriding it in a `Skill` subclass is the whole skill-shot design space — lead
+    prediction, spread fans, scatter, aim-where-they-were — as content rather than architecture.
+    `BaseAreaSkill` already overrides it to the feet rather than the aim transform (`:104`).
+  - **Threat is deferred, not rejected** (2026-09-03). The skill-shot model answers the question threat
+    exists to answer: who gets hit is decided by who failed to move. The open decision in the document
+    is marked deferred rather than removed, and the damage-ledger findings above stand for whenever it
+    is picked up.
+  - **Two traps that would have cost a day each.** The AI halts entirely on
+    `Identity.CountSubscribers() == 0` (`:148`), so an enrage timer driven from the activity component
+    freezes when the arena empties; and `findEnemyDelayMax` is dead because
+    `Random.Range(findEnemyDelayMin, findEnemyDelayMin)` passes `Min` twice (`:235`). The latter is a
+    kit bug — override it, do not patch `Core/`.
+
+- **`Documentation/Systems/02_ARENA_1V1_2V2_DESIGN.md`** (2026-09-03) — design for ranked 1v1 and
+  2v2 arena on top of the battleground queue transport from doc 01. Design only, nothing implemented.
+  - **Friend/foe is a property of the map, not of combat code.** `DamageableEntity.IsAlly`/`IsEnemy`
+    delegate straight to `CurrentMapInfo` (`DamageableEntity.cs:443`, `:450`), which dispatches to
+    four `protected abstract` members on `BaseMapInfo` (`BaseMapInfo.cs:330-333`). A map type
+    therefore defines its own factions with no kit edit, which is what makes 2v2 friendly-fire
+    suppression possible. `GuildWarMapInfo.cs:102` is the in-repo precedent, keying off `GuildId`;
+    arena keys off a team index read through `EntityInfo.TryGetEntity`.
+  - **Team index must be `Public` custom data, not `Server`.** Ally checks run on clients too, for
+    nameplates and targeting, and only public custom data replicates. Doc 01 suggested `Server`
+    visibility for the battleground team; that is corrected here for anything the client renders.
+  - **Queue-pop latency is solved by configuration, not code.** `ClusterServer.HandleRequestSpawnMap`
+    consumes a pre-allocated warm map server before asking a map-spawn server to boot one
+    (`ClusterServer.cs:493-503`), and the pool is an inspector list on `MapSpawnNetworkManager`
+    (`spawningAllocateMaps`, `:56`). Booting a Unity process per 1v1 was rejected as the default:
+    arena matches are short and frequent, unlike battlegrounds.
+  - **Leaderboards have a measured trap.** Rating fits custom character data with no schema change
+    (`character_public_int32` is `(id, characterId, hashedKey, value)`), but the only indexes are
+    `PRIMARY(id)` and `KEY(characterId)` (`mysql_main.sql:790-794`), so `WHERE hashedKey=? ORDER BY
+    value DESC` is a full scan over every public custom value for every character. Chosen fix is a
+    cluster-side cached top-N; adding a composite index is an ops runbook step, explicitly **not** an
+    edit to `mysql_main.sql` or `MySQLDatabase_Migrate.cs`, which a kit update would revert.
+  - **The dueling system is a reference, not a dependency.** `PlayerCharacterDuelingComponent` has
+    the round shape worth copying — countdown separate from duration (`:336`), and disconnect-as-loss
+    via `OnDestroy` (`:369`) — but it is built around a consensual open-world request/accept
+    handshake, so arena drives its own match component instead. Arena maps must set
+    `DisableDueling` true, or players can start side-duels inside a ranked match (`:101`).
+  - **2v2 starts premade-only**, so team assignment falls out of existing party membership and the
+    balancing question is deferred rather than guessed at.
+
+- **`Documentation/Systems/01_BATTLEGROUND_QUEUE_DESIGN.md`** (2026-09-03) — amended with the four
+  abstract ally/enemy members, missed in the original draft. Not cosmetic: `BattlegroundMapInfo`
+  does not compile without implementing all four.
+
+
+- **`Documentation/Systems/01_BATTLEGROUND_QUEUE_DESIGN.md`** (2026-09-03) — design for a
+  battleground queue that spawns a dedicated instance once enough players have queued. Design only,
+  nothing implemented yet.
+  - **The kit's own instance warp cannot serve a queue.** `WarpCharacterToInstance`
+    (`MMO/.../MapNetworkManager_PlayerActivity.cs:81`) requires the participants to be in one party,
+    requires the caller to be the party leader, and requires members to be standing within
+    `joinInstanceMapDistance` of the leader. A queue is by definition strangers on different map
+    servers, so the built-in path was rejected outright rather than adapted.
+  - **You also cannot join an instance by id.** `ClusterServer.HandleRequestSpawnMap` overwrites
+    whatever `instanceId` the caller sends (`ClusterServer.cs:496`), so every `SpawnMap` request
+    yields a fresh instance and there is no "join instance X" request type. Any design that assumes
+    otherwise will not work.
+  - **Chosen mechanism: spawn one instance, reuse its `peerInfo` for N players.** The spawn response
+    carries a `CentralServerPeerInfo`, and the private `SaveAndWarpCharacterByPeerInfo`
+    (`MapNetworkManager_PlayerActivity.cs:156`) will move any character to any peer. `MapNetworkManager`
+    is `partial`, and parts of a partial class share private access, so a file of ours in
+    `Assets/Scripts/` can call it directly — no reflection, no kit edit. This is the load-bearing
+    trick of the design.
+  - **Queue lives on the cluster**, beside parties and guilds, because no single map server can see
+    players queued on other map servers. Registered from a `[DevExtMethods("OnStartServer")]` hook on
+    the partial `CentralNetworkManager`, which exposes `ClusterServer` publicly.
+  - **`BaseGameNetworkManagerComponent` preferred over `[DevExtMethods]`** for the map-server and
+    match-runner pieces: compile-checked overrides instead of silent string hook names,
+    inspector-configurable, and it can be attached to the instance manager prefab only so match logic
+    never loads on world servers.
+  - **Measured constraint: an empty instance quits after 30 s.** `TERMINATE_INSTANCE_DELAY = 30f`
+    (`MapNetworkManager.cs:18`, checked at `:167`), timed from when the instance learns its map
+    (`:1070`). All participants must finish save-warp-reconnect inside that window, which rules out
+    pre-spawning instances to wait for a queue to fill. The constant is `const`, so raising it would
+    be a stock-kit edit and is avoided by design.
+  - **MMO-only.** LAN has no instances: `LanRpgNetworkManager.IsInstanceMap()` returns `false`
+    (`:452`) and its `WarpCharacterToInstance` forwards to a normal warp with a kit `TODO` (`:445`).
+    Phase 0 of the plan is therefore wiring `00Init_MMO.unity` to this project's assets, which
+    `CLAUDE.md` already flags as unfinished.
+  - Team assignment crosses the map transfer via custom character data rather than a schema change,
+    since `SaveAndWarpCharacterByPeerInfo` does a full save on the way out.
+
 ### Changed
 
 - **Backward movement is full speed** (2026-09-02) — `CharacterControllerEntityMovement` on
@@ -613,6 +904,53 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Added
 
+- **`Documentation/EXTENDING.md`** and a new "Adding functionality" section in `CLAUDE.md`
+  (2026-09-03) — how to add features without editing vendored kit code, which is the workflow
+  every other rule in `CLAUDE.md` depends on. The kit's own page on this is at
+  `https://suriyun-production.github.io/mmorpg-kit-docs/#/pages/037-dev-extension`; the tables here
+  were generated from this repo's source instead, which is newer than the published docs.
+  - A ten-step decision procedure, cheapest mechanism first: data asset, subclass a data type,
+    plain `MonoBehaviour`, `[DevExtMethods]` hook, entity event, ScriptableObject service swap,
+    custom character data, controller subclass, handler interface swap, and only then patching the
+    kit. The short form lives in `CLAUDE.md`, the reference and code examples in `EXTENDING.md`.
+  - **The complete hook table**, 28 classes, generated by grepping every
+    `InvokeInstanceDevExtMethods` and `InvokeStaticDevExtMethods` call site. Worth having written
+    down because the names are strings: `BaseGameNetworkManager` alone exposes 27 of them, and
+    there is no way to discover them from an IDE.
+  - Two failure modes recorded because both are silent: **a misspelled hook name never runs**, with
+    no compile error and no warning, and **exceptions inside a hook are caught and logged** by
+    `DevExtUtils` rather than propagating, so a broken hook does not announce itself.
+  - The worked example is a persistent per-character death counter, chosen because it needs a hook,
+    an event, custom data and persistence at once, and needs no schema change. Also notes that the
+    custom data helpers are wrapped in `#if !DISABLE_CUSTOM_CHARACTER_DATA`, so defining that
+    symbol would turn every call into a silent no-op returning the default.
+  - Every class, method and event named in the document was verified to exist, and the last section
+    gives the grep commands to regenerate each table after a kit update rather than hand-editing.
+
+- **`CLAUDE.md`** (2026-09-03) — an operating manual for AI agents working in this repo, loaded
+  automatically at the start of every Claude Code session. Carries the hard rules (never edit
+  `Core/` or `MMO/`, log every change here, new work goes in `1. Data` / `Scripts` /
+  `TopDownController`), the ownership map, where new data and behaviour belong, the changelog
+  convention, the list of kit files we have patched in place, both entry scenes, and the gotchas
+  that have already cost time.
+  - Written instead of the 42 remaining subsystem documents that were planned for
+    `Documentation/Systems/`. The reasoning is worth recording, since the obvious move is to
+    document everything: **2,507 of this project's 2,514 C# files are vendored kit code**, and
+    `Core/` and `MMO/` are replaced wholesale by a GitHub mirror, as they were in `f2e39d8`. Prose
+    describing them goes stale in one discontinuous step, silently, and an agent can read the
+    source itself in seconds. What an agent cannot recover from source is why a choice was made,
+    what was rejected, and which files are ours. That is what this file and this changelog hold.
+  - Four documents from that pass were kept: `PROJECT_OVERVIEW.md` and, most usefully,
+    `Documentation/Systems/00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md`, which is the full
+    ours-versus-vendored inventory plus the re-apply checklist after a kit update. The three
+    kit-subsystem documents (`01`, `03`, `04`) are explicitly marked in `CLAUDE.md` as a snapshot
+    that will not be maintained, so nobody trusts them over the code later.
+  - Found while writing it: **renaming a game data asset silently changes its `DataId`**.
+    `BaseGameData.Id` returns the serialized `id` field or, when that is empty, the asset name
+    (`BaseGameData.cs:30`), and `DataId` is a hash of that string (`:180`). Every asset in
+    `1. Data` leaves `id` empty, so asset names are load-bearing and a rename would orphan any
+    saved item, skill or quest referencing them. Recorded as a gotcha; not fixed.
+
 - **`Assets/Scripts/UI/UIEscapeWindowsHandler.cs`** (2026-08-29) — WoW-style escape handling:
   the first Escape press closes every opened window, the next one toggles the system menu.
   Windows are auto-collected at `Awake` from `windowContainers` (`UIBase` on direct children) and
@@ -810,6 +1148,22 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
   checked inside `SetLookRotation`, so skills that legitimately lock rotation still work.
 
 ### Removed
+
+- **`Documentation/Systems/01_CORE_ARCHITECTURE.md`, `03_NETWORKING_FOUNDATION.md` and
+  `04_MMO_SERVER_ARCHITECTURE.md`** (2026-09-03) — 1,694 lines describing vendored kit
+  subsystems, deleted the same day they were written. They were accurate, and that was the
+  problem: they describe `Core/` and `MMO/`, which are replaced wholesale by a GitHub mirror, so
+  they would have gone stale in one silent step while reading as current. Kept instead are
+  `PROJECT_OVERVIEW.md` and `00_PROJECT_CUSTOMIZATIONS_AND_KIT_DIVERGENCE.md`, which describe our
+  decisions and the vendor boundary rather than the kit's internals.
+  - Consequence handled: the two survivors carried 83 links into the documentation set that was
+    planned but never built. The overview's 46-row catalogue of documents was replaced with a
+    46-row **map from system to source directory**, which is more useful and degrades to a wrong
+    path rather than to wrong prose. All remaining references now point at source. Verified
+    mechanically: every markdown link resolves and all 59 source paths in the map exist.
+  - The rule this establishes, recorded in `CLAUDE.md`: documentation holds what cannot be
+    recomputed from the code. Anything an agent could derive by reading the source in a few
+    minutes should be generated on demand, not stored and maintained.
 
 - **`Assets/TopDownController/Scripts/TopDownPlayerCharacterController.cs`** and
   **`Demo/Prefabs/TopDownPlayerCharacterController.prefab`** (2026-08-28) — the addon's own
