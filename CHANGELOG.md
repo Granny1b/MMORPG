@@ -9,6 +9,130 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Added
 
+- **`Documentation/Systems/04_CAMERA_SHAKE_DESIGN.md`** (2026-09-03) — design for a camera shake
+  system with a locally callable API and server-decided shakes. Design only, nothing implemented.
+  - **A server-decided shake mostly needs no networking.** The server already replicates a boss's
+    skill to every observing client (`[AllRpc] RpcUseSkill`,
+    `DefaultCharacterUseSkillComponent.cs:518`) and each of those clients already instantiates
+    `skill.SkillActivateEffects` locally (`GameEntityModel.InstantiateEffect:263`, called at
+    `DefaultCharacterUseSkillComponent.cs:276/285/292`), and `PoolSystem` fires the pooled prefab's
+    serialized `onGetInstance` UnityEvent on every spawn (`PoolDescriptor.cs:16`, `:24`). A shake
+    component on the effect prefab, wired to that event, is therefore server-decided, correctly
+    interest-filtered and free. Recording this because the obvious design — a new RPC and a new
+    message id — is the *second* tier, not the first.
+  - **The camera pose is rewritten absolutely every frame, which is what makes the shake easy.**
+    `FollowCamera` is `[DefaultExecutionOrder(int.MinValue)]` (`FollowCamera.cs:7`) and assigns
+    `CacheCameraTransform.position/rotation` outright from `LateUpdate` (`:207-208`). So anything
+    running earlier is silently discarded, and anything running later gets a clean base pose and
+    cannot accumulate drift — no save/restore, no reset when the shake ends. The kit already relies
+    on this once, for weapon recoil (`FollowCameraControls.cs:207`, applied at `:212-221`).
+  - **Rejected: a parent "shake pivot" so the camera's own transform stays clean.** The pose is
+    written in *world* space onto the camera's own transform (`FollowCamera.cs:45`, `:79`,
+    `:207-208`), so a parent offset is ignored outright, and moving the `Camera` onto a child just
+    relocates the problem. There is no clean transform to hide behind; post-processing the pose is
+    the mechanism, not a workaround.
+  - **Rejected: reusing `FollowCameraControls.Recoil`.** It is rotation-only (`:221`), a spring
+    toward zero rather than a windowed envelope (`:219-220`), has one global amplitude with no
+    per-source blending, and `ShooterRecoilUpdater.cs:271` already owns it for gun recoil. Sharing
+    it would make weapon recoil and world shake fight over one accumulator. Both are additive
+    offsets on a pose rebuilt each frame, so a second component sums with it for free.
+  - **Camera shake shakes the *aim* in this project, not just the picture.**
+    `TopDownAimController.TryGetCursorWorldPosition` builds its ray with
+    `camera.ScreenPointToRay` (`:216`) and the result drives the character's replicated facing
+    (`:200`). The shake lands in `LateUpdate` and the aim is read in `Update`, so the aim uses the
+    previous frame's shaken pose — a real one-frame wobble on a stationary mouse. The fix is to
+    cache the pre-shake pose and aim from that; the kit's own click-pick
+    (`PlayerCharacterController_Inputs.cs:32`) keeps the jitter, accepted rather than patching
+    `Core/`. This is the assumption to prove before building anything else.
+  - **`[AllRpc]` handlers run on the server too**, so client-only presentation must be a no-op
+    there and not merely unlikely to run: host connections dispatch by direct `HookCallback()`
+    (`LiteNetLibRPC.cs:78-83`) and a dedicated server invokes the callback as well
+    (`:95-97`). The design leans on one guard — the static camera reference being null — so that no
+    call site anywhere needs an `IsClient` check.
+  - **Never add a new `LiteNetLibBehaviour` to an existing networked prefab to carry the RPC.**
+    `behaviourIndex` is the position in `GetComponentsInChildren<LiteNetLibBehaviour>()`
+    (`LiteNetLibIdentity.cs:584`) and is hashed into every RPC and sync-element id
+    (`LiteNetLibBehaviour.cs:1193-1207`), so inserting a component silently renumbers everything
+    after it, child objects included. Same-build client and server still agree, which means this
+    fails only across mismatched builds. A `partial class` on an existing behaviour moves no index.
+  - **Camera shake profiles should not go in `GameDatabase_G`.** `GameDatabase` holds a fixed set
+    of typed arrays (`GameDatabase.cs:25-63`) with no generic slot; a new type would need the
+    `partial` field plus a `[DevExtMethods("LoadDataImplement")]` hook (`:18`, `:136`). That route
+    works, but only the RPC tiers ever name a profile over the wire and a standalone profile set
+    keyed by `GenerateHashId` (`BaseGameData.cs:180`, `:184`) covers it without putting
+    presentation tuning in the asset that governs items, skills and quests. Also rejected: sending
+    raw shake parameters (freezes tuning into the server build, grows with every new field) and
+    sending an array index (breaks on reorder — hashed string ids do not).
+  - **The tier-1 spawn hook is reliable for `GameEffect` and quietly is not for networked prefabs.**
+    `PoolSystem.GetInstance` invokes `OnGetInstance()` after its if/else, so it fires on both the
+    dequeue and the fresh-instantiate branch (`PoolSystem.cs:108`), with an uninitialised pool
+    routed through `InitPool` and recursion (`:113-114`). `LiteNetLibAssets.GetObjectInstance`
+    invokes it **only** when dequeuing (`:324`) and not when instantiating (`:331-334`), and
+    `disablePooling` skips pooling entirely (`:274`, `:286`) — so a shake wired to a networked
+    prefab's `onGetInstance` works until the pool exceeds `PoolingSize` (`:302`), i.e. fails exactly
+    when the fight is busiest. Correct as the *reset* hook the kit uses it for
+    (`AreaDamageEntity.cs:33`); wrong as a fire-on-spawn hook. `OnEnable` is not the fix either:
+    pool pre-warm instantiates each instance active before deactivating it (`:304-306`), giving
+    `PoolingSize` phantom firings at load, and `NetworkSpawn` calls `SetActive(true)` (`:465`)
+    before `Initial(...)` assigns an object id (`:466`), so there is nothing to guard on. Use
+    `OnStartClient` (`LiteNetLibAssets.cs:472-473`, dispatched at `LiteNetLibIdentity.cs:642-644`).
+  - **Skill effects anchor to the caster's socket, not to the world.** `InstantiateEffect` requires a
+    non-empty `effectSocket`, resolves it against the model's containers, spawns at that container
+    and sets `FollowingTarget` to it (`GameEntityModel.cs:269-280`). So a stomp shakes outward from
+    the boss, which is right, but a meteor's activate effect would shake outward from its *caster*,
+    which is not. Ground-targeted abilities must take their origin from the `AreaDamageEntity`,
+    network-spawned at the aim position (`SimpleAreaAttackSkill.cs:148-153`). A third anchor exists
+    for "you personally were hit": `DamageableEntity.PlayHitEffects` off `[AllRpc]
+    RpcAppendCombatText` (`:236`, `:303`).
+  - **`SkillActivateEffects` lead the impact.** They spawn after the cast delay but *before* the
+    action animation plays (`DefaultCharacterUseSkillComponent.cs:270-297`), so an un-delayed shake
+    fires before the foot lands. Recording it because it reads as a physics bug, not a timing one.
+  - **Tier 1 costs nothing on a dedicated server.** Skill effect instantiation is inside
+    `if (IsClient)` (`DefaultCharacterUseSkillComponent.cs:271`) and hit effects behind
+    `if (!IsClient) return;` (`DamageableEntity.cs:255`), so the server never builds the effect that
+    would carry the shake.
+  - **Falloff must be measured from the camera's follow target, not the camera.** The camera is
+    offset back by `zoomDistance` (`FollowCamera.cs:183`), so measuring from it makes the same
+    explosion feel weaker the further a player has zoomed out — a difficulty difference produced by
+    a camera setting.
+  - **The aim wobble camera shake causes is accepted, not fixed** (decided 2026-09-03). Shaking the
+    camera shakes the cursor ray and therefore the character's replicated facing; the fix exists and
+    needs no kit edit (cache the pre-shake pose, aim from that), but the wobble is bounded by the
+    shake amplitude — degrees and centimetres — and only exists while a shake runs. This removed a
+    build step and the `UnshakenPosition`/`UnshakenRotation` requirement from the shaker. The
+    mechanism stays documented so a twitching character during a stomp is not re-investigated as a
+    bug, and it puts a ceiling on rotation amplitude: the decision is only cheap while the numbers
+    stay small.
+  - **Radius needs two numbers, not one.** A single "shake within 30 m" starts fading the moment you
+    step off the spawn point, so `innerRadius` (full strength, roughly the ability's visual
+    footprint) and `outerRadius` (zero beyond, the advertised radius) with a tuned curve between.
+    Rejected both closed-form falloffs: linear makes the boundary noticeable as it sweeps past, and
+    true inverse-square spends almost everything in the first few metres and wastes the rest.
+  - **`outerRadius` is capped by the source entity's network visible range**, 80 m by default
+    (`BaseInterestManager.cs:10`, `:58`; per-prefab override at `LiteNetLibIdentity.cs:55-56`,
+    `:172`). A larger radius does not error — players beyond the interest range never receive the
+    effect at all, so the falloff curve silently claims strength that was already truncated by
+    replication. Not a concern at 30 m; it is the thing that makes a zone-wide rumble a tier-3
+    problem rather than a bigger number.
+  - **Magnitude is one multiplication chain**, profile amplitude x envelope(t) x falloff(distance) x
+    per-emitter scale x the player's accessibility setting, with every term after the first in 0-1.
+    So a profile is tuned once for "epicentre, setting at 100%" and every other case derives, no
+    per-call-site magic numbers, and no call path can bypass the accessibility slider.
+  - **Falloff distance is sampled once at spawn, not tracked.** Cheaper (one distance test per client
+    per effect) and better behaved: a shake whose strength changed as you walked would read as a bug.
+    It also makes the caster-following behaviour of skill effects irrelevant to the shake.
+  - **`[AllRpc]` reaches current subscribers only, and default interest is 80 m**
+    (`LiteNetLibRPC.cs:86`, `BaseInterestManager.cs:10`, `:58`). That is the right filter for a
+    stomp for free, and simultaneously a hard ceiling: a zone-wide rumble cannot ride an entity RPC
+    and needs a manager message instead.
+  - **The world-space UI camera is already handled.** `CharacterUICamera` is a child at local zero
+    on `TopDownGameplayCamera.prefab` and `CopyCamera` copies lens properties only, never the
+    transform (`Utils/CopyCamera.cs`), so shaking the root keeps nameplates welded to the world.
+  - **Shake would be inert in MMO mode today.** `00Init_MMO.unity` still uses the kit's
+    `GameInstance.prefab` with the stock camera prefab, so a shaker installed on our
+    `TopDownGameplayCamera.prefab` never exists there. The server halves of all three tiers are
+    unaffected; only the receiving end is missing.
+
 - **`Documentation/Systems/03_BOSS_ENCOUNTER_DESIGN.md`** (2026-09-03) — survey of how complex a
   boss can be in this kit, and the design for phase-scripted encounters. Design only, nothing
   implemented.
