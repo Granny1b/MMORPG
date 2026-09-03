@@ -63,6 +63,38 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
     presentation tuning in the asset that governs items, skills and quests. Also rejected: sending
     raw shake parameters (freezes tuning into the server build, grows with every new field) and
     sending an array index (breaks on reorder — hashed string ids do not).
+  - **The tier-1 spawn hook is reliable for `GameEffect` and quietly is not for networked prefabs.**
+    `PoolSystem.GetInstance` invokes `OnGetInstance()` after its if/else, so it fires on both the
+    dequeue and the fresh-instantiate branch (`PoolSystem.cs:108`), with an uninitialised pool
+    routed through `InitPool` and recursion (`:113-114`). `LiteNetLibAssets.GetObjectInstance`
+    invokes it **only** when dequeuing (`:324`) and not when instantiating (`:331-334`), and
+    `disablePooling` skips pooling entirely (`:274`, `:286`) — so a shake wired to a networked
+    prefab's `onGetInstance` works until the pool exceeds `PoolingSize` (`:302`), i.e. fails exactly
+    when the fight is busiest. Correct as the *reset* hook the kit uses it for
+    (`AreaDamageEntity.cs:33`); wrong as a fire-on-spawn hook. `OnEnable` is not the fix either:
+    pool pre-warm instantiates each instance active before deactivating it (`:304-306`), giving
+    `PoolingSize` phantom firings at load, and `NetworkSpawn` calls `SetActive(true)` (`:465`)
+    before `Initial(...)` assigns an object id (`:466`), so there is nothing to guard on. Use
+    `OnStartClient` (`LiteNetLibAssets.cs:472-473`, dispatched at `LiteNetLibIdentity.cs:642-644`).
+  - **Skill effects anchor to the caster's socket, not to the world.** `InstantiateEffect` requires a
+    non-empty `effectSocket`, resolves it against the model's containers, spawns at that container
+    and sets `FollowingTarget` to it (`GameEntityModel.cs:269-280`). So a stomp shakes outward from
+    the boss, which is right, but a meteor's activate effect would shake outward from its *caster*,
+    which is not. Ground-targeted abilities must take their origin from the `AreaDamageEntity`,
+    network-spawned at the aim position (`SimpleAreaAttackSkill.cs:148-153`). A third anchor exists
+    for "you personally were hit": `DamageableEntity.PlayHitEffects` off `[AllRpc]
+    RpcAppendCombatText` (`:236`, `:303`).
+  - **`SkillActivateEffects` lead the impact.** They spawn after the cast delay but *before* the
+    action animation plays (`DefaultCharacterUseSkillComponent.cs:270-297`), so an un-delayed shake
+    fires before the foot lands. Recording it because it reads as a physics bug, not a timing one.
+  - **Tier 1 costs nothing on a dedicated server.** Skill effect instantiation is inside
+    `if (IsClient)` (`DefaultCharacterUseSkillComponent.cs:271`) and hit effects behind
+    `if (!IsClient) return;` (`DamageableEntity.cs:255`), so the server never builds the effect that
+    would carry the shake.
+  - **Falloff must be measured from the camera's follow target, not the camera.** The camera is
+    offset back by `zoomDistance` (`FollowCamera.cs:183`), so measuring from it makes the same
+    explosion feel weaker the further a player has zoomed out — a difficulty difference produced by
+    a camera setting.
   - **`[AllRpc]` reaches current subscribers only, and default interest is 80 m**
     (`LiteNetLibRPC.cs:86`, `BaseInterestManager.cs:10`, `:58`). That is the right filter for a
     stomp for free, and simultaneously a hard ceiling: a zone-wide rumble cannot ride an entity RPC

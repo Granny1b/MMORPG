@@ -216,6 +216,64 @@ Why this is the right default and not a shortcut:
 - **The amplitude lives where it is tuned.** Shake strength belongs next to the dust plume and the
   impact sound, on the same prefab, adjustable by whoever is tuning the effect.
 
+- **It costs nothing on a dedicated server.** Skill effect instantiation sits inside `if (IsClient)`
+  (`DefaultCharacterUseSkillComponent.cs:271`), and hit effects behind `if (!IsClient) return;`
+  (`Scripts/Gameplay/DamageableEntity.cs:255`). The server never builds the effect, so it never
+  reaches the shake.
+
+**The "area" is client-side, and that is the point.** `PlayAt` is one distance test per client
+against its own player; there is no server-side area query and no per-player message. Measure from
+the camera's **follow target**, not the camera position — the camera sits back from the target by
+`zoomDistance` (`FollowCamera.cs:183`), so measuring from it biases the falloff by how far the
+player happens to be zoomed out.
+
+#### Which anchor, and therefore where the shake originates
+
+This is the part that decides whether "within an area" means what you want, because the three effect
+paths anchor in three different places:
+
+| Anchor | Path | Origin of the shake | Right for |
+|---|---|---|---|
+| **The caster** | `SkillCastEffects` / `SkillActivateEffects` | the boss's model socket | a stomp, a roar, a slam — anything originating at the caster |
+| **The impact point** | the skill's `AreaDamageEntity` prefab, network-spawned at `aimPosition.position` (`GameData/Skill/SimpleAreaAttackSkill.cs:148-153`) | where the ability lands | a meteor, a ground AoE, anything aimed away from the caster |
+| **The victim** | `DamageableEntity.PlayHitEffects`, driven by `[AllRpc] RpcAppendCombatText` (`:236`, spawning at `:303`) | whoever got hit | "you personally took a big hit" |
+
+Skill effects are **caster-anchored, not world-anchored**: `InstantiateEffect` requires a non-empty
+`effectSocket`, looks it up in the model's `CacheEffectContainers`, spawns at that container's
+transform and sets `FollowingTarget` to it (`GameEntityModel.cs:269-280`). So a stomp effect on the
+boss shakes outward from the boss — correct — but a meteor's activate effect would shake outward
+from the *caster*, which is wrong. Use the area entity for those.
+
+**Timing:** `SkillActivateEffects` spawn after the cast delay but **before** the action animation
+plays (`DefaultCharacterUseSkillComponent.cs:270-297`), so they lead the impact by the length of the
+swing. For a stomp that reads as shaking before the foot lands. Either give the profile a start
+delay, or anchor to the area entity, which spawns at the damage trigger instead.
+
+#### The spawn hook is reliable for `GameEffect` and *not* for networked prefabs
+
+This is the trap in tier 1, and it is invisible until a pool runs dry:
+
+- **`GameEffect` → reliable.** `PoolSystem.GetInstance` calls `OnGetInstance()` after the if/else, so
+  it fires on both the dequeue and the fresh-instantiate branch (`PoolSystem.cs:108`), and an
+  uninitialised pool is routed through `InitPool` and a recursive call (`:113-114`). Every spawn,
+  every time. Wire the prefab's `onGetInstance` UnityEvent and it just works.
+- **A networked prefab → not reliable.** `LiteNetLibAssets.GetObjectInstance` calls `OnGetInstance()`
+  **only on the pooled-dequeue branch** (`:324`); the fresh-`Instantiate` branch returns without it
+  (`:331-334`), and `disablePooling` skips pooling altogether (`:274`, `:286`). So
+  `Identity.onGetInstance` silently misses any spawn beyond `PoolingSize` (`:302`). That is fine for
+  what the kit uses it for — resetting pooled state, which a fresh instance does not need
+  (`AreaDamageEntity.cs:33`) — and wrong for firing an effect.
+- **`OnEnable` is not the fix.** Pool pre-warm instantiates each instance *active* and then
+  deactivates it (`:304-306`), so every pooled instance fires one spurious `OnEnable` at startup —
+  `PoolingSize` phantom shakes on load. And there is nothing to guard on, because `NetworkSpawn`
+  calls `SetActive(true)` (`:465`) *before* `Initial(...)` assigns the object id (`:466`).
+- **Use `OnStartClient`.** `LiteNetLibBehaviour.OnStartClient()` is invoked once per network spawn and
+  only when `Manager.IsClient` (`LiteNetLibAssets.cs:472-473`, dispatched at
+  `LiteNetLibIdentity.cs:642-644`). The behaviour-index warning in tier 2 applies, but it is about
+  *existing* prefabs: on a new `AreaDamageEntity` variant authored in `Assets/1. Data/` there is no
+  deployed build to stay compatible with — only a standing rule never to reorder its components
+  afterwards.
+
 Where it runs out:
 
 - Shakes for things that are not skills or effects — a phase transition, a scripted gate, an enrage.
@@ -420,6 +478,21 @@ sends nothing else.
   `Identity.HasSubscriberOrIsOwning` (`LiteNetLibRPC.cs:86`), `defaultVisibleRange = 80f`
   (`BaseInterestManager.cs:10`, `:58`). Correct filtering for free, and also a hard ceiling: nothing
   beyond that range can be shaken by an entity RPC. A zone-wide rumble needs tier 3.
+- **`onGetInstance` fires on every spawn for `GameEffect` and not for networked prefabs.**
+  `PoolSystem.GetInstance` calls it on both the dequeue and the fresh-instantiate branch
+  (`PoolSystem.cs:108`); `LiteNetLibAssets.GetObjectInstance` calls it only when dequeuing (`:324`)
+  and not when instantiating (`:331-334`). A shake wired to a networked prefab's event therefore
+  works until the pool runs dry, which is exactly when the fight is busiest.
+- **Skill effects anchor to the caster's socket, not to the world.** `InstantiateEffect` needs a
+  non-empty `effectSocket`, resolves it against the model's containers, and sets `FollowingTarget`
+  to it (`GameEntityModel.cs:269-280`). An ability that lands away from its caster needs the
+  `AreaDamageEntity` as the shake origin instead (`SimpleAreaAttackSkill.cs:148-153`).
+- **`SkillActivateEffects` lead the impact.** They spawn after the cast delay but before the action
+  animation (`DefaultCharacterUseSkillComponent.cs:270-297`), so an un-delayed shake fires before
+  the foot lands.
+- **Measure falloff from the camera's follow target, not the camera.** The camera is offset back by
+  `zoomDistance` (`FollowCamera.cs:183`), so distance from the camera makes the same explosion feel
+  weaker the further a player zooms out.
 - **The UI camera comes along for free.** `CharacterUICamera` is a child at local zero, and
   `CopyCamera` copies lens properties only, never the transform (`Scripts/Utils/CopyCamera.cs`).
   Shaking the root keeps world-space UI locked to the world.
