@@ -9,6 +9,99 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Added
 
+- **`Documentation/Systems/03_BOSS_ENCOUNTER_DESIGN.md`** (2026-09-03) — survey of how complex a
+  boss can be in this kit, and the design for phase-scripted encounters. Design only, nothing
+  implemented.
+  - **The kit already has exactly one phase primitive, and it is data-only.** `MonsterSkill.useWhenHpRate`
+    gates a skill behind `entity.HpRate <= rate` inside `MonsterCharacter.RandomSkill`
+    (`MonsterCharacter.cs:264`), so "new abilities below 50%" needs no code at all. Recording this
+    because it is easy to miss and easy to reimplement by accident.
+  - **That primitive has three hard limits, all in one method.** The gate is one-directional, so
+    phase-one abilities can never be retired, only added to. A single `Random.value` is drawn once
+    (`:258`) and compared against every skill's `useRate` in shuffled order, so the inspector's
+    per-skill rates are not the real selection frequencies. And selection is a shuffle, so ordered
+    rotations cannot be expressed. Real phases therefore need code, not tuning.
+  - **`MonsterActivityComponent` is referenced from exactly one place in the entire kit**, the editor
+    utility that builds a monster prefab (`Core/Editor/CharacterEntityCreatorEditor.cs:193`). Nothing
+    resolves it at runtime. So a boss prefab can carry a subclass instead and the kit never notices —
+    this is the seam the design is built on, and it costs no kit edit. Rejected the alternative of
+    hooking `MonsterActivityComponent` via `[DevExtMethods]`: the class invokes no hooks, and its
+    combat loop `UpdateAttackEnemy` is `private` (`:270`), so decoration cannot reach it.
+  - **Per-encounter state must never live on the `MonsterCharacter` asset.** Proved by the kit's own
+    `_tempRandomSkills` (`MonsterCharacter.cs:177`), a mutable list on the `ScriptableObject` that
+    every spawned instance of that monster shares. Two copies of a boss would otherwise share a phase.
+  - **Phase changes should ride a `Buff`, not direct field writes.** `Buff.isOverrideDamageInfo`
+    replaces the character's basic attack wholesale (`CharacterDataCache.cs:457`, `:471`), and buffs
+    already replicate, stack and surface in UI. Writing stats directly would need new network plumbing.
+  - **There is no threat model anywhere in the kit, but the ledger it needs is already built and
+    unused.** `threat`, `aggro`, `taunt`, `enmity` and `provoke` return zero hits across `Core/`,
+    `MMO/`, `GuildWar/` and the demos, and target selection is the first survivor from an overlap
+    query (`MonsterActivityComponent.cs:463`, `:526`) with a coin-flip re-roll on every hit (`:136`).
+    But `BaseCharacterEntity_DamageFunctions.cs:11` keeps a per-attacker cumulative damage table fed
+    on every damage application (`:208`), crediting summon damage to the summoner (`:246-248`) and
+    clamping overkill (`:254`) — and ships `GetSortedReceivedDamageRecordsByDamage` (`:278`) and
+    `...ByTime` (`:288`) which **nothing in the kit ever calls**. The only live consumer is reward
+    attribution on death (`BaseMonsterCharacterEntity.cs:469`). Recording this because "build threat
+    from scratch" is the wrong cost estimate: the data collection and sorting exist, the AI just never
+    reads them. What is genuinely missing is threat decay, per-skill threat modifiers, healing threat,
+    and a reset that is not death (the ledger clears only in `Killed`, `:71`).
+  - **Taunt as a debuff works, because a `CharacterBuff` records who applied it.**
+    `CharacterBuff.BuffApplier` returns an `EntityInfo`
+    (`Core/Scripts/CharacterData/RelatesData/CharacterBuff.cs:10`), set inside `ApplyBuff` on both the
+    refresh path (`BaseCharacterEntity_BuffFunctions.cs:83`) and the fresh-buff path (`:151`). So a
+    taunt debuff is not just a flag, it names the taunter. Taunt-over-taunt is already correct too:
+    with `maxStack <= 1` the old buff is removed and the new one records the new applier (`:105-112`).
+    The only code needed is the lookup plus a target lock in the activity component.
+  - **The two ways to land that debuff use different `BuffType` values and different asset fields.**
+    `isDebuff` + `debuff` is applied on hit as `BuffType.SkillDebuff` (`BaseSkill.cs:906-909`) and can
+    miss; `skillBuffType = BuffToEnemy` applies the `buff` field directly with no hit roll, as
+    `BuffType.SkillBuff` (`Skill.cs:214-221`). Querying `IndexOfBuff` with the wrong one returns -1
+    silently, which is exactly the kind of failure that looks like a broken taunt.
+  - **`BuffApplier` is server-side only** — `SetApplier` runs inside `ApplyBuff`, which returns early
+    on `!IsServer` (`BaseCharacterEntity_BuffFunctions.cs:11-12`). Fine for AI, since the monster AI is
+    server-only anyway, but a "taunted by X" client indicator would need the identity replicated
+    separately.
+  - **The applier cache never evicts per entry.** `MemoryManager.CharacterBuffs` is keyed by the
+    buff's unique id (`CharacterBuffCacheManager.cs:38-46`) and `BaseCacheManager.GetOrMakeCache` only
+    inserts (`BaseCacheManager.cs:42-51`). One entry accumulates per buff instance ever applied, which
+    a boss taunted every few seconds for hours will notice.
+  - `BaseMonsterCharacterEntity.SetAttackTarget` is public (`:313`) and called from nowhere but the AI
+    component, so a skill could redirect the boss directly instead. Rejected as the primary route: the
+    buff gets duration, stacking, replication, UI and `restrictTags` taunt-immunity for free, where a
+    direct call gets none of them.
+  - **Skill-shot bosses need almost no code, because the AI already aims at a point.**
+    `MonsterActivityComponent.cs:352-357` builds `AimPosition{type = Position}` and passes
+    `targetObjectId: 0`, so with `hitOnlySelectedTarget` false by default (`Damage.cs:25`) the
+    missile's `_lockingTarget` stays null. That field is a damage filter, not homing
+    (`MissileDamageEntity.cs:399`), so the projectile hits whoever it collides with — a boss can miss.
+  - **Cast time is literally the dodge window.** The aim position is stamped at cast start and carried
+    unchanged through `FrameBasedDelay(CastingSkillDuration)`
+    (`DefaultCharacterUseSkillComponent.cs:200`, `:267`) before `ApplySkillUsing` (`:372`). So a
+    dodgeable boss attack needs only a non-zero `castDuration` and a projectile with travel time
+    (`MissileDamageEntity.cs:128`) — no code at all.
+  - **`applyDuration` on an area skill is a free telegraph window.** `AreaDamageEntity` sets
+    `_lastAppliedTime` at spawn (`:92`) and only ticks when `applyDuration` has elapsed (`:101`), with
+    membership maintained by `OnTriggerEnter`/`OnTriggerExit` (`:143-187`). Stepping out before the
+    tick takes **zero** damage, not reduced damage. That is a WoW-style ground AoE with no code.
+  - **`TargetObjectPrefab` on `BaseAreaSkill` is not a networked telegraph** — it is the local aim
+    preview for the player's own area skills, referenced only by `DefaultAreaSkillAimController.cs:28-31`
+    and `ShooterAreaSkillAimController.cs:25-28`. A monster casting the skill spawns nothing. The boss's
+    visible warning must live on the `AreaDamageEntity` prefab, which is what network-spawns. Recording
+    this because "I authored a boss AoE and there is no circle" has exactly one cause.
+  - **`GetDefaultAttackAimPosition` is `virtual`** (`BaseSkill.cs:1276`) and defaults to the target's
+    current position. Overriding it in a `Skill` subclass is the whole skill-shot design space — lead
+    prediction, spread fans, scatter, aim-where-they-were — as content rather than architecture.
+    `BaseAreaSkill` already overrides it to the feet rather than the aim transform (`:104`).
+  - **Threat is deferred, not rejected** (2026-09-03). The skill-shot model answers the question threat
+    exists to answer: who gets hit is decided by who failed to move. The open decision in the document
+    is marked deferred rather than removed, and the damage-ledger findings above stand for whenever it
+    is picked up.
+  - **Two traps that would have cost a day each.** The AI halts entirely on
+    `Identity.CountSubscribers() == 0` (`:148`), so an enrage timer driven from the activity component
+    freezes when the arena empties; and `findEnemyDelayMax` is dead because
+    `Random.Range(findEnemyDelayMin, findEnemyDelayMin)` passes `Min` twice (`:235`). The latter is a
+    kit bug — override it, do not patch `Core/`.
+
 - **`Documentation/Systems/02_ARENA_1V1_2V2_DESIGN.md`** (2026-09-03) — design for ranked 1v1 and
   2v2 arena on top of the battleground queue transport from doc 01. Design only, nothing implemented.
   - **Friend/foe is a property of the map, not of combat code.** `DamageableEntity.IsAlly`/`IsEnemy`
