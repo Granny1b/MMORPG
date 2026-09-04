@@ -10,6 +10,56 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 ### Added
 
 - **`Documentation/Systems/05_CLASSLESS_EQUIPMENT_SKILLS_AND_TALENTS_DESIGN.md`** (2026-09-04) —
+  added Part 7, a fixed skill budget across weapon loadouts: one-hander plus shield or off-hand
+  weapon gives 1 + 1, a two-hander gives 2, so the player always has the same number of buttons.
+  Still design only.
+  - **Most of it is free.** `WeaponType.EquipType` already models the loadout shapes —
+    `MainHandOnly`, `DualWieldable`, `TwoHand`, `OffHandOnly` (`WeaponType.cs:8-14`, field `:28`) —
+    and the kit enforces them on equip (`CharacterInventoryExtensions.cs:614-625`, `:665`).
+    `increaseSkills` is an array, so a two-hander listing two skills needs no code.
+  - **Identical dual-wielded items collapse into one skill, and this is the mechanical obstacle.**
+    Both hands aggregate through the same callback and the same additive merge
+    (`CharacterDataExtensions_Stats.cs:776` and `:810`, both
+    `skills => CombineSkills(buffSkills, skills)`), the hand is never carried into the dictionary,
+    and `CombineSkills` sums duplicate keys (`GameDataHelpers_CombineKeyValuePair.cs:203-217`). Two
+    identical daggers each granting `Slash 1` therefore give **one** entry at `Slash 2` — one
+    hotkey, silently stronger, budget silently 1 instead of 2. There is no data-only way to vary a
+    grant by hand: `increaseSkills` belongs to the item and `CalculatedItemBuff` resolves it with no
+    hand context.
+  - **Fix: mark off-hand weapon types `OffHandOnly` so the off-hand is a distinct class of item**
+    (parrying dagger, focus, tome, buckler) carrying its own skill. That makes the invariant
+    structural rather than a convention, and `DualWieldRestriction` (`WeaponType.cs:16-21`) is the
+    softer variant when a type should merely be restricted to one hand.
+  - **Rejected: true mirror dual-wield with players expected to mix weapon types.** One duplicate
+    pair breaks the invariant, the failure is silent, and it presents as "why do I only have one
+    button" — pointing at the hotkey system rather than at the merge that caused it.
+  - **Live stock-kit bug: a broken main hand suppresses the off-hand's skills and buffs.** In the
+    left-hand block of `GetAllStats`, the durability guard reads the *right* hand —
+    `if (!data.EquipWeapons.rightHand.IsBroken())` at `CharacterDataExtensions_Stats.cs:807`, where
+    the equivalent right-hand block at `:773` is correct. A copy-paste slip that inverts durability
+    for the off-hand: break the main hand and an undamaged off-hand's grants vanish; break the
+    off-hand and its grants keep working. **This project already uses durability** —
+    `Assets/1. Data/GameData/Items/Shields/Shield001_G.asset:69` sets `maxDurability: 100` — so it
+    is live, and under the classless design it presents as "my shield skill disappeared when my
+    sword broke", which points at the wrong system. Preferred resolution is to drop durability from
+    weapons and shields rather than patch `Core/`; patching is a one-word change but a kit mirror
+    reverts it silently, so it would need a divergence-index entry.
+  - **The weapon hotkey rows key on hand plus index, not on equip position.** Slot 2 is "left hand,
+    skill 0" *or* "right hand, skill 1" when the right hand is `TwoHand` — that conditional is the
+    whole always-two-buttons rule, and it is why the mapping belongs in one asset the auto-assign
+    component reads: no individual item can know whether it is currently supplying slot 2. The
+    component must also subscribe to `onEquipWeaponSetChange` (`BaseCharacterEntity_Events.cs:31`),
+    since `WeaponType.EquippableSetIndexes` supports weapon sets whose swap changes the whole
+    loadout without firing an equip-items operation.
+  - **The budget is a convention nothing validates, so it wants an editor pass.** Nothing checks
+    that a `TwoHand` weapon lists exactly two skills; the failure is a weapon that quietly gives one
+    button too few, found by a player. One editor script under `Assets/Scripts/Editor/` can cover
+    every silent-failure mode this document identifies: skill-count against `EquipType`, non-empty
+    `id` on grantable skills, no grantable skill in the class asset's `skills` array, `maxLevel` set
+    deliberately rather than left at its default of `1`, and `moveSpeedRateWhileAttacking` not left
+    at `0`.
+
+- **`Documentation/Systems/05_CLASSLESS_EQUIPMENT_SKILLS_AND_TALENTS_DESIGN.md`** (2026-09-04) —
   added Part 6, on default keybindings that follow equipped gear: swap legs, get the new legs'
   skill on the key that means "legs skill". Still design only.
   - **The kit ships a working precedent, for items.** `UICharacterHotkey.autoAssignItem` (`:27`)

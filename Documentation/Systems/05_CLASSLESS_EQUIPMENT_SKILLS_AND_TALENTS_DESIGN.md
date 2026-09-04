@@ -608,7 +608,139 @@ accident, and 4.1 shows affix order is explicitly shuffled for rolled bonuses.
   and `InputManager` is one of the two kit files this project has already patched in place
   (`CLAUDE.md`), so changes near it need care.
 
-## Part 7 — Build order
+## Part 7 — A fixed skill budget across weapon loadouts
+
+The want: weapon slots always yield **exactly two** skills. One-hander + shield gives 1 + 1. One-hander
++ off-hand weapon gives 1 + 1. A two-handed sword or staff gives 2 on its own. The player always has
+the same number of buttons whatever they are holding.
+
+This works, and it is almost entirely data. There is one mechanical obstacle and one live kit bug.
+
+### 7.1 What is free
+
+`WeaponType.EquipType` is a `WeaponItemEquipType` — `MainHandOnly`, `DualWieldable`, `TwoHand`,
+`OffHandOnly` (`GameData/Item/Equipments/WeaponType.cs:8-14`, field at `:28-29`) — so the loadout
+shapes are already modelled, and the kit enforces them on equip
+(`CharacterInventoryExtensions.cs:614-625`, `:665`).
+
+`increaseSkills` is an array, so **a two-hander listing two skills needs no code at all.** A
+one-hander lists one, a shield lists one, an off-hand weapon lists one. Different item classes
+cannot collide, so 1H + shield is safe by construction.
+
+### 7.2 The obstacle: identical dual-wielded items collapse into one skill
+
+Both hands are aggregated through the same callback and the same additive merge:
+
+```csharp
+// Right hand equipment                                          // :776
+GetBuffs(data.EquipWeapons.rightHand, ...,
+    skills => GameDataHelpers.CombineSkills(buffSkills, skills), ...);
+// Left hand equipment                                           // :810
+GetBuffs(data.EquipWeapons.leftHand, ...,
+    skills => GameDataHelpers.CombineSkills(buffSkills, skills), ...);
+```
+
+`CharacterDataExtensions_Stats.cs:764-825`
+
+**The hand is not carried into the skill dictionary**, and `CombineSkills` sums duplicate keys
+(`GameDataHelpers_CombineKeyValuePair.cs:203-217`). So two identical daggers, each granting
+`Slash 1`, produce a single entry `Slash 2` — **one** hotkey at double rank, not two hotkeys. The
+budget silently becomes 1 instead of 2, and the skill is silently stronger than intended.
+
+There is no data-only way to make one item grant a different skill depending on which hand holds it:
+`increaseSkills` is a property of the item, resolved by `CalculatedItemBuff` with no hand context.
+
+**Recommended fix: make the off-hand a distinct class of weapon, using `OffHandOnly`.** Parrying
+dagger, focus, tome, buckler — items that only ever go in the left hand and therefore carry their
+own skill. The invariant becomes structural instead of a convention someone has to remember, and it
+gives the off-hand its own identity, which is better design anyway.
+
+`DualWieldRestriction` (`WeaponType.cs:16-21`) is the softer version — `MainHandRestricted` and
+`OffHandRestricted` constrain which hand a dual-wieldable type may occupy without making it
+off-hand-only.
+
+**Rejected: allowing true mirror dual-wield and relying on players to mix weapon types.** One
+duplicate pair breaks the invariant, the failure is silent, and it presents as "why do I only have
+one button" — which points at the hotkey system rather than at the merge that actually caused it.
+
+### 7.3 The live bug: a broken main hand suppresses the off-hand's skills
+
+Inside the **left hand** block, the durability guard reads the **right** hand:
+
+```csharp
+// Left hand equipment
+tempEquipmentItem = data.EquipWeapons.GetLeftHandEquipmentItem();
+if (tempEquipmentItem != null)
+{
+    ...
+    if (!data.EquipWeapons.rightHand.IsBroken())        // <-- should be leftHand
+    {
+        GameDataHelpers.CombineArmors(resultArmors, data.EquipWeapons.leftHand.GetArmorAmount());
+        GetBuffs(data.EquipWeapons.leftHand, ...);
+    }
+```
+
+`CharacterDataExtensions_Stats.cs:798-823`, against the correct `:773` in the right-hand block
+above it. It is a copy-paste slip, and it inverts durability for the off-hand:
+
+- **Main hand breaks → the off-hand's skills and buffs vanish**, though the off-hand is undamaged.
+- **Off-hand breaks → its skills and buffs keep working.**
+
+**This project already has durability in use** — `Assets/1. Data/GameData/Items/Shields/Shield001_G.asset:69`
+sets `maxDurability: 100` — so this is live, not hypothetical. Under the design in this document it
+presents as *"my shield skill disappeared when my sword broke"*, which points at the wrong system
+entirely and is very hard to diagnose.
+
+Three options, in order of preference:
+
+1. **Do not put durability on weapons or shields.** Free, and sidesteps it entirely. Reasonable if
+   durability is not a mechanic this game wants.
+2. **Patch the line.** It is a one-word fix in `Core/`, so it is extension route 10: keep it
+   minimal, record it in bold in `CHANGELOG.md` as a stock-kit edit, and add it to the divergence
+   index, because a kit mirror silently reverts it.
+3. **Live with it** and document the behaviour. Only defensible if items never break in practice.
+
+### 7.4 Mapping the budget onto keys
+
+Part 6's mapping asset keys on `ArmorType.EquipPosition`, which does not describe hands. For weapons
+the rows want hand plus index instead:
+
+- `WeaponSkill1` ← right hand, granted skill index 0
+- `WeaponSkill2` ← left hand, granted skill index 0 — **or** right hand, granted skill index 1 when
+  the right hand's `EquipType` is `TwoHand`
+
+That conditional is the whole "always two buttons" rule, and it is why the mapping belongs in one
+asset the auto-assign component reads rather than as a `defaultHotkeyId` field on each item: no item
+can know whether it is currently supplying slot 2.
+
+Where an item grants several skills, do not take `increaseSkills[0]` and `[1]` by position without
+saying so in the data. Array order is authoring accident, and 4.1 shows the kit deliberately
+shuffles affix order for rolled bonuses — a rolled skill and an authored one are indistinguishable
+once merged into the cache.
+
+**Also subscribe to `onEquipWeaponSetChange`** (`BaseCharacterEntity_Events.cs:31`), not only
+`onEquipItemsOperation`. `WeaponType.EquippableSetIndexes` (`WeaponType.cs:36-40`) supports multiple
+weapon sets, and swapping sets changes the whole loadout without firing an equip-items operation.
+
+### 7.5 The invariant is a convention — enforce it in the editor
+
+Nothing in the kit validates that a `TwoHand` weapon lists exactly two skills and a `MainHandOnly`
+one lists exactly one. The failure mode is a weapon that quietly gives the player one button too
+few, discovered by a player.
+
+An editor validation pass is the cheap answer, and this repo already has the pattern:
+`Assets/Scripts/Editor/`, namespace `MMORPGGranny.EditorTools`, menu under `Tools/`
+(`CLAUDE.md`). Walk every weapon and shield asset and assert the expected count against
+`WeaponType.EquipType`. Extend it with the checks the rest of this document earns:
+
+- every grantable skill has a non-empty `id` (3.5, 6.6)
+- no grantable skill appears in the class asset's `skills` array (3.1)
+- every learnable skill has `maxLevel` set deliberately, not left at the default `1` (4.2)
+- `moveSpeedRateWhileAttacking` is not `0` on any new weapon (`CLAUDE.md`)
+
+That is one script covering every silent-failure mode identified here.
+
+## Part 8 — Build order
 
 1. **Set `id` explicitly on every skill asset** that gear will ever reference (3.5). First, because
    it is destructive to retrofit.
@@ -619,8 +751,11 @@ accident, and 4.1 shows affix order is explicitly shuffled for rolled bonuses.
    Verify: appears on equip, hotbar-assignable, castable, gone on unequip, and **rejected by the
    server** when a client tries to cast it unequipped.
 4. **Weapon-type identity pass.** Decide what each of the four existing weapon types
-   (`Assets/1. Data/GameData/WeaponTypes/`) means, and author `increaseSkills` across the weapon
-   catalogue with `IncrementalInt` curves so item level carries rank.
+   (`Assets/1. Data/GameData/WeaponTypes/`) means, set `EquipType` on each, and author
+   `increaseSkills` across the weapon catalogue with `IncrementalInt` curves so item level carries
+   rank. Settle the skill budget here (Part 7): one skill for main-hand and off-hand types, two for
+   `TwoHand`, and off-hand types marked `OffHandOnly` so a mirror dual-wield cannot collapse them.
+   Decide the durability question in 7.3 at the same time.
 5. **Armor and accessory grants**, then `EquipmentSet.Effects[].Skills` for set-bonus spells.
 6. **Talent architecture A** — passive nodes, tree edges via `skillLevels`, wired to the existing
    `UICharacterSkills` overload. Playable trees, no new C#.
@@ -628,7 +763,9 @@ accident, and 4.1 shows affix order is explicitly shuffled for rolled bonuses.
    A has shown which nodes actually want per-skill scaling.
 8. **Gear-following default keybindings** (Part 6), once more than one slot grants a skill. It is
    pointless with one staff and becomes obviously necessary at four grant slots.
-9. **`ItemRandomBonus.randomSkillLevels`** last. It is the most exciting feature here and the one
+9. **The editor validation pass** (7.5), once the conventions above are settled — one script for
+   every silent-failure mode this document identifies.
+10. **`ItemRandomBonus.randomSkillLevels`** last. It is the most exciting feature here and the one
    most likely to wreck balance before the baseline exists.
 
 `moveSpeedRateWhileAttacking` defaults to 0 and freezes movement for the length of every cast —
@@ -647,6 +784,9 @@ default).
   greyed and re-resolves on re-equip (`UICharacterHotkey.cs:150-162`), which is free and probably
   right, but it means a bar can look half-dead after a swap.
 - **Battle point handling for gear skills** (3.3) — only matters once matchmaking exists.
+- **Does this game want weapon durability at all?** 7.3 makes the answer load-bearing: while
+  durability is on, a stock-kit bug lets a broken main hand suppress the off-hand's granted skills.
+  Dropping durability from weapons and shields avoids a kit patch entirely.
 
 ## Related
 
