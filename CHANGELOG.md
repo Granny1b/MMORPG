@@ -9,6 +9,66 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Added
 
+- **`Documentation/Systems/05_AI_CONTENT_PIPELINE_DESIGN.md`** (2026-09-04) — design for an
+  AI-assisted content pipeline that lets an assistant add quests, items, dialogs and NPCs over MCP.
+  Design only, nothing implemented. Recommends JSON content specs as the authoring source of truth,
+  an editor-side importer that owns every project invariant, and four generic custom MCP tools.
+  - **The transport already existed and nobody had recorded it.** `com.coplaydev.unity-mcp` is
+    already in `Packages/manifest.json` and resolved in `Packages/packages-lock.json`, so no server
+    needs writing — the missing piece is a domain layer. Its
+    `MCPForUnity/Editor/MCPForUnity.Editor.asmdef` is `"autoReferenced": true`, so
+    `Assets/Scripts/Editor/` (no asmdef, compiles into `Assembly-CSharp-Editor`) can define custom
+    tools against it with no wiring and no new assembly definition, which keeps the project's
+    no-asmdef convention intact.
+  - **Rejected: the kit's own patch system (`Core/Scripts/Patching/`), which looks purpose-built for
+    exactly this and is an unfinished stub.** Recording the three defects because the export side
+    reads as a complete JSON authoring path and will tempt a future agent again.
+    `PatchDataManager.PatchingData` (`PatchDataManager.cs:27`) is read in exactly one place,
+    `BaseGameData.OnEnable` (`BaseGameData.cs:194`), and written nowhere in the repository — there
+    is no loader and no file format, so the dictionary is always empty. Both branches that would
+    rehydrate a reference to another game data object are stubbed
+    `// TODO: Get data by type and id` / `IGameData foundData = null`
+    (`PatchDataManager.cs:263-264`, `:377-378`), so a patched quest silently loses its reward items,
+    monsters and follow-up quests. And `ApplyGameDataPatchData` guards with
+    `if (field.DeclaringType is not IGameData) return;` (`:373`) — `DeclaringType` is a
+    `System.Type` and a `Type` never implements `IGameData`, so the guard is always true and the
+    method always returns before doing anything. Since nearly all content is cross-references, a
+    system that drops every reference is not a partial solution.
+  - **Rejected: having the assistant write `.asset` YAML directly.** It needs correct `m_Script`
+    GUIDs, `fileID`s, and for dialogs an xNode node list with port connection records and graph
+    coordinates. Errors there do not fail loudly, they deserialize into something subtly wrong. The
+    surviving half of the idea is Route C: let the assistant write plain JSON and let editor code do
+    the serialization.
+  - **Dialogs cannot use the same identity rule as everything else, so their graphs must be
+    append-only.** `BaseNpcDialog` extends xNode's `Node`, not `BaseGameData`, and its identity is
+    the object name with no serialized `id` to override
+    (`BaseNpcDialog.cs:152`, hashed at `:154`) — while `NpcDialogGraph.GetDialogs()` renames every
+    node as it collects them, `nodes[i].name = name + " " + i;` (`NpcDialogGraph.cs:17`). A dialog's
+    `DataId` is therefore its *index* in the graph, assigned at load, so inserting a node at the
+    front re-keys every dialog after it and invalidates saved quest state. Not a rare path:
+    `GetDialogs()` runs from `GameInstance_Data.cs:601` on database load and again from
+    `NpcEntity.cs:103` and `:119` on entity init.
+  - **NPCs register through a different asset than everything else.** Items, quests and skills go
+    into the arrays on `GameDatabase_G` (`GameDatabase.cs:40-63`), but NPCs live in
+    `NpcDatabase_G.maps[].npcs[]`, walked by `AddMapNpcs` (`GameInstance.cs:1827-1828`), and it is
+    that walk which registers each NPC's start dialog and dialog graph
+    (`GameInstance_Data.cs:598-601`). `NpcDatabase_G.asset` currently holds `maps: []`, so an
+    importer that only knows `GameDatabase_G` produces NPCs and dialogs that never load. There are
+    three registries on `GameInstance`, not one (`GameInstance.cs:373`, `:378`, `:381`).
+  - **`Quest.tasks` is dead and an assistant will fill it.** The field is private,
+    `[HideInInspector]` and marked `// TODO: Deprecating, use random tasks`
+    (`Quest.cs:16-19`); every read goes through `randomTasks` instead (`:101`, `:103`, `:175`).
+    Filling it yields a quest with no objectives and no error, so the spec format maps its flat
+    `tasks` array to `randomTasks[0].tasks` and leaves the dead field unreachable.
+  - **The importer must call `Validate()` rather than just setting fields.** For quests that call
+    bakes `npcEntityId` from the `npcEntity` reference (`Quest.cs:183-184`), and `npcEntity` is
+    compiled out of player builds by `#if UNITY_EDITOR` (`QuestTask.cs:21-29`). A `TalkToNpc` task
+    that skipped editor-side validation carries `npcEntityId` 0 and can never be completed.
+  - **Specs set the `id` field explicitly**, departing from every existing project asset, which
+    leaves it empty. `BaseGameData.Id` falls back to the asset name (`BaseGameData.cs:30-32`) and
+    `DataId` hashes it (`:147-153`), so today filenames are load-bearing and a rename orphans saved
+    data. Writing `id` decouples runtime identity from the filename for all new content.
+
 - **`Documentation/Systems/04_CAMERA_SHAKE_DESIGN.md`** (2026-09-03) — design for a camera shake
   system with a locally callable API and server-decided shakes. Design only, nothing implemented.
   - **A server-decided shake mostly needs no networking.** The server already replicates a boss's
@@ -1217,6 +1277,10 @@ Not project changes, but they affected the editor and are worth recording:
   (pushed 2026-05-20) — it may cover the same ground and be worth adopting or borrowing from.
 - Re-run the update periodically; the creator commits to `Core` most days. The version can be
   pinned by diffing a known file against upstream history, as was done to identify `7876b7e`.
+- `com.coplaydev.unity-mcp` in `Packages/manifest.json` tracks `#main`, so any two resolves can
+  pull different package commits. Harmless while it is only an editor bridge, but it also decides
+  which custom-tool API is available, so pin a tag before building anything on top of it
+  (`Documentation/Systems/05_AI_CONTENT_PIPELINE_DESIGN.md`).
 
 
 - Bind M1/M2 to abilities Battlerite-style: `Attack` is already a virtual button, and

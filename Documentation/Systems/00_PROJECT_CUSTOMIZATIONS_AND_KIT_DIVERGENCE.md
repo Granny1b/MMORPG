@@ -328,5 +328,7 @@ Known issues and follow-ups recorded by the project:
 - [01_BATTLEGROUND_QUEUE_DESIGN.md](01_BATTLEGROUND_QUEUE_DESIGN.md): design for the battleground queue and instance system. Project-owned feature, not yet implemented.
 - [02_ARENA_1V1_2V2_DESIGN.md](02_ARENA_1V1_2V2_DESIGN.md): design for ranked 1v1 and 2v2 arena on the same transport. Project-owned feature, not yet implemented.
 - [03_BOSS_ENCOUNTER_DESIGN.md](03_BOSS_ENCOUNTER_DESIGN.md): how complex a boss can be in this kit, and the design for phase-scripted encounters. Project-owned feature, not yet implemented.
+- [04_CAMERA_SHAKE_DESIGN.md](04_CAMERA_SHAKE_DESIGN.md): design for a locally callable camera shake API and server-decided shakes. Project-owned feature, not yet implemented.
+- [05_AI_CONTENT_PIPELINE_DESIGN.md](05_AI_CONTENT_PIPELINE_DESIGN.md): design for authoring quests, items, dialogs and NPCs from an AI assistant over MCP, via JSON content specs and an editor-side importer. Project-owned tooling, not yet implemented.
 
 There are no per-subsystem documents describing the *kit*; see section 2 of the overview for why. Numbered documents from 01 onward cover project-owned features, where the reasoning is ours and cannot be recomputed from kit source.
