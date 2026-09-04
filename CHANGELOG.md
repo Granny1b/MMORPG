@@ -9,6 +9,64 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Added
 
+- **`Documentation/Systems/05_CLASSLESS_EQUIPMENT_SKILLS_AND_TALENTS_DESIGN.md`** (2026-09-04) —
+  design for classless characters where equipment grants castable spells, plus three talent-tree
+  architectures on top. Design only, nothing implemented.
+  - **The classless half is already implemented in the kit and unused by the demo content.**
+    `BaseEquipmentItem.increaseSkills` is a `SkillIncremental[]` on every weapon, armor, shield and
+    accessory (`BaseEquipmentItem.cs:138-145`), scaled by item level through `IncrementalInt`, and
+    `ItemRandomBonus.randomSkillLevels` rolls spells onto drops (`ItemRandomBonus.cs:19`). It
+    aggregates through `CalculatedItemBuff.Build` (`:107-108`) and
+    `CharacterDataExtensions_Stats.GetBuffs` (`:161`) into `CharacterDataCache.Skills` (`:29`).
+    Every consumer already reads that merged cache rather than the learnt list — server-side cast
+    validation at `CharacterDataExtensions.cs:1324`, `BaseSkill.IsAvailable` (`:499-502`), the
+    hotkey bar, the hotkey assigner and the skill window. `UICharacterHotkey.cs:157` carries the kit
+    author's own comment, `// Get all skills included equipment skills`. Recorded because the
+    feature is invisible in the demo data and looks absent.
+  - **A passive skill's `increaseSkills` is silently discarded, and this is the expensive one.**
+    `GetAllStats` merges `buffSkills` into `resultSkills` once, at
+    `CharacterDataExtensions_Stats.cs:989`, then walks passive skills *after* that merge and writes
+    their granted skills back into `buffSkills` (`:1006`), which is never re-combined before
+    `resultSkills` is emitted (`:1042-1043`). So line 1006 is dead code for the skill dictionary.
+    Equipment, equipment sets, active buffs, summons, vehicles, titles and factions all work,
+    because all of them are aggregated before line 989. There is no error and no warning, and the
+    field is fully editable in the inspector. This kills the obvious talent design — a passive node
+    that adds ranks to a gear-granted spell — and it fails quietly.
+  - **Grant and gate are separate axes, and both already exist.** `item.increaseSkills` decides what
+    is in the spellbook; `BaseSkill.availableWeapons` (`:87`), `availableArmors` (`:90`) and
+    `requireShield` (`:84`) decide what is castable right now, checked in `CanUse`
+    (`:1030-1080`) and only for `BasePlayerCharacterEntity` (`:1015`), so monsters are unaffected.
+    Two data fields give a character who owns a spell permanently but must hold the right weapon to
+    cast it, and make weapon-swap hotbars re-resolve for free.
+  - **A skill asset must be either grantable or learnable, never both.** Granted and learnt levels
+    are different additive sources that meet only at the merge, while `UICharacterSkill.cs:273`
+    offers a level-up button based on the *merged* level — so a player can spend a skill point on a
+    staff's spell and keep it after unequipping the staff. The fix is
+    `requirementEachLevels[].disallow` (`BaseSkill.cs:424-430`), which short-circuits `CanLevelUp`
+    and therefore stops both the UI and the server's `AddSkill`.
+  - **Rejected: filtering the skill window to hide gear-granted skills.**
+    `UICharacterSkills.UpdateData` populates from the cache (`:156`), so hiding them there hides
+    from the player what their gear actually does, and it would not stop `AddSkill`, which validates
+    through `CanLevelUp` and nothing else. One `disallow` flag fixes UI and server together.
+  - **`SkillRequirement` is already a talent-tree node definition.** `skillLevels` are the DAG's
+    edges, `skillPoint` the currency, `attributeAmounts` and `characterLevel` the gates, and
+    `requirementEachLevels` is a list with one entry per rank, so multi-rank talents with escalating
+    costs are pure data. `UISkillRequirement.cs:170-185` already renders prerequisites, and
+    `ResetSkills`/`ResetAttributes` (`PlayerCharacterDataExtensions.cs:382`, `:453`) already respec.
+    What is missing is only the tree *layout* — xNode is vendored but wired solely to
+    `NpcDialogGraph`.
+  - **Skill-specific talent scaling belongs in a `BaseGameplayRule` subclass.** `GetTotalDamage`
+    (`BaseGameplayRule.cs:83`) receives the `BaseSkill` being cast and the instigator, which is the
+    only seam that can multiply damage for one named spell; `DefaultGameplayRule` already walks
+    `GetCaches().Skills` this way for passive combat effects (`:749`, `:810`).
+  - **Rejected: registering talent-mapping assets in `GameDatabase_G`.** Same reasoning as doc 04 —
+    `GameDatabase` holds a fixed set of typed arrays (`GameDatabase.cs:25-63`) with no generic slot.
+    Reference the mapping list from the gameplay-rule asset instead.
+  - **Set `id` explicitly on every skill asset before authoring the item side.** `DataId` hashes the
+    asset name while `id` is empty (`BaseGameData.cs:30`, `:180`) and every project asset currently
+    leaves it empty. Under this design a single spell is referenced from dozens of item assets, so
+    the cost of a later rename scales with the catalogue.
+
 - **`Documentation/Systems/04_CAMERA_SHAKE_DESIGN.md`** (2026-09-03) — design for a camera shake
   system with a locally callable API and server-decided shakes. Design only, nothing implemented.
   - **A server-decided shake mostly needs no networking.** The server already replicates a boss's
