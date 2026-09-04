@@ -9,6 +9,212 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 
 ### Added
 
+- **`Documentation/Systems/05_CLASSLESS_EQUIPMENT_SKILLS_AND_TALENTS_DESIGN.md`** (2026-09-04) —
+  added Part 7, a fixed skill budget across weapon loadouts: one-hander plus shield or off-hand
+  weapon gives 1 + 1, a two-hander gives 2, so the player always has the same number of buttons.
+  Still design only.
+  - **Most of it is free.** `WeaponType.EquipType` already models the loadout shapes —
+    `MainHandOnly`, `DualWieldable`, `TwoHand`, `OffHandOnly` (`WeaponType.cs:8-14`, field `:28`) —
+    and the kit enforces them on equip (`CharacterInventoryExtensions.cs:614-625`, `:665`).
+    `increaseSkills` is an array, so a two-hander listing two skills needs no code.
+  - **Identical dual-wielded items collapse into one skill, and this is the mechanical obstacle.**
+    Both hands aggregate through the same callback and the same additive merge
+    (`CharacterDataExtensions_Stats.cs:776` and `:810`, both
+    `skills => CombineSkills(buffSkills, skills)`), the hand is never carried into the dictionary,
+    and `CombineSkills` sums duplicate keys (`GameDataHelpers_CombineKeyValuePair.cs:203-217`). Two
+    identical daggers each granting `Slash 1` therefore give **one** entry at `Slash 2` — one
+    hotkey, silently stronger, budget silently 1 instead of 2. There is no data-only way to vary a
+    grant by hand: `increaseSkills` belongs to the item and `CalculatedItemBuff` resolves it with no
+    hand context.
+  - **Fix: mark off-hand weapon types `OffHandOnly` so the off-hand is a distinct class of item**
+    (parrying dagger, focus, tome, buckler) carrying its own skill. That makes the invariant
+    structural rather than a convention, and `DualWieldRestriction` (`WeaponType.cs:16-21`) is the
+    softer variant when a type should merely be restricted to one hand.
+  - **Rejected: true mirror dual-wield with players expected to mix weapon types.** One duplicate
+    pair breaks the invariant, the failure is silent, and it presents as "why do I only have one
+    button" — pointing at the hotkey system rather than at the merge that caused it.
+  - **Live stock-kit bug: a broken main hand suppresses the off-hand's skills and buffs.** In the
+    left-hand block of `GetAllStats`, the durability guard reads the *right* hand —
+    `if (!data.EquipWeapons.rightHand.IsBroken())` at `CharacterDataExtensions_Stats.cs:807`, where
+    the equivalent right-hand block at `:773` is correct. A copy-paste slip that inverts durability
+    for the off-hand: break the main hand and an undamaged off-hand's grants vanish; break the
+    off-hand and its grants keep working. **This project already uses durability** —
+    `Assets/1. Data/GameData/Items/Shields/Shield001_G.asset:69` sets `maxDurability: 100` — so it
+    is live, and under the classless design it presents as "my shield skill disappeared when my
+    sword broke", which points at the wrong system. Preferred resolution is to drop durability from
+    weapons and shields rather than patch `Core/`; patching is a one-word change but a kit mirror
+    reverts it silently, so it would need a divergence-index entry.
+  - **The weapon hotkey rows key on hand plus index, not on equip position.** Slot 2 is "left hand,
+    skill 0" *or* "right hand, skill 1" when the right hand is `TwoHand` — that conditional is the
+    whole always-two-buttons rule, and it is why the mapping belongs in one asset the auto-assign
+    component reads: no individual item can know whether it is currently supplying slot 2. The
+    component must also subscribe to `onEquipWeaponSetChange` (`BaseCharacterEntity_Events.cs:31`),
+    since `WeaponType.EquippableSetIndexes` supports weapon sets whose swap changes the whole
+    loadout without firing an equip-items operation.
+  - **The budget is a convention nothing validates, so it wants an editor pass.** Nothing checks
+    that a `TwoHand` weapon lists exactly two skills; the failure is a weapon that quietly gives one
+    button too few, found by a player. One editor script under `Assets/Scripts/Editor/` can cover
+    every silent-failure mode this document identifies: skill-count against `EquipType`, non-empty
+    `id` on grantable skills, no grantable skill in the class asset's `skills` array, `maxLevel` set
+    deliberately rather than left at its default of `1`, and `moveSpeedRateWhileAttacking` not left
+    at `0`.
+
+- **`Documentation/Systems/05_CLASSLESS_EQUIPMENT_SKILLS_AND_TALENTS_DESIGN.md`** (2026-09-04) —
+  added Part 6, on default keybindings that follow equipped gear: swap legs, get the new legs'
+  skill on the key that means "legs skill". Still design only.
+  - **The kit ships a working precedent, for items.** `UICharacterHotkey.autoAssignItem` (`:27`)
+    plus its `OnNonEquipItemsOperation` handler (`:72-86`) reacts to an inventory sync-list
+    operation and fills the slot **only when it is empty**, never overwriting a player's own
+    assignment. Both of those properties are worth copying.
+  - **A "virtual" hotkey that resolves live is not possible without patching the kit.**
+    `GetAssignedSkill` reads the stored `relateId` (`UICharacterHotkey.cs:150-162`), is not
+    `virtual`, and is called from three non-virtual sites in the same class (`:76`, `:103`, `:245`),
+    which is under `Core/`. So the design must **write a real `CharacterHotkey`** on equipment
+    change rather than intercept resolution — after which rendering, input, drag-and-drop and the
+    cast itself all work unchanged because nothing knows the assignment was automatic.
+  - **Do it server-side even though the kit's own precedent is client-side.** `CmdAssignHotkey`
+    performs no validation whatsoever (`BasePlayerCharacterEntity_NetworkResponse.cs:57-71`), which
+    is fine because hotkeys are cosmetic and the cast is validated at
+    `CharacterDataExtensions.cs:1324` — but `Hotkeys` is directly writable on the server
+    (`BasePlayerCharacterEntity_NetworkData.cs:290-298`), equipment can change through paths that
+    are not the equip UI, and the write reaches clients free because `UICharacterHotkeys` already
+    listens to `onHotkeysOperation` (`:178`). A `[DevExtMethods("Awake")]` partial subscribing to
+    `onEquipItemsOperation` (`BaseCharacterEntity_Events.cs:45`) touches no kit file.
+  - **"Is the slot empty" must be judged by resolution, not by record — this is the bug this
+    feature will produce.** `IndexOfHotkey` finds a stored row
+    (`SharedData/.../PlayerCharacterDataExtensions.cs:663`) while `GetAssignedSkill` returns false
+    for a `relateId` that no longer resolves against the merged cache (`UICharacterHotkey.cs:157`).
+    A slot holding a skill you no longer have looks empty on screen and is not empty in data, so
+    fill-only logic keyed on `IndexOfHotkey` fires exactly once and then never again.
+  - **A persisted hotkey stores the skill's string `Id`, not its `DataId`** — `AssignSkillHotkey`
+    writes `GetSkill().Id` (`BasePlayerCharacterEntity_NetworkRequest.cs:62-66`) and resolution
+    re-hashes it with `MakeDataId` (`UICharacterHotkey.cs:158`). With `Id` falling back to the asset
+    name while the `id` field is empty, **renaming a skill asset silently breaks every persisted
+    hotkey pointing at it, on every character.** Third independent reason to set `id` explicitly
+    before any of this ships.
+  - **Rejected: "always overwrite the slot on equip".** It is one line simpler and it destroys any
+    deliberate arrangement the player made, plus it writes to a synced, persisted list on every
+    swap including swaps that change nothing. The recommended policy replaces only what that slot
+    itself put there, using the `oldItem`/`newItem` pair the operation callback already provides,
+    which also collapses first-equip and unequip into the same rule.
+  - **Use `buttonName`, not `key`, for the binding.** `UICharacterHotkey` reads
+    `InputManager.GetKeyDown(key) || InputManager.GetButtonDown(buttonName)` (`:129`); only the
+    `buttonName` path goes through `InputManager` and therefore stays rebindable through the Input
+    System. Bindings live on the forked `CanvasGameplay_G.prefab`, not in game data.
+  - **The mapping wants one asset, not a field on every item.** `ArmorType.EquipPosition`
+    (`ArmorType.cs:18-21`) names the slot and `CharacterItem.equipSlotIndex` disambiguates
+    multi-slot types such as two rings, so `{ armorType, equipSlotIndex, hotkeyId }` rows are the
+    whole configuration. Not registered in `GameDatabase_G`, for the usual reason. A per-item
+    override is possible — `BaseItem` and its subclasses are `partial` and compile into
+    `Assembly-CSharp` — but is the escape hatch, not the default.
+
+- **`Documentation/Systems/05_CLASSLESS_EQUIPMENT_SKILLS_AND_TALENTS_DESIGN.md`** (2026-09-04) —
+  added Part 4 on rolled skill ranks on gear and on a baseline every character owns, and **corrected
+  section 3.1**, which previously named the wrong mechanism. Still design only.
+  - **Correction: `requirementEachLevels[].disallow` is not what stops a player learning a
+    gear-granted spell — a whitelist is.** `PlayerCharacter.skills` does double duty:
+    `GetSkillLevels` grants each listed skill, and `GetLearnableSkillDataIds` returns that same list
+    as the complete set of skills the character may ever learn (`PlayerCharacter.cs:126-146`).
+    `CanLevelUp` rejects anything outside it before every other check (`BaseSkill.cs:921-925`), and
+    both the server's `AddSkill` and the UI's level-up button route through `CanLevelUp`. So keeping
+    grantable spells off the class asset is the boundary; `disallow` locks an individual *rank* of
+    an otherwise-learnable skill, which is a different job. The earlier entry overstated it.
+  - **A rolled skill rank on an item is a genuine per-instance affix, and needs no replication.**
+    `SkillRandomLevel` carries `minLevel`, `maxLevel` and `applyRate`
+    (`GameData/Skill/SkillLevel.cs:12-33`); `CharacterItem.randomSeed` is assigned once at creation
+    (`CharacterItem.cs:296`) and persisted (`SharedData/.../CharacterItem.cs:37`), and
+    `CalculatedItemRandomBonus.Build` derives the whole roll from `new System.Random(_randomSeed)`
+    (`:91`), so both sides compute the same result from stored data. Works identically for passive
+    and active skills. Caveats recorded: `maxRandomStatsAmount` is one budget shared across *all*
+    affix categories (`:113-116`), category and entry order are shuffled only when the item's
+    `version > 1` (`:107`, `:282-288`, `CURRENT_VERSION = 2`), and a rolled rank is **additive** with
+    the same item's flat `increaseSkills` (`CalculatedItemBuff.cs:107-108`).
+  - **`BaseSkill.maxLevel` defaults to `1`, and a class grant counts against it.** The cap is
+    `learntLevel + classGrantAtCharacterLevel1 >= maxLevel` (`BaseSkill.cs:941-951`), so a baseline
+    passive granted at rank 1 with the default `maxLevel` can never be raised, reporting only
+    `UI_ERROR_SKILL_REACHED_MAX_LEVEL`. The class grant is sampled at character level **1**,
+    hardcoded (`:944`), so a baseline that scales with character level is not measured by the cap at
+    all — a passive growing 1→5 with `maxLevel = 5` still permits four purchased ranks on top.
+  - **The skill window and the server disagree about which requirement rank is being purchased,
+    but only when a skill is both granted and learnable.** `UICharacterSkills.GenerateList` stores
+    the *learnt* level in the `CharacterSkill` and the *merged* level as `targetLevel`
+    (`UICharacterSkills.cs:224-226`); `UICharacterSkill.Level` returns `targetLevel` (`:13`) and
+    passes it to `CanLevelUp` (`:273`), while the server passes the learnt level
+    (`PlayerCharacterDataExtensions.cs:421`, `:436`). With a baseline grant of 1 and nothing learnt,
+    the UI reads `requirementEachLevels[1]` and the server charges `[0]` — displayed cost is not
+    charged cost. Invisible in stock content, where nothing grants skills and the two levels are
+    equal. Preferred fix is a flat per-rank cost, which makes the mismatch unobservable.
+  - **Rejected: patching `UICharacterSkill.cs` to pass the learnt level.** It is under `Core/` and a
+    kit update reverts it, and the merged `targetLevel` is deliberate for *display* — the entry is
+    meant to show effective rank. The fix, if flat costs are not acceptable, is to fork the
+    component into `Assets/1. Data/`, not to change what `targetLevel` means for everyone.
+  - **New characters are seeded with a rank-0 row for every learnable skill**
+    (`PlayerCharacterDataExtensions.cs:143-147`), and `CombineSkills` skips only null keys, never
+    zero values (`GameDataHelpers_CombineKeyValuePair.cs:203-217`), so unlearnt talent nodes sit in
+    the merged cache at 0 — visible to a tree UI, not castable (`IsAvailable` requires `> 0`,
+    `BaseSkill.cs:501`), and cluttering the normal skill window unless filtered. Removing a skill
+    from the class asset strips it from every character and refunds the points
+    (`PlayerCharacterDataExtensions.cs:50-70`), which is a usable talent-retirement path and an
+    accidental wipe if that array is edited carelessly.
+
+- **`Documentation/Systems/05_CLASSLESS_EQUIPMENT_SKILLS_AND_TALENTS_DESIGN.md`** (2026-09-04) —
+  design for classless characters where equipment grants castable spells, plus three talent-tree
+  architectures on top. Design only, nothing implemented.
+  - **The classless half is already implemented in the kit and unused by the demo content.**
+    `BaseEquipmentItem.increaseSkills` is a `SkillIncremental[]` on every weapon, armor, shield and
+    accessory (`BaseEquipmentItem.cs:138-145`), scaled by item level through `IncrementalInt`, and
+    `ItemRandomBonus.randomSkillLevels` rolls spells onto drops (`ItemRandomBonus.cs:19`). It
+    aggregates through `CalculatedItemBuff.Build` (`:107-108`) and
+    `CharacterDataExtensions_Stats.GetBuffs` (`:161`) into `CharacterDataCache.Skills` (`:29`).
+    Every consumer already reads that merged cache rather than the learnt list — server-side cast
+    validation at `CharacterDataExtensions.cs:1324`, `BaseSkill.IsAvailable` (`:499-502`), the
+    hotkey bar, the hotkey assigner and the skill window. `UICharacterHotkey.cs:157` carries the kit
+    author's own comment, `// Get all skills included equipment skills`. Recorded because the
+    feature is invisible in the demo data and looks absent.
+  - **A passive skill's `increaseSkills` is silently discarded, and this is the expensive one.**
+    `GetAllStats` merges `buffSkills` into `resultSkills` once, at
+    `CharacterDataExtensions_Stats.cs:989`, then walks passive skills *after* that merge and writes
+    their granted skills back into `buffSkills` (`:1006`), which is never re-combined before
+    `resultSkills` is emitted (`:1042-1043`). So line 1006 is dead code for the skill dictionary.
+    Equipment, equipment sets, active buffs, summons, vehicles, titles and factions all work,
+    because all of them are aggregated before line 989. There is no error and no warning, and the
+    field is fully editable in the inspector. This kills the obvious talent design — a passive node
+    that adds ranks to a gear-granted spell — and it fails quietly.
+  - **Grant and gate are separate axes, and both already exist.** `item.increaseSkills` decides what
+    is in the spellbook; `BaseSkill.availableWeapons` (`:87`), `availableArmors` (`:90`) and
+    `requireShield` (`:84`) decide what is castable right now, checked in `CanUse`
+    (`:1030-1080`) and only for `BasePlayerCharacterEntity` (`:1015`), so monsters are unaffected.
+    Two data fields give a character who owns a spell permanently but must hold the right weapon to
+    cast it, and make weapon-swap hotbars re-resolve for free.
+  - **A skill asset must be either grantable or learnable, never both.** Granted and learnt levels
+    are different additive sources that meet only at the merge, while `UICharacterSkill.cs:273`
+    offers a level-up button based on the *merged* level — so a player can spend a skill point on a
+    staff's spell and keep it after unequipping the staff. The fix is
+    `requirementEachLevels[].disallow` (`BaseSkill.cs:424-430`), which short-circuits `CanLevelUp`
+    and therefore stops both the UI and the server's `AddSkill`.
+  - **Rejected: filtering the skill window to hide gear-granted skills.**
+    `UICharacterSkills.UpdateData` populates from the cache (`:156`), so hiding them there hides
+    from the player what their gear actually does, and it would not stop `AddSkill`, which validates
+    through `CanLevelUp` and nothing else. One `disallow` flag fixes UI and server together.
+  - **`SkillRequirement` is already a talent-tree node definition.** `skillLevels` are the DAG's
+    edges, `skillPoint` the currency, `attributeAmounts` and `characterLevel` the gates, and
+    `requirementEachLevels` is a list with one entry per rank, so multi-rank talents with escalating
+    costs are pure data. `UISkillRequirement.cs:170-185` already renders prerequisites, and
+    `ResetSkills`/`ResetAttributes` (`PlayerCharacterDataExtensions.cs:382`, `:453`) already respec.
+    What is missing is only the tree *layout* — xNode is vendored but wired solely to
+    `NpcDialogGraph`.
+  - **Skill-specific talent scaling belongs in a `BaseGameplayRule` subclass.** `GetTotalDamage`
+    (`BaseGameplayRule.cs:83`) receives the `BaseSkill` being cast and the instigator, which is the
+    only seam that can multiply damage for one named spell; `DefaultGameplayRule` already walks
+    `GetCaches().Skills` this way for passive combat effects (`:749`, `:810`).
+  - **Rejected: registering talent-mapping assets in `GameDatabase_G`.** Same reasoning as doc 04 —
+    `GameDatabase` holds a fixed set of typed arrays (`GameDatabase.cs:25-63`) with no generic slot.
+    Reference the mapping list from the gameplay-rule asset instead.
+  - **Set `id` explicitly on every skill asset before authoring the item side.** `DataId` hashes the
+    asset name while `id` is empty (`BaseGameData.cs:30`, `:180`) and every project asset currently
+    leaves it empty. Under this design a single spell is referenced from dozens of item assets, so
+    the cost of a later rename scales with the catalogue.
+
 - **`Documentation/Systems/04_CAMERA_SHAKE_DESIGN.md`** (2026-09-03) — design for a camera shake
   system with a locally callable API and server-decided shakes. Design only, nothing implemented.
   - **A server-decided shake mostly needs no networking.** The server already replicates a boss's
