@@ -10,6 +10,55 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 ### Added
 
 - **`Documentation/Systems/05_CLASSLESS_EQUIPMENT_SKILLS_AND_TALENTS_DESIGN.md`** (2026-09-04) —
+  added Part 4 on rolled skill ranks on gear and on a baseline every character owns, and **corrected
+  section 3.1**, which previously named the wrong mechanism. Still design only.
+  - **Correction: `requirementEachLevels[].disallow` is not what stops a player learning a
+    gear-granted spell — a whitelist is.** `PlayerCharacter.skills` does double duty:
+    `GetSkillLevels` grants each listed skill, and `GetLearnableSkillDataIds` returns that same list
+    as the complete set of skills the character may ever learn (`PlayerCharacter.cs:126-146`).
+    `CanLevelUp` rejects anything outside it before every other check (`BaseSkill.cs:921-925`), and
+    both the server's `AddSkill` and the UI's level-up button route through `CanLevelUp`. So keeping
+    grantable spells off the class asset is the boundary; `disallow` locks an individual *rank* of
+    an otherwise-learnable skill, which is a different job. The earlier entry overstated it.
+  - **A rolled skill rank on an item is a genuine per-instance affix, and needs no replication.**
+    `SkillRandomLevel` carries `minLevel`, `maxLevel` and `applyRate`
+    (`GameData/Skill/SkillLevel.cs:12-33`); `CharacterItem.randomSeed` is assigned once at creation
+    (`CharacterItem.cs:296`) and persisted (`SharedData/.../CharacterItem.cs:37`), and
+    `CalculatedItemRandomBonus.Build` derives the whole roll from `new System.Random(_randomSeed)`
+    (`:91`), so both sides compute the same result from stored data. Works identically for passive
+    and active skills. Caveats recorded: `maxRandomStatsAmount` is one budget shared across *all*
+    affix categories (`:113-116`), category and entry order are shuffled only when the item's
+    `version > 1` (`:107`, `:282-288`, `CURRENT_VERSION = 2`), and a rolled rank is **additive** with
+    the same item's flat `increaseSkills` (`CalculatedItemBuff.cs:107-108`).
+  - **`BaseSkill.maxLevel` defaults to `1`, and a class grant counts against it.** The cap is
+    `learntLevel + classGrantAtCharacterLevel1 >= maxLevel` (`BaseSkill.cs:941-951`), so a baseline
+    passive granted at rank 1 with the default `maxLevel` can never be raised, reporting only
+    `UI_ERROR_SKILL_REACHED_MAX_LEVEL`. The class grant is sampled at character level **1**,
+    hardcoded (`:944`), so a baseline that scales with character level is not measured by the cap at
+    all — a passive growing 1→5 with `maxLevel = 5` still permits four purchased ranks on top.
+  - **The skill window and the server disagree about which requirement rank is being purchased,
+    but only when a skill is both granted and learnable.** `UICharacterSkills.GenerateList` stores
+    the *learnt* level in the `CharacterSkill` and the *merged* level as `targetLevel`
+    (`UICharacterSkills.cs:224-226`); `UICharacterSkill.Level` returns `targetLevel` (`:13`) and
+    passes it to `CanLevelUp` (`:273`), while the server passes the learnt level
+    (`PlayerCharacterDataExtensions.cs:421`, `:436`). With a baseline grant of 1 and nothing learnt,
+    the UI reads `requirementEachLevels[1]` and the server charges `[0]` — displayed cost is not
+    charged cost. Invisible in stock content, where nothing grants skills and the two levels are
+    equal. Preferred fix is a flat per-rank cost, which makes the mismatch unobservable.
+  - **Rejected: patching `UICharacterSkill.cs` to pass the learnt level.** It is under `Core/` and a
+    kit update reverts it, and the merged `targetLevel` is deliberate for *display* — the entry is
+    meant to show effective rank. The fix, if flat costs are not acceptable, is to fork the
+    component into `Assets/1. Data/`, not to change what `targetLevel` means for everyone.
+  - **New characters are seeded with a rank-0 row for every learnable skill**
+    (`PlayerCharacterDataExtensions.cs:143-147`), and `CombineSkills` skips only null keys, never
+    zero values (`GameDataHelpers_CombineKeyValuePair.cs:203-217`), so unlearnt talent nodes sit in
+    the merged cache at 0 — visible to a tree UI, not castable (`IsAvailable` requires `> 0`,
+    `BaseSkill.cs:501`), and cluttering the normal skill window unless filtered. Removing a skill
+    from the class asset strips it from every character and refunds the points
+    (`PlayerCharacterDataExtensions.cs:50-70`), which is a usable talent-retirement path and an
+    accidental wipe if that array is edited carelessly.
+
+- **`Documentation/Systems/05_CLASSLESS_EQUIPMENT_SKILLS_AND_TALENTS_DESIGN.md`** (2026-09-04) —
   design for classless characters where equipment grants castable spells, plus three talent-tree
   architectures on top. Design only, nothing implemented.
   - **The classless half is already implemented in the kit and unused by the demo content.**
