@@ -10,6 +10,55 @@ Paths are relative to the project root (`D:\1. Unity projekt\MMORPG Granny`).
 ### Added
 
 - **`Documentation/Systems/05_CLASSLESS_EQUIPMENT_SKILLS_AND_TALENTS_DESIGN.md`** (2026-09-04) —
+  added Part 6, on default keybindings that follow equipped gear: swap legs, get the new legs'
+  skill on the key that means "legs skill". Still design only.
+  - **The kit ships a working precedent, for items.** `UICharacterHotkey.autoAssignItem` (`:27`)
+    plus its `OnNonEquipItemsOperation` handler (`:72-86`) reacts to an inventory sync-list
+    operation and fills the slot **only when it is empty**, never overwriting a player's own
+    assignment. Both of those properties are worth copying.
+  - **A "virtual" hotkey that resolves live is not possible without patching the kit.**
+    `GetAssignedSkill` reads the stored `relateId` (`UICharacterHotkey.cs:150-162`), is not
+    `virtual`, and is called from three non-virtual sites in the same class (`:76`, `:103`, `:245`),
+    which is under `Core/`. So the design must **write a real `CharacterHotkey`** on equipment
+    change rather than intercept resolution — after which rendering, input, drag-and-drop and the
+    cast itself all work unchanged because nothing knows the assignment was automatic.
+  - **Do it server-side even though the kit's own precedent is client-side.** `CmdAssignHotkey`
+    performs no validation whatsoever (`BasePlayerCharacterEntity_NetworkResponse.cs:57-71`), which
+    is fine because hotkeys are cosmetic and the cast is validated at
+    `CharacterDataExtensions.cs:1324` — but `Hotkeys` is directly writable on the server
+    (`BasePlayerCharacterEntity_NetworkData.cs:290-298`), equipment can change through paths that
+    are not the equip UI, and the write reaches clients free because `UICharacterHotkeys` already
+    listens to `onHotkeysOperation` (`:178`). A `[DevExtMethods("Awake")]` partial subscribing to
+    `onEquipItemsOperation` (`BaseCharacterEntity_Events.cs:45`) touches no kit file.
+  - **"Is the slot empty" must be judged by resolution, not by record — this is the bug this
+    feature will produce.** `IndexOfHotkey` finds a stored row
+    (`SharedData/.../PlayerCharacterDataExtensions.cs:663`) while `GetAssignedSkill` returns false
+    for a `relateId` that no longer resolves against the merged cache (`UICharacterHotkey.cs:157`).
+    A slot holding a skill you no longer have looks empty on screen and is not empty in data, so
+    fill-only logic keyed on `IndexOfHotkey` fires exactly once and then never again.
+  - **A persisted hotkey stores the skill's string `Id`, not its `DataId`** — `AssignSkillHotkey`
+    writes `GetSkill().Id` (`BasePlayerCharacterEntity_NetworkRequest.cs:62-66`) and resolution
+    re-hashes it with `MakeDataId` (`UICharacterHotkey.cs:158`). With `Id` falling back to the asset
+    name while the `id` field is empty, **renaming a skill asset silently breaks every persisted
+    hotkey pointing at it, on every character.** Third independent reason to set `id` explicitly
+    before any of this ships.
+  - **Rejected: "always overwrite the slot on equip".** It is one line simpler and it destroys any
+    deliberate arrangement the player made, plus it writes to a synced, persisted list on every
+    swap including swaps that change nothing. The recommended policy replaces only what that slot
+    itself put there, using the `oldItem`/`newItem` pair the operation callback already provides,
+    which also collapses first-equip and unequip into the same rule.
+  - **Use `buttonName`, not `key`, for the binding.** `UICharacterHotkey` reads
+    `InputManager.GetKeyDown(key) || InputManager.GetButtonDown(buttonName)` (`:129`); only the
+    `buttonName` path goes through `InputManager` and therefore stays rebindable through the Input
+    System. Bindings live on the forked `CanvasGameplay_G.prefab`, not in game data.
+  - **The mapping wants one asset, not a field on every item.** `ArmorType.EquipPosition`
+    (`ArmorType.cs:18-21`) names the slot and `CharacterItem.equipSlotIndex` disambiguates
+    multi-slot types such as two rings, so `{ armorType, equipSlotIndex, hotkeyId }` rows are the
+    whole configuration. Not registered in `GameDatabase_G`, for the usual reason. A per-item
+    override is possible — `BaseItem` and its subclasses are `partial` and compile into
+    `Assembly-CSharp` — but is the escape hatch, not the default.
+
+- **`Documentation/Systems/05_CLASSLESS_EQUIPMENT_SKILLS_AND_TALENTS_DESIGN.md`** (2026-09-04) —
   added Part 4 on rolled skill ranks on gear and on a baseline every character owns, and **corrected
   section 3.1**, which previously named the wrong mechanism. Still design only.
   - **Correction: `requirementEachLevels[].disallow` is not what stops a player learning a

@@ -472,7 +472,143 @@ a screen coordinate.
 
 ---
 
-## Part 6 — Build order
+## Part 6 — Default keybindings that follow your gear
+
+The want: a key that means "my legs skill". Swap legs, and the new legs' skill is on that key with
+no dragging. This is buildable, the kit ships a working precedent for it, and there is one
+architectural fact that decides the whole shape.
+
+### 6.1 The kit already does this, for items
+
+`UICharacterHotkey` has an `autoAssignItem` flag (`UI/Hotkey/UICharacterHotkey.cs:27`) and this
+handler (`:72-86`):
+
+```csharp
+private void OnNonEquipItemsOperation(LiteNetLibSyncListOp operation, int index, ...)
+{
+    if (!autoAssignItem)
+        return;
+    if (!GetAssignedSkill(out _, out _) && !GetAssignedItem(out _, out _, out _))
+    {
+        foreach (CharacterItem nonEquipItem in GameInstance.PlayingCharacter.NonEquipItems)
+        {
+            if (!CanAssignCharacterItem(nonEquipItem))
+                continue;
+            GameInstance.PlayingCharacterEntity.AssignItemHotkey(HotkeyId, nonEquipItem);
+            break;
+        }
+    }
+}
+```
+
+Inventory changes, the slot is empty, so it fills itself. Two things to copy from it: it reacts to a
+**sync-list operation**, and it **only fills an empty slot** — it never overwrites what the player
+put there.
+
+### 6.2 Hotkeys cannot be made virtual — write the assignment, don't intercept it
+
+The tempting design is a "virtual slot" that resolves live: *slot 5 means whatever my legs currently
+grant*, with nothing stored. **That route is closed.** `GetAssignedSkill` reads the stored
+`Data.relateId` (`UICharacterHotkey.cs:150-162`), it is **not `virtual`**, and it is called from
+three non-virtual sites inside the same class (`:76`, `:103`, `:245`). A subclass cannot intercept
+resolution, and `UICharacterHotkey` is under `Core/`, so overriding it means patching the kit.
+
+So the supported design is the one `autoAssignItem` uses: **write a real `CharacterHotkey` into the
+character's persisted `hotkeys` list when equipment changes.** Everything downstream — rendering,
+input, drag-and-drop, the cast itself — then works unchanged, because nothing knows the assignment
+was automatic.
+
+### 6.3 Run it on the server
+
+`autoAssignItem` runs client-side and sends `CallCmdAssignHotkey`
+(`BasePlayerCharacterEntity_NetworkRequest.cs:56-60`). That is safe — `CmdAssignHotkey` performs
+**no validation at all**, it writes whatever it is handed
+(`BasePlayerCharacterEntity_NetworkResponse.cs:57-71`) — because hotkeys are cosmetic and the cast
+is validated separately at `CharacterDataExtensions.cs:1324`.
+
+Prefer the server side anyway:
+
+- `Hotkeys` is directly writable there — the property returns the live sync list and has a setter
+  (`BasePlayerCharacterEntity_NetworkData.cs:290-298`).
+- Equipment can change through paths that are not the equip UI (quest rewards, admin commands, an
+  item expiring). A client-side hook misses those.
+- No RPC round trip, and the write reaches the client for free: the sync-list op fires
+  `onHotkeysOperation`, which `UICharacterHotkeys` already listens to (`UICharacterHotkeys.cs:178`).
+
+Shape: a `partial class PlayerCharacterEntity` in `Assets/Scripts/Gameplay/` with a
+`[DevExtMethods("Awake")]` hook subscribing to `onEquipItemsOperation`
+(`BaseCharacterEntity_Events.cs:45`), guarded by `if (!IsServer) return;`, unsubscribing from the
+`OnDestroy` hook. This is extension mechanisms 4 and 2 from `EXTENDING.md`, and touches no kit file.
+
+### 6.4 The mapping asset
+
+Two keys are needed: which equip slot, and which hotkey.
+
+**Equip slot** is `ArmorType.EquipPosition` (`GameData/Item/Equipments/ArmorType.cs:18-21`) — a
+string that falls back to the `ArmorType`'s own `Id`, uppercased. `CharacterItem.equipSlotIndex`
+(`SharedData/.../CharacterItem.cs:32`) disambiguates multi-slot types, so two ring slots can carry
+different defaults.
+
+**Hotkey id** is the `hotkeyId` string that `UICharacterHotkeyPair` binds to a UI element
+(`UI/Hotkey/UICharacterHotkeyPair.cs`).
+
+So a small `ScriptableObject` under `Assets/1. Data/GameData/` holding
+`{ ArmorType armorType, byte equipSlotIndex, string hotkeyId }` rows is the whole configuration.
+**Do not register it in `GameDatabase_G`** — same reason as elsewhere in this document and doc 04:
+`GameDatabase` has a fixed set of typed arrays (`GameDatabase.cs:25-63`) and no generic slot.
+Reference it from the component that reads it.
+
+If a single item ever needs to override the slot default, `BaseItem` and its subclasses are
+`partial` and compile into `Assembly-CSharp`, so a serialized `defaultHotkeyId` can be added from
+`Assets/Scripts/` without touching kit source. Treat that as the escape hatch, not the default —
+one mapping asset is easier to reason about than a field on two hundred items.
+
+### 6.5 The overwrite policy is the actual design decision
+
+This is where it goes wrong if it is not decided deliberately.
+
+- **Always overwrite.** Swap legs, slot 5 becomes the new legs skill, unconditionally. Simple, and
+  it silently destroys any deliberate arrangement the player made.
+- **Fill only when empty**, as `autoAssignItem` does. Never destroys intent, but the slot stops
+  updating after the first assignment — see the trap in 6.6.
+- **Replace only what this slot put there** — recommended. `onEquipItemsOperation` hands you
+  `oldItem` and `newItem`. If the hotkey currently holds a skill that `oldItem` granted, replace it
+  with the corresponding skill from `newItem`; if `newItem` is empty, clear it; otherwise leave it
+  alone. That preserves every manual choice exactly, keeps gear slots live, and handles first equip
+  and unequip as the same rule with no special cases.
+
+Where an item grants several skills, the mapping row needs to say which one, or list several hotkey
+ids in order. Do not silently take `increaseSkills[0]` — the order of that array is authoring
+accident, and 4.1 shows affix order is explicitly shuffled for rolled bonuses.
+
+### 6.6 Gotchas
+
+- **Judge "is this slot empty" by resolution, not by record.** `IndexOfHotkey`
+  (`SharedData/.../PlayerCharacterDataExtensions.cs:663`) finds a stored row; `GetAssignedSkill`
+  returns false when the stored `relateId` no longer resolves against the merged cache
+  (`UICharacterHotkey.cs:157-161`). A slot holding a skill you no longer have **looks empty on
+  screen but is not empty in data**. Fill-only logic keyed on `IndexOfHotkey` fires exactly once and
+  then never again. This is the bug this feature will produce if it produces one.
+- **`relateId` is the string `Id`, not the integer `DataId`.** `AssignSkillHotkey` stores
+  `characterSkill.GetSkill().Id` (`BasePlayerCharacterEntity_NetworkRequest.cs:62-66`) and
+  `GetAssignedSkill` re-hashes it with `BaseGameData.MakeDataId` (`:158`). Combined with 3.5 — `Id`
+  falls back to the asset name while the `id` field is empty — **renaming a skill asset silently
+  breaks every persisted hotkey pointing at it**, on every character. Another reason to set `id`
+  explicitly before any of this ships.
+- **`hotkeys` is synced and persisted, so every write costs a DB round trip in the MMO flavour.**
+  Compare before writing and skip no-op assignments. Policy 3 does this naturally; "always
+  overwrite" writes on every swap, including swaps that change nothing.
+- **Do not leave `autoAssignItem` enabled on a slot this system manages.** Both would assign, and
+  the client-side one runs on a different event. Pick one owner per slot.
+- **The keybind itself is prefab data, not game data.** `UICharacterHotkey.key` is a raw `KeyCode`
+  and `buttonName` is an InputManager button, read as
+  `InputManager.GetKeyDown(key) || InputManager.GetButtonDown(buttonName)` (`:129`). **Use
+  `buttonName`** — it routes through `InputManager` and therefore through the Input System, so the
+  key stays rebindable; a `KeyCode` does not. These live on our forked `CanvasGameplay_G.prefab`,
+  and `InputManager` is one of the two kit files this project has already patched in place
+  (`CLAUDE.md`), so changes near it need care.
+
+## Part 7 — Build order
 
 1. **Set `id` explicitly on every skill asset** that gear will ever reference (3.5). First, because
    it is destructive to retrofit.
@@ -490,7 +626,9 @@ a screen coordinate.
    `UICharacterSkills` overload. Playable trees, no new C#.
 7. **Talent architecture C** — the `BaseGameplayRule` subclass and the talent-mapping asset, once
    A has shown which nodes actually want per-skill scaling.
-8. **`ItemRandomBonus.randomSkillLevels`** last. It is the most exciting feature here and the one
+8. **Gear-following default keybindings** (Part 6), once more than one slot grants a skill. It is
+   pointless with one staff and becomes obviously necessary at four grant slots.
+9. **`ItemRandomBonus.randomSkillLevels`** last. It is the most exciting feature here and the one
    most likely to wreck balance before the baseline exists.
 
 `moveSpeedRateWhileAttacking` defaults to 0 and freezes movement for the length of every cast —
